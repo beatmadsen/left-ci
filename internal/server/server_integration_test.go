@@ -7,16 +7,22 @@ import (
 	"testing"
 )
 
-func TestAdvanceRevision(t *testing.T) {
-	srv := NewServer()
+func TestAdvanceRevisionReturnsOKStatus(t *testing.T) {
+	// Arrange
+	ts := httptest.NewServer(NewHandler())
+	defer ts.Close()
 
 	payload := `{"next_state": "something"}`
-	req := httptest.NewRequest("POST", "/revision/abc123/advance", strings.NewReader(payload))
-	w := httptest.NewRecorder()
 
-	srv.ServeHTTP(w, req)
+	// Act
+	resp, err := http.Post(ts.URL+"/revision/abc123/advance", "application/json", strings.NewReader(payload))
+	if err != nil {
+		t.Fatalf("Failed to perform request: %v", err)
+	}
+	defer resp.Body.Close()
 
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status code %d, got %d", http.StatusOK, w.Code)
+	// Assert
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status code %d, got %d", http.StatusOK, resp.StatusCode)
 	}
 }

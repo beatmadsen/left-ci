@@ -1,13 +1,24 @@
 package server
 
-import "net/http"
+import (
+	"fmt"
+	"log"
+	"net/http"
+)
 
-type fakeHandler struct{}
+type simpleHandler struct{}
 
-func (h *fakeHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h *simpleHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func NewServer() http.Handler {
-	return &fakeHandler{}
+func NewHandler() http.Handler {
+	return &simpleHandler{}
+}
+
+func RunServer(port uint8) {
+	log.Printf("Server starting on port %d", port)
+	if err := http.ListenAndServe(fmt.Sprintf(":%d", port), NewHandler()); err != nil {
+		log.Fatal(err)
+	}
 }

@@ -9,7 +9,7 @@ import (
 
 func TestAdvanceRevisionReturnsOKStatus(t *testing.T) {
 	// Arrange
-	ts := httptest.NewServer(NewHandler())
+	ts := httptest.NewServer(newHandler())
 	defer ts.Close()
 
 	payload := `{"next_state": "something"}`

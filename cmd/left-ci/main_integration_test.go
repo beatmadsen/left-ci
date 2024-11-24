@@ -5,13 +5,16 @@ import (
 	"testing"
 )
 
-func TestSomething(t *testing.T) {
+func TestServerStartsWhenModeIsServer(t *testing.T) {
 	// given that I specify mode "server"
 	// Create a strategy that tracks when it's runServerCalled
 
 	mock := &mock{}
 
-	sm := newEngine("server", mock.ListenAndServe)
+	sm, err := newEngine("server", mock.ListenAndServe)
+	if err != nil {
+		t.Error("Expected no error but got", err)
+	}
 	// when I run the program
 	sm.execute()
 	// then the server should start

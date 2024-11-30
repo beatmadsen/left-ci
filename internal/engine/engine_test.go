@@ -5,8 +5,20 @@ import (
 	"testing"
 )
 
+type argParserStub struct {
+	mode string
+}
+
+func (a *argParserStub) Mode() (string, error) {
+	return a.mode, nil
+}
+
+func (a *argParserStub) Port() (uint16, error) {
+	return 0, nil
+}
+
 func TestThatUnknownModeReturnsError(t *testing.T) {
-	engine, err := NewEngine("unknown", listenAndServeStub)
+	engine, err := NewEngine(&argParserStub{mode: "unknown"}, listenAndServeStub)
 
 	if err == nil {
 		t.Error("expected an error, got nil")
@@ -17,7 +29,7 @@ func TestThatUnknownModeReturnsError(t *testing.T) {
 }
 
 func TestThatNewEngineReturnsServerEngineWhenModeIsServer(t *testing.T) {
-	engine, err := NewEngine("server", listenAndServeStub)
+	engine, err := NewEngine(&argParserStub{mode: "server"}, listenAndServeStub)
 
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)

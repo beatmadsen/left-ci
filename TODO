@@ -1,8 +1,3 @@
-- Integrate argparser with engine:
-- NewEngine should take an ArgParser as an argument and return a concrete implementation
-- Based on the mode provided by the ArgParser.
-- Additional arguments available on ArgParser.
-  - ArgParser does not validate whether requested arg matches mode.
 - Server:
   - POST /:sha/fast/advance
   - POST /:sha/slow/advance

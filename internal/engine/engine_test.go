@@ -1,4 +1,4 @@
-package main
+package engine
 
 import (
 	"net/http"
@@ -6,7 +6,7 @@ import (
 )
 
 func TestThatUnknownModeReturnsError(t *testing.T) {
-	engine, err := newEngine("unknown", listenAndServeStub)
+	engine, err := NewEngine("unknown", listenAndServeStub)
 
 	if err == nil {
 		t.Error("expected an error, got nil")
@@ -17,7 +17,7 @@ func TestThatUnknownModeReturnsError(t *testing.T) {
 }
 
 func TestThatNewEngineReturnsServerEngineWhenModeIsServer(t *testing.T) {
-	engine, err := newEngine("server", listenAndServeStub)
+	engine, err := NewEngine("server", listenAndServeStub)
 
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)

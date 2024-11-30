@@ -3,6 +3,8 @@ package main
 import (
 	"net/http"
 	"testing"
+
+	"github.com/beatmadsen/left-ci/internal/engine"
 )
 
 func TestServerStartsWhenModeIsServer(t *testing.T) {
@@ -11,12 +13,15 @@ func TestServerStartsWhenModeIsServer(t *testing.T) {
 
 	mock := &mock{}
 
-	sm, err := newEngine("server", mock.ListenAndServe)
+	sm, err := engine.NewEngine("server", mock.ListenAndServe)
 	if err != nil {
 		t.Error("Expected no error but got", err)
 	}
 	// when I run the program
-	sm.execute()
+	err = sm.Execute()
+	if err != nil {
+		t.Error("Expected no error but got", err)
+	}
 	// then the server should start
 
 	// Verify the strategy was invoked

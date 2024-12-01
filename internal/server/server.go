@@ -6,16 +6,6 @@ import (
 	"net/http"
 )
 
-type simpleHandler struct{}
-
-func (h *simpleHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-}
-
-func newHandler() http.Handler {
-	return &simpleHandler{}
-}
-
 type Server interface {
 	Run()
 }

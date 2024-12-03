@@ -23,6 +23,9 @@ func (h *simpleHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if matches(path, "/revision/", "/fast/advance") {
 		revision := extractRevision(path, "/revision/", "/fast/advance")
 		h.service.advanceFast(revision)
+	} else if matches(path, "/revision/", "/slow/advance") {
+		revision := extractRevision(path, "/revision/", "/slow/advance")
+		h.service.advanceSlow(revision)
 	}
 	w.WriteHeader(http.StatusOK)
 }

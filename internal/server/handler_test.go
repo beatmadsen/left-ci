@@ -25,11 +25,32 @@ func TestAdvanceFast(t *testing.T) {
 	}
 }
 
+func TestAdvanceSlow(t *testing.T) {
+	// Arrange
+	s := &serviceMock{}
+	h := &simpleHandler{service: s}
+	req, err := http.NewRequest("POST", "/revision/abc123/slow/advance", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	w := httptest.NewRecorder()
+
+	// Act
+	h.ServeHTTP(w, req)
+
+	// Assert
+	if s.advanceSlowCalledWith != "abc123" {
+		t.Errorf("Expected advanceSlow to be called with 'abc123', but it was not")
+	}
+}
+
 type serviceMock struct {
 	advanceFastCalledWith string
+	advanceSlowCalledWith string
 }
 
 func (s *serviceMock) advanceSlow(revision string) error {
+	s.advanceSlowCalledWith = revision
 	return nil
 }
 

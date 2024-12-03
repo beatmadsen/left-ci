@@ -20,13 +20,13 @@ func TestAdvanceFast(t *testing.T) {
 	h.ServeHTTP(w, req)
 
 	// Assert
-	if s.advanceFastCalled != true {
-		t.Errorf("Expected advanceFast to be called, but it was not")
+	if s.advanceFastCalledWith != "abc123" {
+		t.Errorf("Expected advanceFast to be called with 'abc123', but it was not")
 	}
 }
 
 type serviceMock struct {
-	advanceFastCalled bool
+	advanceFastCalledWith string
 }
 
 func (s *serviceMock) advanceSlow(revision string) error {
@@ -34,6 +34,6 @@ func (s *serviceMock) advanceSlow(revision string) error {
 }
 
 func (s *serviceMock) advanceFast(revision string) error {
-	s.advanceFastCalled = true
+	s.advanceFastCalledWith = revision
 	return nil
 }

@@ -1,4 +1,3 @@
-- Server:
-  - POST /:sha/fast/advance
-  - POST /:sha/slow/advance
-  - GET /:sha
+- Database
+  - Migration equivalent
+  - Query functions

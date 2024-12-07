@@ -46,3 +46,37 @@ func TestCreatingRevisionAndGettingState(t *testing.T) {
 		t.Error("Expected revision to be 'revision-1'")
 	}
 }
+
+func TestUpdatingFastState(t *testing.T) {
+	db := New(dbDirPath, "isolation-suffix-2")
+	defer db.Close()
+	db.CreateRevision("revision-1")
+	db.UpdateFastState("revision-1", "building")
+	state, err := db.FastState("revision-1")
+	if err != nil {
+		t.Error(err)
+	}
+	if state == nil {
+		t.Fatal("Expected state to be non-nil")
+	}
+	if state.State != "building" {
+		t.Error("Expected state to be 'building'")
+	}
+}
+
+func TestUpdatingSlowState(t *testing.T) {
+	db := New(dbDirPath, "isolation-suffix-3")
+	defer db.Close()
+	db.CreateRevision("abcd1234")
+	db.UpdateSlowState("abcd1234", "building")
+	state, err := db.SlowState("abcd1234")
+	if err != nil {
+		t.Error(err)
+	}
+	if state == nil {
+		t.Fatal("Expected state to be non-nil")
+	}
+	if state.State != "building" {
+		t.Error("Expected state to be 'building'")
+	}
+}

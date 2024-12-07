@@ -51,6 +51,13 @@ func (d *db) CreateRevision(revision string) error {
 		return err
 	}
 
+	_, err = tx.Exec(`
+		INSERT INTO slow_state (revision_id, state) VALUES (?, ?)
+	`, revisionId, "new")
+	if err != nil {
+		return err
+	}
+
 	return tx.Commit()
 }
 
@@ -71,6 +78,38 @@ func (d *db) FastState(revision string) (*State, error) {
 	}
 
 	return &state, nil
+}
+
+func (d *db) UpdateFastState(revision, state string) error {
+	_, err := d.instance.Exec(`
+		UPDATE fast_state SET state = ? WHERE revision_id = (SELECT id FROM revisions WHERE sha = ?)
+	`, state, revision)
+	return err
+}
+
+func (d *db) SlowState(revision string) (*State, error) {
+	// query slow_state table for revision by joining with revisions table
+	row := d.instance.QueryRow(`
+		SELECT state, revisions.sha
+		FROM slow_state 
+		JOIN revisions ON slow_state.revision_id = revisions.id
+		WHERE revisions.sha = ?
+	`, revision)
+
+	// parse row into state
+	var state State
+	err := row.Scan(&state.State, &state.Revision)
+	if err != nil {
+		return nil, err
+	}
+	return &state, nil
+}
+
+func (d *db) UpdateSlowState(revision, state string) error {
+	_, err := d.instance.Exec(`
+		UPDATE slow_state SET state = ? WHERE revision_id = (SELECT id FROM revisions WHERE sha = ?)
+	`, state, revision)
+	return err
 }
 
 func (d *db) init() {

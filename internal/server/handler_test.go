@@ -141,7 +141,7 @@ func TestFailingStateLookupReturns500(t *testing.T) {
 	}
 }
 
-func TestUnknownPathReturns500(t *testing.T) {
+func TestUnknownPathReturns400(t *testing.T) {
 	// Arrange
 	s := &serviceStub{}
 	h := &simpleHandler{service: s}
@@ -155,7 +155,7 @@ func TestUnknownPathReturns500(t *testing.T) {
 	h.ServeHTTP(w, req)
 
 	// Assert
-	if w.Code != http.StatusInternalServerError {
+	if w.Code != http.StatusBadRequest {
 		t.Errorf("Expected status code to be 500, but it was %d", w.Code)
 	}
 }

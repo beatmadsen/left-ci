@@ -20,35 +20,40 @@ func extractRevision(path string, prefix string, suffix string) string {
 }
 
 func (h *simpleHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	state, clientErr, serverErr := h.routeToService(r.URL.Path, r.Method)
 
-	path := r.URL.Path
+	if clientErr != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(clientErr.Error()))
+	} else if serverErr != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(serverErr.Error()))
+	} else {
+		w.WriteHeader(http.StatusOK)
+		if state != nil {
+			json.NewEncoder(w).Encode(state)
+		}
+	}
+}
 
-	var myErr error
+// returns state, client error, server error
+func (h *simpleHandler) routeToService(path string, method string) (*state, error, error) {
 
 	if matches(path, "/revision/", "/fast/advance") {
 		revision := extractRevision(path, "/revision/", "/fast/advance")
-		myErr = h.service.advanceFast(revision)
+		err := h.service.advanceFast(revision)
+		return nil, nil, err
 	} else if matches(path, "/revision/", "/slow/advance") {
 		revision := extractRevision(path, "/revision/", "/slow/advance")
-		myErr = h.service.advanceSlow(revision)
-	} else if r.Method == http.MethodGet {
+		err := h.service.advanceSlow(revision)
+		return nil, nil, err
+	} else if method == http.MethodGet {
 		revision := extractRevision(path, "/revision/", "")
 		state, err := h.service.state(revision)
-		myErr = err
-		if err == nil {
-			json.NewEncoder(w).Encode(state)
-		}
+		return &state, nil, err
 	} else {
-		myErr = fmt.Errorf("unknown path: %s", path)
+		return nil, fmt.Errorf("unknown path: %s", path), nil
 	}
-
-	if myErr != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(myErr.Error()))
-	} else {
-		w.WriteHeader(http.StatusOK)
-	}
-
 }
 
 func newHandler() http.Handler {

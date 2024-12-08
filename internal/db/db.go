@@ -8,13 +8,22 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+type Db interface {
+	CreateRevision(revision string) error
+	FastState(revision string) (*State, error)
+	UpdateFastState(revision, state string) error
+	SlowState(revision string) (*State, error)
+	UpdateSlowState(revision, state string) error
+	Close() error
+}
+
 type db struct {
 	directoryPath   string
 	isolationSuffix string
 	instance        *sql.DB
 }
 
-func New(directoryPath, isolationSuffix string) *db {
+func New(directoryPath, isolationSuffix string) Db {
 
 	db := &db{directoryPath: directoryPath, isolationSuffix: isolationSuffix}
 

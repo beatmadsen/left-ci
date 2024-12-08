@@ -173,7 +173,21 @@ func (s *serviceStub) AdvanceSlow(revision string) error {
 	return nil
 }
 
+func (s *serviceStub) FailSlow(revision string) error {
+	if s.failing {
+		return fmt.Errorf("failed")
+	}
+	return nil
+}
+
 func (s *serviceStub) AdvanceFast(revision string) error {
+	if s.failing {
+		return fmt.Errorf("failed")
+	}
+	return nil
+}
+
+func (s *serviceStub) FailFast(revision string) error {
 	if s.failing {
 		return fmt.Errorf("failed")
 	}
@@ -187,9 +201,15 @@ func (s *serviceStub) State(revision string) (svc.State, error) {
 	return svc.State{Revision: revision, Fast: 2, Slow: 5}, nil
 }
 
+func (s *serviceStub) Close() error {
+	return nil
+}
+
 type serviceMock struct {
 	advanceFastCalledWith string
+	failFastCalledWith    string
 	advanceSlowCalledWith string
+	failSlowCalledWith    string
 	stateCalledWith       string
 }
 
@@ -198,12 +218,26 @@ func (s *serviceMock) AdvanceSlow(revision string) error {
 	return nil
 }
 
+func (s *serviceMock) FailSlow(revision string) error {
+	s.failSlowCalledWith = revision
+	return nil
+}
+
 func (s *serviceMock) AdvanceFast(revision string) error {
 	s.advanceFastCalledWith = revision
+	return nil
+}
+
+func (s *serviceMock) FailFast(revision string) error {
+	s.failFastCalledWith = revision
 	return nil
 }
 
 func (s *serviceMock) State(revision string) (svc.State, error) {
 	s.stateCalledWith = revision
 	return svc.State{Revision: revision, Fast: 0, Slow: 0}, nil
+}
+
+func (s *serviceMock) Close() error {
+	return nil
 }

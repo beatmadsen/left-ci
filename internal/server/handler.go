@@ -60,6 +60,6 @@ func (h *simpleHandler) routeToService(path string, method string) (*svc.State, 
 
 func newHandler() http.Handler {
 	return &simpleHandler{
-		service: svc.New(),
+		service: svc.New(nil),
 	}
 }

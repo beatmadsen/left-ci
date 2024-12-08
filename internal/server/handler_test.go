@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	svc "github.com/beatmadsen/left-ci/internal/server/service"
 )
 
 func TestAdvanceFast(t *testing.T) {
@@ -164,25 +166,25 @@ type serviceStub struct {
 	failing bool
 }
 
-func (s *serviceStub) advanceSlow(revision string) error {
+func (s *serviceStub) AdvanceSlow(revision string) error {
 	if s.failing {
 		return fmt.Errorf("failed")
 	}
 	return nil
 }
 
-func (s *serviceStub) advanceFast(revision string) error {
+func (s *serviceStub) AdvanceFast(revision string) error {
 	if s.failing {
 		return fmt.Errorf("failed")
 	}
 	return nil
 }
 
-func (s *serviceStub) state(revision string) (state, error) {
+func (s *serviceStub) State(revision string) (svc.State, error) {
 	if s.failing {
-		return state{}, fmt.Errorf("failed")
+		return svc.State{}, fmt.Errorf("failed")
 	}
-	return state{Revision: revision, Fast: 2, Slow: 5}, nil
+	return svc.State{Revision: revision, Fast: 2, Slow: 5}, nil
 }
 
 type serviceMock struct {
@@ -191,17 +193,17 @@ type serviceMock struct {
 	stateCalledWith       string
 }
 
-func (s *serviceMock) advanceSlow(revision string) error {
+func (s *serviceMock) AdvanceSlow(revision string) error {
 	s.advanceSlowCalledWith = revision
 	return nil
 }
 
-func (s *serviceMock) advanceFast(revision string) error {
+func (s *serviceMock) AdvanceFast(revision string) error {
 	s.advanceFastCalledWith = revision
 	return nil
 }
 
-func (s *serviceMock) state(revision string) (state, error) {
+func (s *serviceMock) State(revision string) (svc.State, error) {
 	s.stateCalledWith = revision
-	return state{Revision: revision, Fast: 0, Slow: 0}, nil
+	return svc.State{Revision: revision, Fast: 0, Slow: 0}, nil
 }

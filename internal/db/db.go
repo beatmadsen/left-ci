@@ -71,18 +71,43 @@ func (d *db) CreateRevision(revision string) error {
 }
 
 func (d *db) FastState(revision string) (*State, error) {
-	// query fast_state table for revision by joining with revisions table
-	row := d.instance.QueryRow(`
-		SELECT state, revisions.sha
-		FROM fast_state 
-		JOIN revisions ON fast_state.revision_id = revisions.id
-		WHERE revisions.sha = ?
-	`, revision)
-
-	// parse row into state
-	var state State
-	err := row.Scan(&state.State, &state.Revision)
+	tx, err := d.instance.Begin()
 	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	// Try to get existing state
+	var state State
+	err = tx.QueryRow(`
+			SELECT state, revisions.sha
+			FROM fast_state 
+			JOIN revisions ON fast_state.revision_id = revisions.id
+			WHERE revisions.sha = ?
+	`, revision).Scan(&state.State, &state.Revision)
+
+	if err == sql.ErrNoRows {
+		// Create new revision and state
+		result, err := tx.Exec(`INSERT INTO revisions (sha) VALUES (?)`, revision)
+		if err != nil {
+			return nil, err
+		}
+		revisionId, err := result.LastInsertId()
+		if err != nil {
+			return nil, err
+		}
+
+		_, err = tx.Exec(`INSERT INTO fast_state (revision_id, state) VALUES (?, 'new')`, revisionId)
+		if err != nil {
+			return nil, err
+		}
+
+		state = State{State: "new", Revision: revision}
+	} else if err != nil {
+		return nil, err
+	}
+
+	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
 
@@ -97,20 +122,46 @@ func (d *db) UpdateFastState(revision, state string) error {
 }
 
 func (d *db) SlowState(revision string) (*State, error) {
-	// query slow_state table for revision by joining with revisions table
-	row := d.instance.QueryRow(`
-		SELECT state, revisions.sha
-		FROM slow_state 
-		JOIN revisions ON slow_state.revision_id = revisions.id
-		WHERE revisions.sha = ?
-	`, revision)
-
-	// parse row into state
-	var state State
-	err := row.Scan(&state.State, &state.Revision)
+	tx, err := d.instance.Begin()
 	if err != nil {
 		return nil, err
 	}
+	defer tx.Rollback()
+
+	// Try to get existing state
+	var state State
+	err = tx.QueryRow(`
+			SELECT state, revisions.sha
+			FROM slow_state 
+			JOIN revisions ON slow_state.revision_id = revisions.id
+			WHERE revisions.sha = ?
+	`, revision).Scan(&state.State, &state.Revision)
+
+	if err == sql.ErrNoRows {
+		// Create new revision and state
+		result, err := tx.Exec(`INSERT INTO revisions (sha) VALUES (?)`, revision)
+		if err != nil {
+			return nil, err
+		}
+		revisionId, err := result.LastInsertId()
+		if err != nil {
+			return nil, err
+		}
+
+		_, err = tx.Exec(`INSERT INTO slow_state (revision_id, state) VALUES (?, 'new')`, revisionId)
+		if err != nil {
+			return nil, err
+		}
+
+		state = State{State: "new", Revision: revision}
+	} else if err != nil {
+		return nil, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+
 	return &state, nil
 }
 

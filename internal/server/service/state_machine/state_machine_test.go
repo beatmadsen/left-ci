@@ -6,7 +6,7 @@ import (
 )
 
 func TestCreatingMachineForRevision(t *testing.T) {
-	machine, err := newStateMachine("new")
+	machine, err := NewStateMachine("new")
 	if err != nil {
 		t.Fatal("Expected no error")
 	}
@@ -16,51 +16,51 @@ func TestCreatingMachineForRevision(t *testing.T) {
 }
 
 func TestAdvancingNewState(t *testing.T) {
-	machine, err := newStateMachine("new")
+	machine, err := NewStateMachine("new")
 	if err != nil {
 		t.Fatal("Expected no error")
 	}
-	machine.advance()
+	machine.Advance()
 	if machine.CurrentState() != "environment ready" {
 		t.Error("Expected current state to be 'environment ready'")
 	}
 }
 
 func TestAdvancingEnvironmentReadyState(t *testing.T) {
-	machine, err := newStateMachine("environment ready")
+	machine, err := NewStateMachine("environment ready")
 	if err != nil {
 		t.Fatal("Expected no error")
 	}
-	machine.advance()
+	machine.Advance()
 	if machine.CurrentState() != "building" {
 		t.Error("Expected current state to be 'building'")
 	}
 }
 
 func TestAdvancingBuildingState(t *testing.T) {
-	machine, err := newStateMachine("building")
+	machine, err := NewStateMachine("building")
 	if err != nil {
 		t.Fatal("Expected no error")
 	}
-	machine.advance()
+	machine.Advance()
 	if machine.CurrentState() != "testing" {
 		t.Error("Expected current state to be 'testing'")
 	}
 }
 
 func TestAdvancingTestingState(t *testing.T) {
-	machine, err := newStateMachine("testing")
+	machine, err := NewStateMachine("testing")
 	if err != nil {
 		t.Fatal("Expected no error")
 	}
-	machine.advance()
+	machine.Advance()
 	if machine.CurrentState() != "succeeded" {
 		t.Error("Expected current state to be 'succeeded'")
 	}
 }
 
 func TestFailingNewState(t *testing.T) {
-	machine, err := newStateMachine("new")
+	machine, err := NewStateMachine("new")
 	if err != nil {
 		t.Fatal("Expected no error")
 	}
@@ -70,7 +70,7 @@ func TestFailingNewState(t *testing.T) {
 	}
 }
 func TestFailingEnvironmentReadyState(t *testing.T) {
-	machine, err := newStateMachine("environment ready")
+	machine, err := NewStateMachine("environment ready")
 	if err != nil {
 		t.Fatal("Expected no error")
 	}
@@ -81,7 +81,7 @@ func TestFailingEnvironmentReadyState(t *testing.T) {
 }
 
 func TestFailingBuildingState(t *testing.T) {
-	machine, err := newStateMachine("building")
+	machine, err := NewStateMachine("building")
 	if err != nil {
 		t.Fatal("Expected no error")
 	}
@@ -92,7 +92,7 @@ func TestFailingBuildingState(t *testing.T) {
 }
 
 func TestFailingTestingState(t *testing.T) {
-	machine, err := newStateMachine("testing")
+	machine, err := NewStateMachine("testing")
 	if err != nil {
 		t.Fatal("Expected no error")
 	}

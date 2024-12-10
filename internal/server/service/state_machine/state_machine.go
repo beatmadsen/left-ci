@@ -6,7 +6,7 @@ type stateMachine struct {
 	currentState state
 }
 
-func newStateMachine(initialState string) (*stateMachine, error) {
+func NewStateMachine(initialState string) (*stateMachine, error) {
 	switch initialState {
 	case "new":
 		return &stateMachine{currentState: &newState{}}, nil
@@ -25,7 +25,7 @@ func (s *stateMachine) CurrentState() string {
 	return s.currentState.String()
 }
 
-func (s *stateMachine) advance() {
+func (s *stateMachine) Advance() {
 	state := s.currentState.advance()
 
 	s.currentState = state

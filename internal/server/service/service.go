@@ -1,6 +1,11 @@
 package service
 
-import "github.com/beatmadsen/left-ci/internal/db"
+import (
+	"fmt"
+
+	"github.com/beatmadsen/left-ci/internal/db"
+	statemachine "github.com/beatmadsen/left-ci/internal/server/service/state_machine"
+)
 
 type Service interface {
 	AdvanceSlow(revision string) error
@@ -26,7 +31,17 @@ type servicePrototype struct {
 }
 
 func (s *servicePrototype) AdvanceSlow(revision string) error {
-	return nil
+	state, err := s.db.SlowState(revision)
+	if err != nil {
+		return fmt.Errorf("failed to get slow state: %w", err)
+	}
+	sm, err := statemachine.NewStateMachine(state.State)
+	if err != nil {
+		return fmt.Errorf("failed to advance slow state: %w", err)
+	}
+	sm.Advance()
+
+	return s.db.UpdateSlowState(revision, sm.CurrentState())
 }
 
 func (s *servicePrototype) FailSlow(revision string) error {

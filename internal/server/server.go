@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 )
 
 type Server interface {
@@ -18,8 +19,20 @@ type myServer struct {
 	port               uint16
 }
 
+var dbDirPath string
+
+func createDatabaseDirectory() {
+	// get tmpdir
+	dir, err := os.MkdirTemp("", "left-ci")
+	if err != nil {
+		panic(err)
+	}
+	dbDirPath = dir
+}
+
 func NewServer(port uint16) Server {
-	return &myServer{handler: newHandler(), listenAndServeFunc: http.ListenAndServe, port: port}
+	createDatabaseDirectory()
+	return &myServer{handler: newHandler(dbDirPath), listenAndServeFunc: http.ListenAndServe, port: port}
 }
 
 func (s *myServer) Run() {

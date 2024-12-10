@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/beatmadsen/left-ci/internal/db"
 	svc "github.com/beatmadsen/left-ci/internal/server/service"
 )
 
@@ -58,8 +59,9 @@ func (h *simpleHandler) routeToService(path string, method string) (*svc.State, 
 	}
 }
 
-func newHandler() http.Handler {
+func newHandler(dbDirPath string) http.Handler {
+	db := db.New(dbDirPath, "handler")
 	return &simpleHandler{
-		service: svc.New(nil),
+		service: svc.New(db),
 	}
 }

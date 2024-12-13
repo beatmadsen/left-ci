@@ -18,7 +18,11 @@ func NewEngine(argParser argparser.ArgParser, listenAndServeFunc server.ListenAn
 	}
 	switch mode {
 	case "server":
-		return &serverEngine{listenAndServeFunc: listenAndServeFunc}, nil
+		port, err := argParser.Port()
+		if err != nil {
+			return nil, fmt.Errorf("error determining port: %w", err)
+		}
+		return &serverEngine{listenAndServeFunc: listenAndServeFunc, port: port}, nil
 	default:
 		return nil, fmt.Errorf("unknown mode: %s", mode)
 	}
@@ -26,8 +30,9 @@ func NewEngine(argParser argparser.ArgParser, listenAndServeFunc server.ListenAn
 
 type serverEngine struct {
 	listenAndServeFunc server.ListenAndServeFunc
+	port               uint16
 }
 
 func (e *serverEngine) Execute() error {
-	return e.listenAndServeFunc(":8080", nil)
+	return e.listenAndServeFunc(fmt.Sprintf(":%d", e.port), nil)
 }

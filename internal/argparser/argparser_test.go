@@ -46,3 +46,19 @@ func TestThatPortReturnsTheSecondArgument(t *testing.T) {
 		t.Errorf("expected port to be 8080, got %v", port)
 	}
 }
+
+func TestThatPortDefaultsTo8080WhenNotProvided(t *testing.T) {
+	parser, err := NewArgParser("server")
+
+	if err != nil {
+		t.Errorf("expected no error, got %v", err)
+	}
+
+	port, err := parser.Port()
+	if err != nil {
+		t.Errorf("expected no error, got %v", err)
+	}
+	if port != 8080 {
+		t.Errorf("expected port to be 8080, got %v", port)
+	}
+}

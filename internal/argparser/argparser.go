@@ -22,6 +22,9 @@ func (a *ap) Mode() (string, error) {
 }
 
 func (a *ap) Port() (uint16, error) {
+	if len(a.args) < 2 {
+		return 8080, nil
+	}
 	port, err := strconv.ParseUint(a.args[1], 10, 16)
 	if err != nil {
 		return 0, err

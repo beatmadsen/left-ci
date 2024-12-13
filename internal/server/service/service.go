@@ -18,8 +18,8 @@ type Service interface {
 
 type State struct {
 	Revision string `json:"revision"`
-	Fast     uint8  `json:"fast"`
-	Slow     uint8  `json:"slow"`
+	Fast     string `json:"fast"`
+	Slow     string `json:"slow"`
 }
 
 func New(db db.Db) Service {
@@ -57,15 +57,39 @@ func (s *servicePrototype) FailSlow(revision string) error {
 }
 
 func (s *servicePrototype) AdvanceFast(revision string) error {
-	return nil
+	state, err := s.db.FastState(revision)
+	if err != nil {
+		return fmt.Errorf("failed to get fast state: %w", err)
+	}
+	newState, err := s.advance(state.State)
+	if err != nil {
+		return err
+	}
+	return s.db.UpdateFastState(revision, newState)
 }
 
 func (s *servicePrototype) FailFast(revision string) error {
-	return nil
+	state, err := s.db.FastState(revision)
+	if err != nil {
+		return fmt.Errorf("failed to get fast state: %w", err)
+	}
+	newState, err := s.fail(state.State)
+	if err != nil {
+		return err
+	}
+	return s.db.UpdateFastState(revision, newState)
 }
 
 func (s *servicePrototype) State(revision string) (State, error) {
-	return State{}, nil
+	fastState, err := s.db.FastState(revision)
+	if err != nil {
+		return State{}, fmt.Errorf("failed to get fast state: %w", err)
+	}
+	slowState, err := s.db.SlowState(revision)
+	if err != nil {
+		return State{}, fmt.Errorf("failed to get slow state: %w", err)
+	}
+	return State{Revision: revision, Fast: fastState.State, Slow: slowState.State}, nil
 }
 
 func (s *servicePrototype) Close() error {

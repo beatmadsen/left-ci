@@ -118,7 +118,7 @@ func TestStateReturnsState(t *testing.T) {
 	h.ServeHTTP(w, req)
 
 	// Assert
-	expected := `{"revision":"abc123","fast":2,"slow":5}` + "\n"
+	expected := `{"revision":"abc123","fast":"testing","slow":"building"}` + "\n"
 	if w.Body.String() != expected {
 		t.Errorf("Unexpected response body: %s ; expected %s", w.Body.String(), expected)
 	}
@@ -198,7 +198,7 @@ func (s *serviceStub) State(revision string) (svc.State, error) {
 	if s.failing {
 		return svc.State{}, fmt.Errorf("failed")
 	}
-	return svc.State{Revision: revision, Fast: 2, Slow: 5}, nil
+	return svc.State{Revision: revision, Fast: "testing", Slow: "building"}, nil
 }
 
 func (s *serviceStub) Close() error {
@@ -235,7 +235,7 @@ func (s *serviceMock) FailFast(revision string) error {
 
 func (s *serviceMock) State(revision string) (svc.State, error) {
 	s.stateCalledWith = revision
-	return svc.State{Revision: revision, Fast: 0, Slow: 0}, nil
+	return svc.State{Revision: revision, Fast: "testing", Slow: "building"}, nil
 }
 
 func (s *serviceMock) Close() error {

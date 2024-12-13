@@ -1,105 +1,97 @@
 package service
 
 import (
-	"fmt"
+	"errors"
 	"testing"
 
 	"github.com/beatmadsen/left-ci/internal/db"
 )
 
-func TestGivenFailingDbItFailsToAdvanceSlow(t *testing.T) {
+func TestGivenBrokenDbItErrorsWhenAdvancingSlowPipeline(t *testing.T) {
 	db := &dbStub{failing: true}
-	service := newService(db)
+	mock := &mock{}
+	service := newService(db, mock)
 	err := service.AdvanceSlow("revision-1")
 	if err == nil {
 		t.Error("Expected error when db fails")
 	}
+	if mock.advanceCount > 0 {
+		t.Errorf("Expected advance to not be called, got %d", mock.advanceCount)
+	}
 }
 
-func TestGivenSuccessfulDbActionAdvanceUpdatesSlowWithCorrectRevision(t *testing.T) {
-	db := &dbMock{}
-	service := newService(db)
+func TestGivenWorkingDbItAdvancesSlowPipeline(t *testing.T) {
+	db := &dbStub{failing: false}
+	mock := &mock{}
+	service := newService(db, mock)
 	err := service.AdvanceSlow("revision-1")
 	if err != nil {
-		t.Error("Expected no error when db succeeds, but got", err)
+		t.Errorf("Expected no error, got %v", err)
 	}
-	if db.updateSlowStateCalledWithState != "succeeded" {
-		t.Error("Expected db to be called with state 'succeeded', but got", db.updateSlowStateCalledWithState)
+	if mock.advanceCount != 1 {
+		t.Errorf("Expected advance to be called once, got %d", mock.advanceCount)
 	}
 }
 
-func newService(db db.Db) Service {
-	return &servicePrototype{db: db}
+func TestGivenBrokenDbItErrorsWhenFailingSlowPipeline(t *testing.T) {
+	db := &dbStub{failing: true}
+	mock := &mock{}
+	service := newService(db, mock)
+	err := service.FailSlow("revision-1")
+	if err == nil {
+		t.Error("Expected error when db fails")
+	}
+	if mock.advanceCount > 0 {
+		t.Errorf("Expected advance to not be called, got %d", mock.advanceCount)
+	}
 }
 
-type dbMock struct {
-	updateSlowStateCalledWithState string
-	updateFastStateCalledWithState string
+func newService(db db.Db, mock *mock) Service {
+	return &servicePrototype{db: db, advance: mock.advance, fail: mock.fail}
 }
 
-func (d *dbMock) UpdateSlowState(revision, state string) error {
-	d.updateSlowStateCalledWithState = state
-	return nil
+type mock struct {
+	advanceCount int
+	failCount    int
 }
 
-func (d *dbMock) UpdateFastState(revision, state string) error {
-	d.updateFastStateCalledWithState = state
-	return nil
+func (m *mock) advance(state string) (string, error) {
+	m.advanceCount++
+	return state, nil
 }
 
-func (d *dbMock) FastState(revision string) (*db.State, error) {
-	return &db.State{State: "environment ready", Revision: revision}, nil
-}
-
-func (d *dbMock) SlowState(revision string) (*db.State, error) {
-	return &db.State{State: "testing", Revision: revision}, nil
-}
-
-func (d *dbMock) CreateRevision(revision string) error {
-	return nil
-}
-
-func (d *dbMock) Close() error {
-	return nil
+func (m *mock) fail(state string) (string, error) {
+	m.failCount++
+	return state, nil
 }
 
 type dbStub struct {
 	failing bool
 }
 
-func (d *dbStub) maybeFail() error {
+func (d *dbStub) SlowState(revision string) (*db.State, error) {
 	if d.failing {
-		return fmt.Errorf("failed")
+		return nil, errors.New("failed to get slow state")
 	}
+	return &db.State{State: "testing", Revision: revision}, nil
+}
+
+func (d *dbStub) UpdateSlowState(revision, state string) error {
 	return nil
 }
 
 func (d *dbStub) Close() error {
-	return d.maybeFail()
-}
-
-func (d *dbStub) CreateRevision(revision string) error {
-	return d.maybeFail()
+	return nil
 }
 
 func (d *dbStub) FastState(revision string) (*db.State, error) {
-	if d.failing {
-		return nil, fmt.Errorf("failed")
-	}
-	return &db.State{State: "environment ready", Revision: revision}, nil
-}
-
-func (d *dbStub) SlowState(revision string) (*db.State, error) {
-	if d.failing {
-		return nil, fmt.Errorf("failed")
-	}
-	return &db.State{State: "environment ready", Revision: revision}, nil
+	return nil, nil
 }
 
 func (d *dbStub) UpdateFastState(revision, state string) error {
-	return d.maybeFail()
+	return nil
 }
 
-func (d *dbStub) UpdateSlowState(revision, state string) error {
-	return d.maybeFail()
+func (d *dbStub) CreateRevision(revision string) error {
+	return nil
 }

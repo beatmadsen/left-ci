@@ -23,11 +23,13 @@ type State struct {
 }
 
 func New(db db.Db) Service {
-	return &servicePrototype{db: db}
+	return &servicePrototype{db: db, advance: advance, fail: fail}
 }
 
 type servicePrototype struct {
-	db db.Db
+	db      db.Db
+	advance func(state string) (string, error)
+	fail    func(state string) (string, error)
 }
 
 func (s *servicePrototype) AdvanceSlow(revision string) error {
@@ -35,17 +37,23 @@ func (s *servicePrototype) AdvanceSlow(revision string) error {
 	if err != nil {
 		return fmt.Errorf("failed to get slow state: %w", err)
 	}
-	sm, err := statemachine.NewStateMachine(state.State)
+	newState, err := s.advance(state.State)
 	if err != nil {
-		return fmt.Errorf("failed to advance slow state: %w", err)
+		return err
 	}
-	sm.Advance()
-
-	return s.db.UpdateSlowState(revision, sm.CurrentState())
+	return s.db.UpdateSlowState(revision, newState)
 }
 
 func (s *servicePrototype) FailSlow(revision string) error {
-	return nil
+	state, err := s.db.SlowState(revision)
+	if err != nil {
+		return fmt.Errorf("failed to get slow state: %w", err)
+	}
+	newState, err := s.fail(state.State)
+	if err != nil {
+		return err
+	}
+	return s.db.UpdateSlowState(revision, newState)
 }
 
 func (s *servicePrototype) AdvanceFast(revision string) error {
@@ -62,4 +70,17 @@ func (s *servicePrototype) State(revision string) (State, error) {
 
 func (s *servicePrototype) Close() error {
 	return s.db.Close()
+}
+
+func advance(state string) (string, error) {
+	sm, err := statemachine.NewStateMachine(state)
+	if err != nil {
+		return "", fmt.Errorf("failed to advance state: %w", err)
+	}
+	sm.Advance()
+	return sm.CurrentState(), nil
+}
+
+func fail(state string) (string, error) {
+	return state, nil
 }

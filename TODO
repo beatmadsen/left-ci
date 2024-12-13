@@ -1,8 +1,2 @@
 - Service
-  - Integrate db
-  - Use state machine to advance state
-  - persist updated state
-
-- Database
-  - Lookup fast state, create if not exists
-  - Lookup slow state, create if not exists
+  - Fetch, update and write inside a transaction

@@ -1,0 +1,14 @@
+/Users/erik.thyge.madsen/.ghcup/ghc/9.8.4/lib/ghc-9.8.4/lib/aarch64-osx-ghc-9.8.4/rts-1.0.2/include/ghcversion.h:
+  hash: 95162794a3bf5e6167631fdd41a509846597231d523d0f21a76713b1f801373c
+? /Users/erik.thyge.madsen/Developer/hobby/left-ci/new-attempt/.stack-work/dist/aarch64-osx/ghc-9.8.4/build/left-ci-test/autogen/Paths_left_ci.hs
+: hash: 5e30677971f25cf94e9c4fc5e0def74b9a7b3277c69ad72dc31882f16f2c6172
+? /Users/erik.thyge.madsen/Developer/hobby/left-ci/new-attempt/.stack-work/dist/aarch64-osx/ghc-9.8.4/build/left-ci-test/autogen/cabal_macros.h
+: hash: 552dc9dc9a68571bc52f91c80187e4950871ad6add0213d698c54d04079335aa
+/Users/erik.thyge.madsen/Developer/hobby/left-ci/new-attempt/left-ci.cabal:
+  hash: 632ced5a5c0876ec2dabc67d68e56523a5e88f07841d3fe3bb9e395e3e03ce85
+/Users/erik.thyge.madsen/Developer/hobby/left-ci/new-attempt/package.yaml:
+  hash: 8ead60dcbf7da6e1340dd2d22742168d8033cdfb0c88207903ca76ff657049d6
+/Users/erik.thyge.madsen/Developer/hobby/left-ci/new-attempt/test/EngineTest.hs:
+  hash: c2834b8041f1dad09991161bbd9ad1f595f9391de48889c9d9a9afe82c5d8fdc
+/Users/erik.thyge.madsen/Developer/hobby/left-ci/new-attempt/test/Main.hs:
+  hash: 4e0dcbf0b6d8e039dadb90c2eb859b6c52576d3502e30f10f3ebfad5168a71eb

@@ -43,12 +43,16 @@ test-suite integration
   type: exitcode-stdio-1.0
   main-is: Main.hs
   other-modules:
-      Integration.FakeWarp
+      FakeWarp
+      ServerTest
+      Paths_left_ci
   hs-source-dirs:
       test/integration
   build-depends:
-      base >=4.7 && <5
+      HUnit
+    , base >=4.7 && <5
     , containers
+    , left-ci
     , text
     , wai
   default-language: Haskell2010
@@ -62,7 +66,7 @@ test-suite unit
       test/unit
   build-depends:
       HUnit
-    , base
+    , base >=4.7 && <5
     , containers
     , left-ci
     , text

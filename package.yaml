@@ -26,26 +26,19 @@ executables:
       - warp
 
 
-# Move test dependencies to a common set to avoid repetition
-_common_test: &common_test
-  dependencies:
-    - left-ci
-    - HUnit
-    - base
-
-
 
 tests:
   unit:
-    <<: *common_test
+    dependencies:
+      - left-ci
+      - HUnit
     main: Main.hs
     source-dirs: test/unit
 
   integration:
-    <<: *common_test
+    dependencies:
+      - left-ci
+      - HUnit
+      - wai
     main: Main.hs
     source-dirs: test/integration
-    dependencies:
-      - wai
-    other-modules:
-      - Integration.FakeWarp

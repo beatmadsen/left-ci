@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Integration.FakeWarp
+module FakeWarp
     ( fakeWarp
     ) where
 
@@ -22,8 +22,7 @@ fakeWarp app = do
 
     fakeResponder :: Response -> IO ResponseReceived
     fakeResponder response = do
-        putStrLn "Received response:"
-        print response
+        putStrLn "Received response"
         pure ResponseReceived
 
     parsePath :: Text -> [Text]

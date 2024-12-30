@@ -4,9 +4,9 @@ module Server.App
     , runWithArgsAndServer
     ) where
 
-import Web.Scotty
-import Network.Wai
-import Server.Routes
+import Web.Scotty ( get, scottyApp, ScottyM )
+import Network.Wai ( Application )
+import Server.Routes ( helloHandler, goodbyeHandler, echoHandler )
 
 app :: ScottyM ()
 app = do

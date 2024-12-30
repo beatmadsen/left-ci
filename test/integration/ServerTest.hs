@@ -1,8 +1,8 @@
-module Integration.ServerTest where
+module ServerTest where
 
 import Test.HUnit
 import Server.App (app, runWithArgsAndServer)
-import Integration.FakeWarp (fakeWarp)
+import FakeWarp (fakeWarp)
 
 serverTests :: Test
 serverTests = TestList

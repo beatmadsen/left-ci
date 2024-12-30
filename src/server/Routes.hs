@@ -5,7 +5,7 @@ module Server.Routes
     , echoHandler
     ) where
 
-import Web.Scotty
+import Web.Scotty ( pathParam, text, ActionM )
 
 helloHandler :: ActionM ()
 helloHandler = text "Hello, world!"
@@ -15,5 +15,5 @@ goodbyeHandler = text "Goodbye, world!"
 
 echoHandler :: ActionM ()
 echoHandler = do
-    msg <- param "msg"
+    msg <- pathParam "msg"
     text $ "Echo: " <> msg

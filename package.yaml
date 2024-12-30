@@ -1,0 +1,51 @@
+name: left-ci
+version: 0.1.0.0
+
+dependencies:
+  - base >= 4.7 && < 5
+  - text
+  - containers
+
+library:
+  source-dirs: src
+  exposed-modules:
+    - Server.App
+    - Server.Routes
+  dependencies:
+    - scotty
+    - wai
+    - warp
+
+
+executables:
+  left-ci:
+    main: Main.hs
+    source-dirs: app
+    dependencies:
+      - left-ci
+      - warp
+
+
+# Move test dependencies to a common set to avoid repetition
+_common_test: &common_test
+  dependencies:
+    - left-ci
+    - HUnit
+    - base
+
+
+
+tests:
+  unit:
+    <<: *common_test
+    main: Main.hs
+    source-dirs: test/unit
+
+  integration:
+    <<: *common_test
+    main: Main.hs
+    source-dirs: test/integration
+    dependencies:
+      - wai
+    other-modules:
+      - Integration.FakeWarp

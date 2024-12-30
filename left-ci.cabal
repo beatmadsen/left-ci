@@ -1,0 +1,69 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.37.0.
+--
+-- see: https://github.com/sol/hpack
+
+name:           left-ci
+version:        0.1.0.0
+build-type:     Simple
+
+library
+  exposed-modules:
+      Server.App
+      Server.Routes
+  other-modules:
+      Paths_left_ci
+  hs-source-dirs:
+      src
+  build-depends:
+      base >=4.7 && <5
+    , containers
+    , scotty
+    , text
+    , wai
+    , warp
+  default-language: Haskell2010
+
+executable left-ci
+  main-is: Main.hs
+  other-modules:
+      Paths_left_ci
+  hs-source-dirs:
+      app
+  build-depends:
+      base >=4.7 && <5
+    , containers
+    , left-ci
+    , text
+    , warp
+  default-language: Haskell2010
+
+test-suite integration
+  type: exitcode-stdio-1.0
+  main-is: Main.hs
+  other-modules:
+      Integration.FakeWarp
+  hs-source-dirs:
+      test/integration
+  build-depends:
+      base >=4.7 && <5
+    , containers
+    , text
+    , wai
+  default-language: Haskell2010
+
+test-suite unit
+  type: exitcode-stdio-1.0
+  main-is: Main.hs
+  other-modules:
+      Paths_left_ci
+  hs-source-dirs:
+      test/unit
+  build-depends:
+      HUnit
+    , base
+    , containers
+    , left-ci
+    , text
+  default-language: Haskell2010

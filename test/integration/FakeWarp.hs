@@ -4,11 +4,17 @@ module FakeWarp
     ) where
 
 import Network.Wai
+    ( defaultRequest,
+      Application,
+      Request(pathInfo),
+      Response,
+      ResponseReceived )
 import Network.Wai.Internal (ResponseReceived(..))
 import Data.Text (Text)
 import qualified Data.Text as Text
+import Server.App (AppRunner)
 
-fakeWarp :: Application -> IO ()
+fakeWarp :: AppRunner
 fakeWarp app = do
     putStrLn "Fake server running"
     runFakeRequests app ["/hello", "/goodbye", "/echo?msg=test"]

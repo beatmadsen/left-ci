@@ -1,7 +1,8 @@
 module Main where
 
 import Test.HUnit
-import ServerTest
+    ( runTestTT, Counts(failures, tried, errors), Test(TestList) )
+import ServerTest ( serverTests )
 import System.Exit (exitFailure, exitSuccess)
 
 main :: IO ()

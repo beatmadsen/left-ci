@@ -1,1 +1,5 @@
-- Test that an engine with the server and port args succeed in starting a fake server
+- I/O based validation of installer path (is it a valid directory?)
+  - use integration testing with tmpdir
+- I/O based validation of server port (is the port available?)
+  - use integration testing with ephemeral port
+- Branch out into different functions for running the server and installing the application

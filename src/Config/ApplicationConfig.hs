@@ -6,8 +6,11 @@ module Config.ApplicationConfig
 data ApplicationConfig
   = Server Int
   | Installer FilePath
-  | Invalid
+  | Invalid String
   deriving (Show, Eq)
 
 parseApplicationConfig :: [String] -> ApplicationConfig
+
+parseApplicationConfig [] = Invalid "No arguments provided"
+parseApplicationConfig ["--server"] = Invalid "No port number provided to run the server on. Please add --port <port>"
 parseApplicationConfig _ = error "Not implemented yet"

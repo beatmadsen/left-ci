@@ -2,12 +2,11 @@ module Main where
 
 import Test.HUnit
     ( runTestTT, Counts(failures, tried, errors), Test(TestList) )
-import ServerTest ( serverTests )
 import System.Exit (exitFailure, exitSuccess)
 
 main :: IO ()
 main = do
-    counts <- runTestTT $ TestList [serverTests]
+    counts <- runTestTT $ TestList []
     putStrLn $ "Tests run: " ++ show (tried counts)
     putStrLn $ "Failures: " ++ show (failures counts)
     putStrLn $ "Errors: " ++ show (errors counts)

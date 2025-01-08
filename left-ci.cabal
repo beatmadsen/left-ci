@@ -10,8 +10,7 @@ build-type:     Simple
 
 library
   exposed-modules:
-      Server.App
-      Server.Routes
+      Config.ApplicationConfig
   other-modules:
       Paths_left_ci
   hs-source-dirs:
@@ -43,8 +42,6 @@ test-suite integration
   type: exitcode-stdio-1.0
   main-is: Main.hs
   other-modules:
-      FakeWarp
-      ServerTest
       Paths_left_ci
   hs-source-dirs:
       test/integration
@@ -61,6 +58,7 @@ test-suite unit
   type: exitcode-stdio-1.0
   main-is: Main.hs
   other-modules:
+      Config.ApplicationConfigTest
       Paths_left_ci
   hs-source-dirs:
       test/unit

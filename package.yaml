@@ -8,9 +8,9 @@ dependencies:
 
 library:
   source-dirs: src
-  exposed-modules:
-    - Server.App
-    - Server.Routes
+  # exposed-modules:
+  #   - Server.App
+  #   - Server.Routes
   dependencies:
     - scotty
     - wai

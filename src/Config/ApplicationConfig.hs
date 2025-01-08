@@ -12,12 +12,17 @@ data ApplicationConfig
 
 parseApplicationConfig :: [String] -> ApplicationConfig
 parseApplicationConfig [] = Invalid "No arguments provided"
-parseApplicationConfig ("--server" : rest) = parseServerConfig rest
+parseApplicationConfig ("--server" : rest) = parseServer rest
 parseApplicationConfig _ = error "Not implemented yet"
 
-parseServerConfig :: [String] -> ApplicationConfig
-parseServerConfig [] = Server 8585 -- Case for just "--server"
-parseServerConfig ("--port" : rest) = case rest of
+parseServer :: [String] -> ApplicationConfig
+parseServer [] = Server 8585
+parseServer ("--port" : rest) = case rest of
   [] -> Invalid "No port number provided to run the server on. Please add a number after --port"
-  (port : _) -> Invalid $ "Invalid port number: " ++ port ++ ". Please add a number after --port"
-parseServerConfig _ = Invalid "Invalid server configuration"
+  (port : _) -> parsePort port
+parseServer _ = Invalid "Invalid server configuration"
+
+parsePort :: String -> ApplicationConfig
+parsePort port = case reads port :: [(Int, String)] of
+  [(n, "")] | n >= 0 && n <= 65535 -> Server n
+  _ -> Invalid $ "Invalid port number: " ++ port ++ ". Please add a number after --port"

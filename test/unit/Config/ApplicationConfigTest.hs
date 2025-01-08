@@ -27,5 +27,9 @@ tests =
       TestLabel "server command with port flag fails if port is not a number" $ TestCase $ do
         let actual = parseApplicationConfig ["--server", "--port", "not-a-number"]
         let expected = Invalid "Invalid port number: not-a-number. Please add a number after --port"
+        actual @?= expected,
+      TestLabel "server command with port flag sets up server with port" $ TestCase $ do
+        let actual = parseApplicationConfig ["--server", "--port", "8080"]
+        let expected = Server 8080
         actual @?= expected
     ]

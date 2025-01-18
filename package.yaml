@@ -3,6 +3,7 @@ version: 0.1.0.0
 
 dependencies:
   - base >= 4.7 && < 5
+  # - either >= 5
   - text
   - containers
 
@@ -12,6 +13,7 @@ library:
   #   - Server.App
   #   - Server.Routes
   dependencies:
+    - network
     - scotty
     - wai
     - warp
@@ -39,6 +41,7 @@ tests:
     dependencies:
       - left-ci
       - HUnit
+      - network
       - wai
     main: Main.hs
     source-dirs: test/integration

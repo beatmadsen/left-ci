@@ -5,6 +5,19 @@ module Config.ApplicationConfig
   )
 where
 
+import Network.Socket
+  ( Socket,
+    bind,
+    close,
+    defaultProtocol,
+    socket,
+    tupleToHostAddress,
+    SockAddr(SockAddrInet),
+    Family(AF_INET),
+    SocketType(Stream)
+  )
+import Control.Exception (try, SomeException)
+
 data ApplicationConfig
   = Server Int
   | Installer FilePath
@@ -38,4 +51,19 @@ parseInstaller _ = Invalid "Invalid installer configuration"
 
 validate :: ApplicationConfig -> IO ApplicationConfig
 validate (Invalid i) = pure $ Invalid i
+validate (Server port) = validatePort port
 validate _ = undefined
+
+bindPort :: Socket -> Int -> IO ()
+bindPort sock port = do
+  bind sock (SockAddrInet (fromIntegral port) (tupleToHostAddress (127, 0, 0, 1)))
+  close sock
+  pure ()
+
+validatePort :: Int -> IO ApplicationConfig
+validatePort port = do
+  sock <- socket AF_INET Stream defaultProtocol
+  result <- try $ bindPort sock port :: IO (Either SomeException ())
+  case result of
+    Left _ -> pure $ Invalid "Server port is not available"
+    Right _ -> pure $ Server port

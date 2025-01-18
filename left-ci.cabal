@@ -18,6 +18,7 @@ library
   build-depends:
       base >=4.7 && <5
     , containers
+    , network
     , scotty
     , text
     , wai
@@ -51,6 +52,7 @@ test-suite integration
     , base >=4.7 && <5
     , containers
     , left-ci
+    , network
     , text
     , wai
   default-language: Haskell2010

@@ -13,6 +13,7 @@ library:
   #   - Server.App
   #   - Server.Routes
   dependencies:
+    - directory
     - network
     - scotty
     - wai
@@ -41,6 +42,7 @@ tests:
     dependencies:
       - left-ci
       - HUnit
+      - directory
       - network
       - wai
     main: Main.hs

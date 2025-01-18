@@ -11,6 +11,9 @@ build-type:     Simple
 library
   exposed-modules:
       Config.ApplicationConfig
+      Config.InstallerValidator
+      Config.ServerValidator
+      Config.Validator
   other-modules:
       Paths_left_ci
   hs-source-dirs:
@@ -18,6 +21,7 @@ library
   build-depends:
       base >=4.7 && <5
     , containers
+    , directory
     , network
     , scotty
     , text
@@ -43,7 +47,7 @@ test-suite integration
   type: exitcode-stdio-1.0
   main-is: Main.hs
   other-modules:
-      Config.ApplicationConfigTest
+      Config.ValidatorTest
       Paths_left_ci
   hs-source-dirs:
       test/integration
@@ -51,6 +55,7 @@ test-suite integration
       HUnit
     , base >=4.7 && <5
     , containers
+    , directory
     , left-ci
     , network
     , text

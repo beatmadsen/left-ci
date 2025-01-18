@@ -1,5 +1,11 @@
 module Main where
 
+import Config.ApplicationConfig (parseApplicationConfig)
+import Config.Validator (validate)
+import System.Environment (getArgs)
+
 main :: IO ()
 main = do
-    putStrLn "Hello, World!"
+    args <- getArgs
+    v <- validate $ parseApplicationConfig args
+    putStrLn $ show v

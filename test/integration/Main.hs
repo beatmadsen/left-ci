@@ -1,12 +1,12 @@
 module Main where
 
 import Test.HUnit
-    ( runTestTT, Counts(failures, tried, errors), Test(TestList) )
 import System.Exit (exitFailure, exitSuccess)
+import qualified Config.ApplicationConfigTest ( tests )
 
 main :: IO ()
 main = do
-    counts <- runTestTT $ TestList []
+    counts <- runTestTT $ TestList [Config.ApplicationConfigTest.tests]
     putStrLn $ "Tests run: " ++ show (tried counts)
     putStrLn $ "Failures: " ++ show (failures counts)
     putStrLn $ "Errors: " ++ show (errors counts)

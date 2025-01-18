@@ -42,6 +42,7 @@ test-suite integration
   type: exitcode-stdio-1.0
   main-is: Main.hs
   other-modules:
+      Config.ApplicationConfigTest
       Paths_left_ci
   hs-source-dirs:
       test/integration

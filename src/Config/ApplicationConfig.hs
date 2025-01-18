@@ -1,6 +1,7 @@
 module Config.ApplicationConfig
   ( ApplicationConfig (..),
     parseApplicationConfig,
+    validate
   )
 where
 
@@ -34,3 +35,7 @@ parseInstaller ("--path" : rest) = case rest of
   [] -> Invalid "No path provided to the project where you want to install Left CI. Please add a path after --installer using --path <path>"
   (path : _) -> Installer path
 parseInstaller _ = Invalid "Invalid installer configuration"
+
+validate :: ApplicationConfig -> IO ApplicationConfig
+validate (Invalid i) = pure $ Invalid i
+validate _ = undefined

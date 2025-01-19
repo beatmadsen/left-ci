@@ -11,15 +11,19 @@ build-type:     Simple
 library
   exposed-modules:
       Config.ApplicationConfig
+      Config.Validator
+      Server.Types
+      Server.Routes
+  other-modules:
       Config.InstallerValidator
       Config.ServerValidator
-      Config.Validator
-  other-modules:
       Paths_left_ci
   hs-source-dirs:
       src
   build-depends:
-      base >=4.7 && <5
+      aeson
+    , base >=4.7 && <5
+    , bytestring
     , containers
     , directory
     , network

@@ -9,15 +9,20 @@ dependencies:
 
 library:
   source-dirs: src
-  # exposed-modules:
-  #   - Server.App
-  #   - Server.Routes
+  exposed-modules:
+    - Config.ApplicationConfig
+    - Config.Validator
+    - Server.Types
+    - Server.Routes
   dependencies:
     - directory
     - network
     - scotty
     - wai
     - warp
+    - aeson
+    - text
+    - bytestring
 
 
 executables:

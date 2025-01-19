@@ -14,7 +14,8 @@ import qualified Data.ByteString.Lazy as LBS
 import qualified Data.IORef as IORef
 import Network.Wai (Application)
 
-import Server.Types
+import Server.BuildService
+import Server.Domain
 import Server.Routes
 
 

@@ -6,7 +6,7 @@ module Server.Routes
 
 import Web.Scotty (ScottyM, get, json)
 import Control.Monad.IO.Class (liftIO)
-import Server.Types (BuildService(..))
+import Server.BuildService (BuildService(..))
 
 makeApplication :: BuildService -> ScottyM ()
 makeApplication service = do

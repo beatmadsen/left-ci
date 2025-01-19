@@ -12,8 +12,9 @@ library:
   exposed-modules:
     - Config.ApplicationConfig
     - Config.Validator
-    - Server.Types
+    - Server.BuildService
     - Server.Routes
+    - Server.Domain
   dependencies:
     - directory
     - network
@@ -21,7 +22,6 @@ library:
     - wai
     - warp
     - aeson
-    - text
     - bytestring
 
 

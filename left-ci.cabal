@@ -12,8 +12,9 @@ library
   exposed-modules:
       Config.ApplicationConfig
       Config.Validator
-      Server.Types
+      Server.BuildService
       Server.Routes
+      Server.Domain
   other-modules:
       Config.InstallerValidator
       Config.ServerValidator

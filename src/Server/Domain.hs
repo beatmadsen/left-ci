@@ -1,9 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Server.Types 
+module Server.Domain
     ( TestResult(..)
     , BuildStatus(..)
-    , BuildService(..)
     ) where
 
 import Data.Aeson (ToJSON(..), object, (.=))
@@ -15,10 +14,6 @@ data BuildStatus = BuildStatus
     { fastResult :: Maybe TestResult
     , slowResult :: Maybe TestResult 
     } deriving (Show, Eq)
-
-data BuildService = BuildService 
-    { getBuildStatus :: String -> IO BuildStatus
-    }
 
 instance ToJSON TestResult where
     toJSON SuccessResult = "success"

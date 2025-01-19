@@ -45,5 +45,10 @@ tests:
       - directory
       - network
       - wai
+      - bytestring
+      - wai-extra
+      - http-types
+      - scotty
+      - aeson
     main: Main.hs
     source-dirs: test/integration

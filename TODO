@@ -1,1 +1,22 @@
 - Branch out into different functions for running the server and installing the application
+
+- Server
+  - Endpoint to post slow flow result for a build
+  - Endpoint to post fast flow result for a build
+  - Endpoint to get build status either as json or html
+
+- Installer
+  - Create .left-ci directory
+  - Create .left-ci/ci.sh that assigns build id and runs the scripts under .left-ci/fast and .left-ci/slow
+  - Create git commit hook that runs .left-ci/ci.sh
+  - Fast flow
+    - Create .left-ci/fast/Dockerfile
+    - Create .left-ci/fast/ci.sh that calls the other scripts and blocks until the tests are done
+    - Create .left-ci/fast/test.sh stub that runs the tests
+    - Create .left-ci/fast/publish-result.sh that sends test outcome and build id to the server
+  - Slow flow
+    - Create .left-ci/slow/Dockerfile
+    - Create .left-ci/slow/ci.sh that calls the other scripts that does not block
+    - Create .left-ci/slow/test.sh that runs the tests
+    - Create .left-ci/slow/publish-result.sh that sends test outcome and build id to the server
+

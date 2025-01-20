@@ -12,7 +12,7 @@ import Data.Text (pack)
 import Network.HTTP.Types
 import Network.HTTP.Types.Header (hContentType)
 import Network.Wai (Application, Request, pathInfo, requestBody, requestHeaders, requestMethod, setRequestBodyChunks)
-import Network.Wai.Test (Session, assertBody, assertStatus, defaultRequest, request, runSession)
+import Network.Wai.Test (SRequest (..), Session, assertBody, assertStatus, defaultRequest, request, runSession, setRawPathInfo, srequest)
 import Server.BuildService
 import Server.Domain
 import Server.Routes
@@ -78,7 +78,7 @@ testPostFastResult = TestCase $ do
 
   runSession
     ( do
-        response <- request $ makePostRequest "test-build-42" "{\"result\": \"success\"}"
+        response <- srequest $ makePostRequest "test-build-42" "{\"result\": \"success\"}"
         assertStatus 200 response
     )
     app
@@ -88,14 +88,15 @@ testPostFastResult = TestCase $ do
   assertEqual "Build ID" "test-build-42" actualId
   assertEqual "Result" (Just SuccessResult) actualResult
 
-makePostRequest :: String -> String -> Request
+makePostRequest :: String -> String -> SRequest
 makePostRequest buildId jsonBody =
-  setRequestBodyChunks (pure $ LBS.toStrict $ LBS.pack jsonBody) $
+  SRequest
     defaultRequest
-      { pathInfo = ["build", pack buildId, "fast"],
-        requestMethod = "POST",
+      { requestMethod = "POST",
+        pathInfo = ["build", pack buildId, "fast"],
         requestHeaders = [(hContentType, "application/json")]
       }
+    (LBS.pack jsonBody)
 
 makeStubService :: IO BuildService
 makeStubService =

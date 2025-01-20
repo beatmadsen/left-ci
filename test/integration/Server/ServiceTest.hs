@@ -87,12 +87,12 @@ testPostFastResult = TestCase $ do
     
     runSession (do
         let jsonBody = "{\"result\": \"success\"}"
-        let req = defaultRequest 
-                { pathInfo = ["build", "test-build-42", "fast"]
-                , requestMethod = "POST"
-                , requestHeaders = [(hContentType, "application/json")]
-                , requestBody = pure $ LBS.toStrict jsonBody
-                }
+        let req = setRequestBodyChunks (pure $ LBS.toStrict jsonBody) $
+                defaultRequest 
+                    { pathInfo = ["build", "test-build-42", "fast"]
+                    , requestMethod = "POST"
+                    , requestHeaders = [(hContentType, "application/json")]
+                    }
         response <- request req
         assertStatus 200 response
         ) app

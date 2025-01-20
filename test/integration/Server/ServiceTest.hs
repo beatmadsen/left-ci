@@ -5,25 +5,25 @@ module Server.ServiceTest
   )
 where
 
-import Test.HUnit
-import Network.Wai(pathInfo)
-import Network.Wai.Test (Session, runSession, request, assertBody, assertStatus, defaultRequest)
-import Network.HTTP.Types
-import Web.Scotty (scottyApp)
 import qualified Data.ByteString.Lazy as LBS
 import qualified Data.IORef as IORef
-import Network.Wai (Application)
-
+import Network.HTTP.Types
+import Network.HTTP.Types.Header (hContentType)
+import Network.Wai (Application, pathInfo, requestBody, requestHeaders, requestMethod, setRequestBodyChunks)
+import Network.Wai.Test (Session, assertBody, assertStatus, defaultRequest, request, runSession)
 import Server.BuildService
 import Server.Domain
 import Server.Routes
-
+import Test.HUnit
+import Web.Scotty (scottyApp)
+import Control.Monad.IO.Class (liftIO)
 
 makeStubService :: IO BuildService
 makeStubService =
   pure
     BuildService
-      { getBuildStatus = \_ -> pure $ BuildStatus Nothing Nothing
+      { getBuildStatus = \_ -> pure $ BuildStatus Nothing Nothing,
+        setFastResult = \_ _ -> pure ()
       }
 
 testGetStatus :: Test
@@ -41,31 +41,71 @@ testGetStatus = TestCase $ do
 
 testUsesPathBuildId :: Test
 testUsesPathBuildId = TestCase $ do
-    -- Create an IORef to store the ID that was passed to the service
+  -- Create an IORef to store the ID that was passed to the service
+  passedId <- IORef.newIORef ""
+
+  let service =
+        BuildService
+          { getBuildStatus = \id -> do
+              IORef.writeIORef passedId id
+              pure $ BuildStatus Nothing Nothing,
+            setFastResult = \_ _ -> pure ()
+          }
+
+  app <- scottyApp $ makeApplication service
+
+  -- Make request with specific build ID
+  runSession
+    ( do
+        response <-
+          request $
+            defaultRequest
+              { pathInfo = ["build", "test-build-42"]
+              }
+        assertStatus 200 response
+    )
+    app
+
+  -- Verify the service was called with correct ID
+  actualId <- IORef.readIORef passedId
+  assertEqual "Build ID" "test-build-42" actualId
+
+testPostFastResult :: Test
+testPostFastResult = TestCase $ do
     passedId <- IORef.newIORef ""
+    passedResult <- IORef.newIORef Nothing
     
     let service = BuildService
-            { getBuildStatus = \id -> do
+            { getBuildStatus = \_ -> pure $ BuildStatus Nothing Nothing
+            , setFastResult = \id result -> do
                 IORef.writeIORef passedId id
-                pure $ BuildStatus Nothing Nothing
+                IORef.writeIORef passedResult (Just result)
+                pure ()
             }
             
     app <- scottyApp $ makeApplication service
     
-    -- Make request with specific build ID
     runSession (do
-        response <- request $ defaultRequest 
-            { pathInfo = ["build", "test-build-42"] }
+        let jsonBody = "{\"result\": \"success\"}"
+        let req = defaultRequest 
+                { pathInfo = ["build", "test-build-42", "fast"]
+                , requestMethod = "POST"
+                , requestHeaders = [(hContentType, "application/json")]
+                , requestBody = pure $ LBS.toStrict jsonBody
+                }
+        response <- request req
         assertStatus 200 response
         ) app
         
-    -- Verify the service was called with correct ID
     actualId <- IORef.readIORef passedId
+    actualResult <- IORef.readIORef passedResult
     assertEqual "Build ID" "test-build-42" actualId
+    assertEqual "Result" (Just SuccessResult) actualResult
 
 tests :: Test
 tests =
   TestList
-    [ TestLabel "Get status endpoint" testGetStatus
-    , TestLabel "Uses build ID from path" testUsesPathBuildId
+    [ TestLabel "Get status endpoint" testGetStatus,
+      TestLabel "Uses build ID from path" testUsesPathBuildId,
+      TestLabel "Post fast result" testPostFastResult
     ]

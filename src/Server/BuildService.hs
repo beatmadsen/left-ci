@@ -2,10 +2,14 @@
 
 module Server.BuildService
     ( BuildService(..)
+    , BuildId
     ) where
 
-import Server.Domain (BuildStatus)
+import Server.Domain (BuildStatus, TestResult)
+
+type BuildId = String
 
 data BuildService = BuildService 
-    { getBuildStatus :: String -> IO BuildStatus
+    { getBuildStatus :: BuildId -> IO BuildStatus
+    , setFastResult :: BuildId -> TestResult -> IO ()
     }

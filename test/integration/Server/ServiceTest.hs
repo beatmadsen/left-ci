@@ -111,5 +111,22 @@ tests =
   TestList
     [ TestLabel "Given a build ID, when getting status, then returns empty status" testGetStatus,
       TestLabel "Given a build ID in URL, when getting status, then passes ID to service" testUsesPathBuildId,
-      TestLabel "Given a build ID, when posting success result, then updates fast result" testPostFastResult
+      TestLabel "Given a build ID, when posting success result, then updates fast result" testPostFastResult,
+      TestLabel "Given invalid JSON, when posting result, then returns 500" testPostInvalidJson
     ]
+
+testPostInvalidJson :: Test
+testPostInvalidJson = TestCase $ do
+    let service = BuildService
+            { getBuildStatus = undefined
+            , setFastResult = \_ _ -> 
+                error "setFastResult should not be called"
+            }
+            
+    app <- scottyApp $ makeApplication service
+    
+    runSession (do
+        let invalidJson = "not valid json"
+        response <- srequest $ makePostRequest "test-build-42" invalidJson
+        assertStatus 400 response
+        ) app

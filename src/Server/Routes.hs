@@ -28,14 +28,8 @@ instance FromJSON ResultRequest where
             "success" -> SuccessResult
             _ -> FailureResult
 
-handleJsonError :: ActionError -> ActionM a
-handleJsonError e = do
-    status status500
-    json $ "Failed to parse JSON: " ++ show e
-    error "JSON parse failed"
-
 parseResultRequest :: ActionM ResultRequest
-parseResultRequest = jsonData `catch` handleJsonError
+parseResultRequest = jsonData
 
 makeApplication :: BuildService -> ScottyM ()
 makeApplication service = do

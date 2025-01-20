@@ -20,6 +20,7 @@ library:
     - network
     - scotty
     - wai
+    - http-types 
     - warp
     - aeson
     - bytestring

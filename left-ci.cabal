@@ -27,6 +27,7 @@ library
     , bytestring
     , containers
     , directory
+    , http-types
     , network
     , scotty
     , text

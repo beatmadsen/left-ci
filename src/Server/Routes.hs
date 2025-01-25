@@ -59,3 +59,15 @@ makeApplication service = do
     bid <- pathBuildId
     liftIO $ advanceSlowResult service vid bid
     json ()
+
+  post "/version/:v/build/:b/fast/fail" $ do
+    vid <- pathVersionId
+    bid <- pathBuildId
+    liftIO $ failFastResult service vid bid
+    json ()
+
+  post "/version/:v/build/:b/slow/fail" $ do
+    vid <- pathVersionId
+    bid <- pathBuildId
+    liftIO $ failSlowResult service vid bid
+    json ()

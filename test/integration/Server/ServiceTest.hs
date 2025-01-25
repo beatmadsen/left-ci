@@ -24,8 +24,10 @@ tests =
   TestList
     [ TestLabel "Given a build id, when getting summary, then serialises a populated summary" testGetSummary,
       TestLabel "Given a build id in URL, when getting summary, then passes build id to service" testUsesPathBuildId,
-      TestLabel "Given build and version ids, when posting advance fast, then passes those ids to service" (testAdvanceBuild "fast"),
-      TestLabel "Given build and version ids, when posting advance slow, then passes those ids to service" (testAdvanceBuild "slow")
+      TestLabel "Given build and version ids, when posting advance fast, then passes those ids to service" (testUpdateBuild "fast" "advance"),
+      TestLabel "Given build and version ids, when posting advance slow, then passes those ids to service" (testUpdateBuild "slow" "advance"),
+      TestLabel "Given build and version ids, when posting fail fast, then passes those ids to service" (testUpdateBuild "fast" "fail"),
+      TestLabel "Given build and version ids, when posting fail slow, then passes those ids to service" (testUpdateBuild "slow" "fail")
     ]
 
 testGetSummary :: Test
@@ -34,7 +36,9 @@ testGetSummary = TestCase $ do
         BuildService
           { getBuildSummary = \_ -> pure $ BuildSummary Init Init,
             advanceFastResult = undefined,
-            advanceSlowResult = undefined
+            advanceSlowResult = undefined,
+            failFastResult = undefined,
+            failSlowResult = undefined
           }
 
   app <- scottyApp $ makeApplication service
@@ -57,7 +61,9 @@ testUsesPathBuildId = TestCase $ do
               IORef.writeIORef passedId id
               pure $ BuildSummary Init Init,
             advanceFastResult = undefined,
-            advanceSlowResult = undefined
+            advanceSlowResult = undefined,
+            failFastResult = undefined,
+            failSlowResult = undefined
           }
 
   app <- scottyApp $ makeApplication service
@@ -76,12 +82,12 @@ testUsesPathBuildId = TestCase $ do
   actualId <- IORef.readIORef passedId
   assertEqual "Build ID" "test-build-42" actualId
 
-makePostRequest :: VersionId -> BuildId -> Text -> String -> SRequest
+makePostRequest :: VersionId -> BuildId -> Text -> Text -> SRequest
 makePostRequest versionId buildId cadence action =
   SRequest
     defaultRequest
       { requestMethod = "POST",
-        pathInfo = ["version", vid, "build", bid, cadence, pack action],
+        pathInfo = ["version", vid, "build", bid, cadence, action],
         requestHeaders = [(hContentType, "application/json")]
       }
     "" -- No body needed for advance
@@ -89,8 +95,8 @@ makePostRequest versionId buildId cadence action =
     (VersionId vid) = versionId
     (BuildId bid) = buildId
 
-testAdvanceBuild :: Text -> Test
-testAdvanceBuild cadence = TestCase $ do
+testUpdateBuild :: Text -> Text -> Test
+testUpdateBuild cadence action = TestCase $ do
   passedBuildId <- IORef.newIORef ""
   passedVersionId <- IORef.newIORef ""
 
@@ -102,14 +108,16 @@ testAdvanceBuild cadence = TestCase $ do
         BuildService
           { getBuildSummary = undefined,
             advanceFastResult = x,
-            advanceSlowResult = x
+            advanceSlowResult = x,
+            failFastResult = x,
+            failSlowResult = x
           }
 
   app <- scottyApp $ makeApplication service
 
   runSession
     ( do
-        response <- srequest $ makePostRequest "version-123" "build-42" cadence "advance"
+        response <- srequest $ makePostRequest "version-123" "build-42" cadence action
         assertStatus 200 response
     )
     app

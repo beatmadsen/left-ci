@@ -12,7 +12,7 @@ import Data.Aeson.Types (Parser)
 import Data.Either (Either (..))
 import Data.Text (Text)
 import Network.HTTP.Types.Status (status500)
-import Server.BuildService (BuildService (..))
+import Server.Service (BuildService (..))
 import Server.Domain (BuildId (..), BuildState (..), VersionId (..))
 import Web.Scotty
   ( ActionM,

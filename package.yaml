@@ -12,7 +12,7 @@ library:
   exposed-modules:
     - Config.ApplicationConfig
     - Config.Validator
-    - Server.BuildService
+    - Server.Service
     - Server.Routes
     - Server.Domain
   dependencies:

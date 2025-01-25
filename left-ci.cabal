@@ -12,12 +12,14 @@ library
   exposed-modules:
       Config.ApplicationConfig
       Config.Validator
-      Server.BuildService
+      Server.Service
       Server.Routes
       Server.Domain
   other-modules:
       Config.InstallerValidator
       Config.ServerValidator
+      Server.DataStore
+      Server.Service.Persistent
       Paths_left_ci
   hs-source-dirs:
       src

@@ -13,7 +13,7 @@ import Network.HTTP.Types
 import Network.HTTP.Types.Header (hContentType)
 import Network.Wai (Application, Request, pathInfo, requestBody, requestHeaders, requestMethod, setRequestBodyChunks)
 import Network.Wai.Test (SRequest (..), Session, assertBody, assertStatus, defaultRequest, request, runSession, setRawPathInfo, srequest)
-import Server.BuildService
+import Server.Service
 import Server.Domain
 import Server.Routes
 import Test.HUnit

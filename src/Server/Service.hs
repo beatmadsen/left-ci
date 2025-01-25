@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Server.BuildService
+module Server.Service
   ( BuildService (..),
   )
 where

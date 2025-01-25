@@ -1,9 +1,7 @@
 - Branch out into different functions for running the server and installing the application
 
 - Server
-  - Endpoint to post slow flow result for a build
-  - Endpoint to post fast flow result for a build
-  - Endpoint to get build status either as json or html
+  - Service layer that interacts with a data store abstraction
 
 - Installer
   - Create .left-ci directory

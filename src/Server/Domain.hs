@@ -1,26 +1,31 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Server.Domain
-    ( TestResult(..)
-    , BuildStatus(..)
-    ) where
+  ( BuildState (..),
+    BuildSummary (..),
+  )
+where
 
-import Data.Aeson (ToJSON(..), object, (.=))
+import Data.Aeson (ToJSON (..), object, (.=))
 
-data TestResult = SuccessResult | FailureResult 
-    deriving (Show, Eq)
+data BuildState = Init | Running | Passed | Failed
+  deriving (Show, Eq)
 
-data BuildStatus = BuildStatus 
-    { fastResult :: Maybe TestResult
-    , slowResult :: Maybe TestResult 
-    } deriving (Show, Eq)
+data BuildSummary = BuildSummary
+  { fastState :: BuildState,
+    slowState :: BuildState
+  }
+  deriving (Show, Eq)
 
-instance ToJSON TestResult where
-    toJSON SuccessResult = "success"
-    toJSON FailureResult = "failure"
+instance ToJSON BuildState where
+  toJSON Init = "init"
+  toJSON Running = "running"
+  toJSON Passed = "passed"
+  toJSON Failed = "failed"
 
-instance ToJSON BuildStatus where
-    toJSON (BuildStatus fast slow) = object
-        [ "fast" .= fast
-        , "slow" .= slow
-        ]
+instance ToJSON BuildSummary where
+  toJSON (BuildSummary fast slow) =
+    object
+      [ "fast" .= fast,
+        "slow" .= slow
+      ]

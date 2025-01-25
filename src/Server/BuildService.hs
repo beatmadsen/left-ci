@@ -5,11 +5,12 @@ module Server.BuildService
     , BuildId
     ) where
 
-import Server.Domain (BuildStatus, TestResult)
+import Server.Domain (BuildSummary, BuildState)
 
 type BuildId = String
+type VersionId = String
 
 data BuildService = BuildService 
-    { getBuildStatus :: BuildId -> IO BuildStatus
-    , setFastResult :: BuildId -> TestResult -> IO ()
+    { getBuildSummary :: BuildId -> IO BuildSummary
+    , advanceFastResult :: VersionId -> BuildId -> IO ()
     }

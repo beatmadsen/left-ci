@@ -22,13 +22,13 @@ import Web.Scotty (scottyApp)
 tests :: Test
 tests =
   TestList
-    [ TestLabel "Given a build ID, when getting status, then returns empty status" testGetStatus,
-      TestLabel "Given a build ID in URL, when getting status, then passes ID to service" testUsesPathBuildId,
-      TestLabel "Given a build ID, when posting advance, then updates fast result" testAdvanceBuild
+    [ TestLabel "Given a build id, when getting summary, then serialises a populated summary" testGetSummary,
+      TestLabel "Given a build id in URL, when getting summary, then passes build id to service" testUsesPathBuildId,
+      TestLabel "Given build and version ids, when posting advance, then passes those ids to service" testAdvanceBuild
     ]
 
-testGetStatus :: Test
-testGetStatus = TestCase $ do
+testGetSummary :: Test
+testGetSummary = TestCase $ do
   service <- makeStubService
   app <- scottyApp $ makeApplication service
 
@@ -36,7 +36,7 @@ testGetStatus = TestCase $ do
     ( do
         response <- request $ defaultRequest {pathInfo = ["build", "123"]}
         assertStatus 200 response
-        assertBody "{\"fast\":null,\"slow\":null}" response
+        assertBody "{\"fast\":\"init\",\"slow\":\"init\"}" response
     )
     app
 
@@ -46,10 +46,10 @@ testUsesPathBuildId = TestCase $ do
 
   let service =
         BuildService
-          { getBuildStatus = \id -> do
+          { getBuildSummary = \id -> do
               IORef.writeIORef passedId id
-              pure $ BuildStatus Nothing Nothing,
-            setFastResult = undefined
+              pure $ BuildSummary Init Init,
+            advanceFastResult = undefined
           }
 
   app <- scottyApp $ makeApplication service
@@ -82,20 +82,20 @@ makeStubService :: IO BuildService
 makeStubService =
   pure
     BuildService
-      { getBuildStatus = \_ -> pure $ BuildStatus Nothing Nothing,
-        setFastResult = \_ _ -> pure ()
+      { getBuildSummary = \_ -> pure $ BuildSummary Init Init,
+        advanceFastResult = \_ _ -> pure ()
       }
 
 testAdvanceBuild :: Test
 testAdvanceBuild = TestCase $ do
-  passedId <- IORef.newIORef ""
-
+  passedBuildId <- IORef.newIORef ""
+  passedVersionId <- IORef.newIORef ""
   let service =
         BuildService
-          { getBuildStatus = undefined,
-            setFastResult = \id _ -> do
-              IORef.writeIORef passedId id
-              pure ()
+          { getBuildSummary = undefined,
+            advanceFastResult = \versionId buildId -> do
+              IORef.writeIORef passedBuildId buildId
+              IORef.writeIORef passedVersionId versionId
           }
 
   app <- scottyApp $ makeApplication service
@@ -107,5 +107,8 @@ testAdvanceBuild = TestCase $ do
     )
     app
 
-  actualId <- IORef.readIORef passedId
-  assertEqual "Build ID" "build-42" actualId
+  actualBuildId <- IORef.readIORef passedBuildId
+  assertEqual "build id" "build-42" actualBuildId
+
+  actualVersionId <- IORef.readIORef passedVersionId
+  assertEqual "version id" "version-123" actualVersionId

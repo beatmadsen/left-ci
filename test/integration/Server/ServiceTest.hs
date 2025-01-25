@@ -19,6 +19,14 @@ import Server.Routes
 import Test.HUnit
 import Web.Scotty (scottyApp)
 
+tests :: Test
+tests =
+  TestList
+    [ TestLabel "Given a build ID, when getting status, then returns empty status" testGetStatus,
+      TestLabel "Given a build ID in URL, when getting status, then passes ID to service" testUsesPathBuildId,
+      TestLabel "Given a build ID, when posting advance, then updates fast result" testAdvanceBuild
+    ]
+
 testGetStatus :: Test
 testGetStatus = TestCase $ do
   service <- makeStubService
@@ -60,43 +68,15 @@ testUsesPathBuildId = TestCase $ do
   actualId <- IORef.readIORef passedId
   assertEqual "Build ID" "test-build-42" actualId
 
-testPostFastResult :: Test
-testPostFastResult = TestCase $ do
-  passedId <- IORef.newIORef ""
-  passedResult <- IORef.newIORef Nothing
-
-  let service =
-        BuildService
-          { getBuildStatus = undefined,
-            setFastResult = \id result -> do
-              IORef.writeIORef passedId id
-              IORef.writeIORef passedResult (Just result)
-              pure ()
-          }
-
-  app <- scottyApp $ makeApplication service
-
-  runSession
-    ( do
-        response <- srequest $ makePostRequest "test-build-42" "{\"result\": \"success\"}"
-        assertStatus 200 response
-    )
-    app
-
-  actualId <- IORef.readIORef passedId
-  actualResult <- IORef.readIORef passedResult
-  assertEqual "Build ID" "test-build-42" actualId
-  assertEqual "Result" (Just SuccessResult) actualResult
-
-makePostRequest :: String -> String -> SRequest
-makePostRequest buildId jsonBody =
+makePostRequest :: String -> String -> String -> SRequest
+makePostRequest versionId buildId action =
   SRequest
     defaultRequest
       { requestMethod = "POST",
-        pathInfo = ["build", pack buildId, "fast"],
+        pathInfo = ["version", pack versionId, "build", pack buildId, "fast", pack action],
         requestHeaders = [(hContentType, "application/json")]
       }
-    (LBS.pack jsonBody)
+    "" -- No body needed for advance
 
 makeStubService :: IO BuildService
 makeStubService =
@@ -106,27 +86,26 @@ makeStubService =
         setFastResult = \_ _ -> pure ()
       }
 
-tests :: Test
-tests =
-  TestList
-    [ TestLabel "Given a build ID, when getting status, then returns empty status" testGetStatus,
-      TestLabel "Given a build ID in URL, when getting status, then passes ID to service" testUsesPathBuildId,
-      TestLabel "Given a build ID, when posting success result, then updates fast result" testPostFastResult,
-      TestLabel "Given invalid JSON, when posting result, then returns 500" testPostInvalidJson
-    ]
+testAdvanceBuild :: Test
+testAdvanceBuild = TestCase $ do
+  passedId <- IORef.newIORef ""
 
-testPostInvalidJson :: Test
-testPostInvalidJson = TestCase $ do
-    let service = BuildService
-            { getBuildStatus = undefined
-            , setFastResult = \_ _ -> 
-                error "setFastResult should not be called"
-            }
-            
-    app <- scottyApp $ makeApplication service
-    
-    runSession (do
-        let invalidJson = "not valid json"
-        response <- srequest $ makePostRequest "test-build-42" invalidJson
-        assertStatus 400 response
-        ) app
+  let service =
+        BuildService
+          { getBuildStatus = undefined,
+            setFastResult = \id _ -> do
+              IORef.writeIORef passedId id
+              pure ()
+          }
+
+  app <- scottyApp $ makeApplication service
+
+  runSession
+    ( do
+        response <- srequest $ makePostRequest "version-123" "build-42" "advance"
+        assertStatus 200 response
+    )
+    app
+
+  actualId <- IORef.readIORef passedId
+  assertEqual "Build ID" "build-42" actualId

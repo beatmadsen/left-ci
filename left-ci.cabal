@@ -13,13 +13,13 @@ library
       Config.ApplicationConfig
       Config.Validator
       Server.Service
+      Server.Service.Persistent
+      Server.DataStore
       Server.Routes
       Server.Domain
   other-modules:
       Config.InstallerValidator
       Config.ServerValidator
-      Server.DataStore
-      Server.Service.Persistent
       Paths_left_ci
   hs-source-dirs:
       src
@@ -81,6 +81,7 @@ test-suite unit
   main-is: Main.hs
   other-modules:
       Config.ApplicationConfigTest
+      Server.Service.PersistentTest
       Paths_left_ci
   hs-source-dirs:
       test/unit

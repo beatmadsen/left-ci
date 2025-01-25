@@ -1,6 +1,6 @@
 module Server.DataStore
-  ( BuildStore,
+  ( BuildStore (..),
   )
 where
 
-data BuildStore = BuildStore {}
+data BuildStore = BuildStore { demo :: Int -> String }

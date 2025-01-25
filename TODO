@@ -1,7 +1,11 @@
 - Branch out into different functions for running the server and installing the application
 
 - Server
-  - Service layer that interacts with a data store abstraction
+  - Routes
+    - GET /builds/:buildId should 404 if the build id is not found
+  - Service
+    - getBuildSummary returns a Maybe BuildSummary
+    - layer that interacts with a data store abstraction
 
 - Installer
   - Create .left-ci directory

@@ -38,3 +38,9 @@ makeApplication service = do
     buildId <- pathParam "b"
     liftIO $ advanceFastResult service versionId buildId
     json ()
+
+  post "/version/:v/build/:b/slow/advance" $ do
+    versionId <- pathParam "v"
+    buildId <- pathParam "b"
+    liftIO $ advanceSlowResult service versionId buildId
+    json ()

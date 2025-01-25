@@ -8,7 +8,7 @@ where
 import Control.Monad.IO.Class (liftIO)
 import qualified Data.ByteString.Lazy.Char8 as LBS
 import qualified Data.IORef as IORef
-import Data.Text (pack)
+import Data.Text (Text, pack)
 import Network.HTTP.Types
 import Network.HTTP.Types.Header (hContentType)
 import Network.Wai (Application, Request, pathInfo, requestBody, requestHeaders, requestMethod, setRequestBodyChunks)
@@ -24,7 +24,8 @@ tests =
   TestList
     [ TestLabel "Given a build id, when getting summary, then serialises a populated summary" testGetSummary,
       TestLabel "Given a build id in URL, when getting summary, then passes build id to service" testUsesPathBuildId,
-      TestLabel "Given build and version ids, when posting advance, then passes those ids to service" testAdvanceBuild
+      TestLabel "Given build and version ids, when posting advance fast, then passes those ids to service" (testAdvanceBuild "fast"),
+      TestLabel "Given build and version ids, when posting advance slow, then passes those ids to service" (testAdvanceBuild "slow")
     ]
 
 testGetSummary :: Test
@@ -49,7 +50,8 @@ testUsesPathBuildId = TestCase $ do
           { getBuildSummary = \id -> do
               IORef.writeIORef passedId id
               pure $ BuildSummary Init Init,
-            advanceFastResult = undefined
+            advanceFastResult = undefined,
+            advanceSlowResult = undefined
           }
 
   app <- scottyApp $ makeApplication service
@@ -68,12 +70,12 @@ testUsesPathBuildId = TestCase $ do
   actualId <- IORef.readIORef passedId
   assertEqual "Build ID" "test-build-42" actualId
 
-makePostRequest :: String -> String -> String -> SRequest
-makePostRequest versionId buildId action =
+makePostRequest :: String -> String -> Text -> String -> SRequest
+makePostRequest versionId buildId cadence action =
   SRequest
     defaultRequest
       { requestMethod = "POST",
-        pathInfo = ["version", pack versionId, "build", pack buildId, "fast", pack action],
+        pathInfo = ["version", pack versionId, "build", pack buildId, cadence, pack action],
         requestHeaders = [(hContentType, "application/json")]
       }
     "" -- No body needed for advance
@@ -83,26 +85,31 @@ makeStubService =
   pure
     BuildService
       { getBuildSummary = \_ -> pure $ BuildSummary Init Init,
-        advanceFastResult = \_ _ -> pure ()
+        advanceFastResult = \_ _ -> pure (),
+        advanceSlowResult = \_ _ -> pure ()
       }
 
-testAdvanceBuild :: Test
-testAdvanceBuild = TestCase $ do
+testAdvanceBuild :: Text -> Test
+testAdvanceBuild cadence = TestCase $ do
   passedBuildId <- IORef.newIORef ""
   passedVersionId <- IORef.newIORef ""
+
+  let x = \versionId buildId -> do
+        IORef.writeIORef passedBuildId buildId
+        IORef.writeIORef passedVersionId versionId
+
   let service =
         BuildService
           { getBuildSummary = undefined,
-            advanceFastResult = \versionId buildId -> do
-              IORef.writeIORef passedBuildId buildId
-              IORef.writeIORef passedVersionId versionId
+            advanceFastResult = x,
+            advanceSlowResult = x
           }
 
   app <- scottyApp $ makeApplication service
 
   runSession
     ( do
-        response <- srequest $ makePostRequest "version-123" "build-42" "advance"
+        response <- srequest $ makePostRequest "version-123" "build-42" cadence "advance"
         assertStatus 200 response
     )
     app

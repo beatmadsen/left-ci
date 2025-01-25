@@ -30,7 +30,13 @@ tests =
 
 testGetSummary :: Test
 testGetSummary = TestCase $ do
-  service <- makeStubService
+  let service =
+        BuildService
+          { getBuildSummary = \_ -> pure $ BuildSummary Init Init,
+            advanceFastResult = undefined,
+            advanceSlowResult = undefined
+          }
+
   app <- scottyApp $ makeApplication service
 
   runSession
@@ -70,24 +76,18 @@ testUsesPathBuildId = TestCase $ do
   actualId <- IORef.readIORef passedId
   assertEqual "Build ID" "test-build-42" actualId
 
-makePostRequest :: String -> String -> Text -> String -> SRequest
+makePostRequest :: VersionId -> BuildId -> Text -> String -> SRequest
 makePostRequest versionId buildId cadence action =
   SRequest
     defaultRequest
       { requestMethod = "POST",
-        pathInfo = ["version", pack versionId, "build", pack buildId, cadence, pack action],
+        pathInfo = ["version", vid, "build", bid, cadence, pack action],
         requestHeaders = [(hContentType, "application/json")]
       }
     "" -- No body needed for advance
-
-makeStubService :: IO BuildService
-makeStubService =
-  pure
-    BuildService
-      { getBuildSummary = \_ -> pure $ BuildSummary Init Init,
-        advanceFastResult = \_ _ -> pure (),
-        advanceSlowResult = \_ _ -> pure ()
-      }
+  where
+    (VersionId vid) = versionId
+    (BuildId bid) = buildId
 
 testAdvanceBuild :: Text -> Test
 testAdvanceBuild cadence = TestCase $ do

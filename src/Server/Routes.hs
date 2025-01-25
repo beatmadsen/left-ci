@@ -9,12 +9,14 @@ where
 import Control.Monad.IO.Class (liftIO)
 import Data.Aeson (FromJSON (..), withObject, (.:))
 import Data.Aeson.Types (Parser)
+import Data.Either (Either (..))
 import Data.Text (Text)
 import Network.HTTP.Types.Status (status500)
-import Server.BuildService (BuildId, BuildService (..))
-import Server.Domain (BuildState (..))
+import Server.BuildService (BuildService (..))
+import Server.Domain (BuildId (..), BuildState (..), VersionId (..))
 import Web.Scotty
   ( ActionM,
+    Parsable,
     ScottyM,
     catch,
     get,
@@ -22,25 +24,38 @@ import Web.Scotty
     jsonData,
     pathParam,
     post,
-    status,
+    status
   )
-import Web.Scotty.Internal.Types (ActionError)
+
+
+import Web.Scotty.Internal.Types (ActionError, ActionT)
+
+pathVersionId :: ActionM VersionId
+pathVersionId = do
+  vid <- pathParam "v"
+  return $ VersionId vid
+
+pathBuildId :: ActionM BuildId
+pathBuildId = do
+  bid <- pathParam "b"
+  return $ BuildId bid
 
 makeApplication :: BuildService -> ScottyM ()
 makeApplication service = do
-  get "/build/:id" $ do
-    buildId <- pathParam "id"
-    summary <- liftIO $ getBuildSummary service buildId
+
+  get "/build/:b" $ do    
+    bid <- pathBuildId    
+    summary <- liftIO $ getBuildSummary service bid    
     json summary
 
   post "/version/:v/build/:b/fast/advance" $ do
-    versionId <- pathParam "v"
-    buildId <- pathParam "b"
-    liftIO $ advanceFastResult service versionId buildId
+    vid <- pathVersionId
+    bid <- pathBuildId
+    liftIO $ advanceFastResult service vid bid
     json ()
 
   post "/version/:v/build/:b/slow/advance" $ do
-    versionId <- pathParam "v"
-    buildId <- pathParam "b"
-    liftIO $ advanceSlowResult service versionId buildId
+    vid <- pathVersionId
+    bid <- pathBuildId
+    liftIO $ advanceSlowResult service vid bid
     json ()

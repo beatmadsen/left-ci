@@ -2,15 +2,10 @@
 
 module Server.BuildService
   ( BuildService (..),
-    BuildId,
   )
 where
 
-import Server.Domain (BuildState, BuildSummary)
-
-type BuildId = String
-
-type VersionId = String
+import Server.Domain (BuildId, BuildState, BuildSummary, VersionId)
 
 data BuildService = BuildService
   { getBuildSummary :: BuildId -> IO BuildSummary,

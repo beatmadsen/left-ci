@@ -29,7 +29,8 @@ tests =
       TestLabel "Given a build id in URL, when posting advance slow, then passes build id to service" (testUpdateBuild "slow" "advance"),
       TestLabel "Given a build id in URL, when posting fail fast, then passes build id to service" (testUpdateBuild "fast" "fail"),
       TestLabel "Given a build id in URL, when posting fail slow, then passes build id to service" (testUpdateBuild "slow" "fail"),
-      TestLabel "Given version and build ids in URL, when creating build, then passes ids to service" (testCreateBuild)
+      TestLabel "Given version and build ids in URL, when creating build, then passes ids to service" testCreateBuild,
+      TestLabel "Given a service that reports conflict, when creating build, then returns status code 409" testCreateBuildConflict
     ]
 
 testGetSummary :: Test
@@ -122,6 +123,7 @@ testCreateBuild = TestCase $ do
           { createBuild = \versionId buildId -> do
               IORef.writeIORef passedVersionId versionId
               IORef.writeIORef passedBuildId buildId
+              pure Success
           }
 
   app <- scottyApp $ makeApplication service
@@ -138,6 +140,17 @@ testCreateBuild = TestCase $ do
 
   actualBuildId <- IORef.readIORef passedBuildId
   assertEqual "build id" "build-42" actualBuildId
+
+testCreateBuildConflict :: Test
+testCreateBuildConflict = TestCase $ do
+  let service = defaultService {createBuild = (const . const) $ pure Conflict}
+  app <- scottyApp $ makeApplication service
+  runSession
+    ( do
+        response <- srequest $ makeCreateRequest (VersionId "version-123") (BuildId "build-42")
+        assertStatus 409 response
+    )
+    app
 
 defaultService :: BuildService
 defaultService =

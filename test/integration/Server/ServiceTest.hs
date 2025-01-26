@@ -87,11 +87,9 @@ testUsesPathBuildId = TestCase $ do
 testUpdateBuild :: Text -> Text -> Test
 testUpdateBuild cadence action = TestCase $ do
   passedBuildId <- IORef.newIORef ""
-  passedVersionId <- IORef.newIORef ""
 
-  let x = \versionId buildId -> do
+  let x = \buildId -> do
         IORef.writeIORef passedBuildId buildId
-        IORef.writeIORef passedVersionId versionId
 
   let service =
         defaultService
@@ -105,7 +103,7 @@ testUpdateBuild cadence action = TestCase $ do
 
   runSession
     ( do
-        response <- srequest $ makePostRequest "version-123" "build-42" cadence action
+        response <- srequest $ makePostRequest "build-42" cadence action
         assertStatus 200 response
     )
     app
@@ -113,27 +111,24 @@ testUpdateBuild cadence action = TestCase $ do
   actualBuildId <- IORef.readIORef passedBuildId
   assertEqual "build id" "build-42" actualBuildId
 
-  actualVersionId <- IORef.readIORef passedVersionId
-  assertEqual "version id" "version-123" actualVersionId
-
 defaultService :: BuildService
 defaultService =
   BuildService
     { getBuildSummary = undefined,
+      createBuild = undefined,
       advanceFastResult = undefined,
       advanceSlowResult = undefined,
       failFastResult = undefined,
       failSlowResult = undefined
     }
 
-makePostRequest :: VersionId -> BuildId -> Text -> Text -> SRequest
-makePostRequest versionId buildId cadence action =
+makePostRequest :: BuildId -> Text -> Text -> SRequest
+makePostRequest buildId cadence action =
   SRequest
     defaultRequest
       { requestMethod = "POST",
-        pathInfo = ["version", vid, "build", bid, cadence, action]
+        pathInfo = ["build", bid, cadence, action]
       }
     "" -- No body needed for advance
   where
-    (VersionId vid) = versionId
     (BuildId bid) = buildId

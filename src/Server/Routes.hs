@@ -50,26 +50,22 @@ makeApplication service = do
       Nothing -> status status404
       Just summary -> json summary
 
-  post "/version/:v/build/:b/fast/advance" $ do
-    vid <- pathVersionId
+  post "/build/:b/fast/advance" $ do
     bid <- pathBuildId
-    liftIO $ advanceFastResult service vid bid
+    liftIO $ advanceFastResult service bid
     json ()
 
-  post "/version/:v/build/:b/slow/advance" $ do
-    vid <- pathVersionId
+  post "/build/:b/slow/advance" $ do
     bid <- pathBuildId
-    liftIO $ advanceSlowResult service vid bid
+    liftIO $ advanceSlowResult service bid
     json ()
 
-  post "/version/:v/build/:b/fast/fail" $ do
-    vid <- pathVersionId
+  post "/build/:b/fast/fail" $ do
     bid <- pathBuildId
-    liftIO $ failFastResult service vid bid
+    liftIO $ failFastResult service bid
     json ()
 
-  post "/version/:v/build/:b/slow/fail" $ do
-    vid <- pathVersionId
+  post "/build/:b/slow/fail" $ do
     bid <- pathBuildId
-    liftIO $ failSlowResult service vid bid
+    liftIO $ failSlowResult service bid
     json ()

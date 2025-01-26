@@ -9,8 +9,9 @@ import Server.Domain (BuildId, BuildState, BuildSummary, VersionId)
 
 data BuildService = BuildService
   { getBuildSummary :: BuildId -> IO (Maybe BuildSummary),
-    advanceFastResult :: VersionId -> BuildId -> IO (),
-    advanceSlowResult :: VersionId -> BuildId -> IO (),
-    failFastResult :: VersionId -> BuildId -> IO (),
-    failSlowResult :: VersionId -> BuildId -> IO ()
+    createBuild :: VersionId -> BuildId -> IO (),
+    advanceFastResult :: BuildId -> IO (),
+    advanceSlowResult :: BuildId -> IO (),
+    failFastResult :: BuildId -> IO (),
+    failSlowResult :: BuildId -> IO ()
   }

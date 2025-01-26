@@ -6,13 +6,14 @@ where
 import Server.Service (BuildService (..))
 import Server.DataStore (BuildStore (..), BuildRecord (..), BuildPair (..))
 import Server.Domain
-    ( BuildSummary(..), BuildState(..), BuildId(..) )
+    ( BuildSummary(..), BuildState(..), BuildId(..), VersionId(..) )
 
 
 makePersistentService :: BuildStore -> BuildService
 makePersistentService buildStore = BuildService { 
     getBuildSummary = pGetBuildSummary buildStore,
-    advanceFastResult = undefined,
+    createBuild = undefined,
+    advanceFastResult = pAdvanceFastResult buildStore,
     advanceSlowResult = undefined,
     failFastResult = undefined,
     failSlowResult = undefined
@@ -26,3 +27,6 @@ pGetBuildSummary buildStore buildId = do
 
 extractSummary :: BuildPair -> BuildSummary
 extractSummary bp = BuildSummary {slowState = state (slowBuild bp), fastState = state (fastBuild bp)}
+
+pAdvanceFastResult :: BuildStore -> BuildId -> IO ()
+pAdvanceFastResult buildStore buildId = undefined

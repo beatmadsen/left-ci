@@ -3,7 +3,7 @@ module Server.Service.Persistent
   )
 where
 
-import Server.Service (BuildService (..))
+import Server.Service
 import Server.DataStore (BuildStore (..), BuildRecord (..), BuildPair (..))
 import Server.Domain
     ( BuildSummary(..), BuildState(..), BuildId(..), VersionId(..) )
@@ -12,7 +12,7 @@ import Server.Domain
 makePersistentService :: BuildStore -> BuildService
 makePersistentService buildStore = BuildService { 
     getBuildSummary = pGetBuildSummary buildStore,
-    createBuild = undefined,
+    createBuild = pCreateBuild buildStore,
     advanceFastResult = pAdvanceFastResult buildStore,
     advanceSlowResult = undefined,
     failFastResult = undefined,
@@ -27,6 +27,13 @@ pGetBuildSummary buildStore buildId = do
 
 extractSummary :: BuildPair -> BuildSummary
 extractSummary bp = BuildSummary {slowState = state (slowBuild bp), fastState = state (fastBuild bp)}
+
+pCreateBuild :: BuildStore -> VersionId -> BuildId -> IO Outcome
+pCreateBuild buildStore versionId buildId = do
+  result <- createBuildUnlessExists buildStore buildId versionId
+  return $ case result of
+    Left () -> Conflict
+    Right () -> Success
 
 pAdvanceFastResult :: BuildStore -> BuildId -> IO ()
 pAdvanceFastResult buildStore buildId = undefined

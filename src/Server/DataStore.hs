@@ -20,4 +20,5 @@ data BuildPair = BuildPair
 
 data BuildStore = BuildStore 
   { findBuildPair :: BuildId -> IO (Maybe BuildPair)  -- Takes a build ID, returns matching rows
+  , createBuildUnlessExists :: BuildId -> VersionId -> IO (Either () ())
   }

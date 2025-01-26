@@ -6,21 +6,21 @@ module Server.Service.PersistentTest
 where
 
 import Server.DataStore (BuildPair (..), BuildRecord (..), BuildStore (..))
-import Server.Domain (BuildId (..), BuildState (..), BuildSummary (..))
-import Server.Service (BuildService (..))
+import Server.Domain (BuildId (..), BuildState (..), BuildSummary (..), VersionId (..))
+import Server.Service (BuildService (..), Outcome (..))
 import Server.Service.Persistent (makePersistentService)
-import Test.HUnit (Test (TestCase, TestLabel, TestList), (@?=), assertBool)
+import Test.HUnit (Test (TestCase, TestLabel, TestList), assertBool, (@?=))
 
 tests :: Test
 tests =
   TestList
     [ TestLabel "given a store and a non-existent build id, getBuildSummary returns Nothing" testGetBuildSummaryNonExistent,
       TestLabel "given a store that returns two rows for a build id, getBuildSummary returns a summary" testGetBuildSummaryTwoRows,
-      TestLabel "given a store and existing version and build ids, createBuild reports conflict" testCreateBuildConflict
+      TestLabel "given a store that reports build id already exists, createBuild reports conflict" testCreateBuildAlreadyExists
     ]
 
 defaultStore :: BuildStore
-defaultStore = BuildStore {findBuildPair = undefined}
+defaultStore = BuildStore {findBuildPair = undefined, createBuildUnlessExists = undefined}
 
 testGetBuildSummaryNonExistent :: Test
 testGetBuildSummaryNonExistent = TestCase $ do
@@ -40,10 +40,12 @@ testGetBuildSummaryTwoRows = TestCase $ do
   let expected = Just $ BuildSummary {slowState = Init, fastState = Running}
   actual @?= expected
 
-testCreateBuildConflict :: Test
-testCreateBuildConflict = TestCase $ do
-  assertBool "TODO" True -- TODO
+testCreateBuildAlreadyExists :: Test
+testCreateBuildAlreadyExists = TestCase $ do
+  let service = makePersistentService defaultStore {createBuildUnlessExists = (const . const) $ pure $ Left ()}
+  actual <- createBuild service (VersionId "123") (BuildId "456")
+  let expected = Conflict
+  actual @?= expected
 
 defaultBuildPair :: BuildPair
 defaultBuildPair = BuildPair {slowBuild = BuildRecord {buildId = "123", versionId = "04a66b1n", state = Init}, fastBuild = BuildRecord {buildId = "123", versionId = "04a66b1n", state = Running}}
-

@@ -8,7 +8,7 @@ where
 
 import Server.Domain (BuildId, BuildState, BuildSummary, VersionId)
 
-data Outcome = Conflict | Success
+data Outcome = Conflict | Success deriving (Show, Eq)
 
 data BuildService = BuildService
   { getBuildSummary :: BuildId -> IO (Maybe BuildSummary),

@@ -11,7 +11,7 @@ import Data.Aeson (FromJSON (..), withObject, (.:))
 import Data.Aeson.Types (Parser)
 import Data.Either (Either (..))
 import Data.Text (Text)
-import Network.HTTP.Types.Status (status500)
+import Network.HTTP.Types.Status (status500, status404)
 import Server.Service (BuildService (..))
 import Server.Domain (BuildId (..), BuildState (..), VersionId (..))
 import Web.Scotty
@@ -45,8 +45,10 @@ makeApplication service = do
 
   get "/build/:b" $ do    
     bid <- pathBuildId    
-    summary <- liftIO $ getBuildSummary service bid    
-    json summary
+    s <- liftIO $ getBuildSummary service bid    
+    case s of
+      Nothing -> status status404
+      Just summary -> json summary
 
   post "/version/:v/build/:b/fast/advance" $ do
     vid <- pathVersionId

@@ -13,9 +13,9 @@ import Network.HTTP.Types
 import Network.HTTP.Types.Header (hContentType)
 import Network.Wai (Application, Request, pathInfo, requestBody, requestHeaders, requestMethod, setRequestBodyChunks)
 import Network.Wai.Test (SRequest (..), Session, assertBody, assertStatus, defaultRequest, request, runSession, setRawPathInfo, srequest)
-import Server.Service
 import Server.Domain
 import Server.Routes
+import Server.Service
 import Test.HUnit
 import Web.Scotty (scottyApp)
 
@@ -23,6 +23,7 @@ tests :: Test
 tests =
   TestList
     [ TestLabel "Given a build id, when getting summary, then serialises a populated summary" testGetSummary,
+      TestLabel "Given a non-existent build id, when getting summary, then returns status code 404 and empty body" testGetSummaryNotFound,
       TestLabel "Given a build id in URL, when getting summary, then passes build id to service" testUsesPathBuildId,
       TestLabel "Given build and version ids, when posting advance fast, then passes those ids to service" (testUpdateBuild "fast" "advance"),
       TestLabel "Given build and version ids, when posting advance slow, then passes those ids to service" (testUpdateBuild "slow" "advance"),
@@ -34,7 +35,7 @@ testGetSummary :: Test
 testGetSummary = TestCase $ do
   let service =
         BuildService
-          { getBuildSummary = \_ -> pure $ BuildSummary Init Init,
+          { getBuildSummary = \_ -> pure $ Just $ BuildSummary Init Init,
             advanceFastResult = undefined,
             advanceSlowResult = undefined,
             failFastResult = undefined,
@@ -51,6 +52,25 @@ testGetSummary = TestCase $ do
     )
     app
 
+testGetSummaryNotFound :: Test
+testGetSummaryNotFound = TestCase $ do
+  let service =
+        BuildService
+          { getBuildSummary = \_ -> pure Nothing,
+            advanceFastResult = undefined,
+            advanceSlowResult = undefined,
+            failFastResult = undefined,
+            failSlowResult = undefined
+          }
+  app <- scottyApp $ makeApplication service
+  runSession
+    ( do
+        response <- request $ defaultRequest {pathInfo = ["build", "123"]}
+        assertStatus 404 response
+        assertBody "" response
+    )
+    app
+
 testUsesPathBuildId :: Test
 testUsesPathBuildId = TestCase $ do
   passedId <- IORef.newIORef ""
@@ -59,7 +79,7 @@ testUsesPathBuildId = TestCase $ do
         BuildService
           { getBuildSummary = \id -> do
               IORef.writeIORef passedId id
-              pure $ BuildSummary Init Init,
+              pure $ Just $ BuildSummary Init Init,
             advanceFastResult = undefined,
             advanceSlowResult = undefined,
             failFastResult = undefined,

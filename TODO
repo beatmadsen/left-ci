@@ -2,9 +2,9 @@
 
 - Server
   - Routes
-    - GET /builds/:buildId should 404 if the build id is not found
+    - POST /version/:versionId/build/:buildId to create a build in Init state before we can advance
+    - POST /version/:versionId/build/:buildId/fast/advance and other actions should return 404 if the build id is not found
   - Service
-    - getBuildSummary returns a Maybe BuildSummary
     - layer that interacts with a data store abstraction
 
 - Installer

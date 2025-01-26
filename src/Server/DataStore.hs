@@ -1,6 +1,7 @@
 module Server.DataStore
   ( BuildStore (..),
-    BuildRecord (..)
+    BuildRecord (..),
+    BuildPair (..)
   )
 where
 
@@ -9,10 +10,14 @@ import Server.Domain
 data BuildRecord = BuildRecord
   { buildId :: BuildId
   , versionId :: VersionId
-  , cadence :: Cadence
   , state :: BuildState
-  }
+  } deriving (Show, Eq)
+
+data BuildPair = BuildPair
+  { slowBuild :: BuildRecord
+  , fastBuild :: BuildRecord
+  } deriving (Show, Eq)
 
 data BuildStore = BuildStore 
-  { getBuildRecords :: BuildId -> IO [BuildRecord]  -- Takes a build ID, returns matching rows
+  { findBuildPair :: BuildId -> IO (Maybe BuildPair)  -- Takes a build ID, returns matching rows
   }

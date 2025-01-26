@@ -4,9 +4,9 @@ module Server.Service.Persistent
 where
 
 import Server.Service (BuildService (..))
-import Server.DataStore (BuildStore (..))
+import Server.DataStore (BuildStore (..), BuildRecord (..), BuildPair (..))
 import Server.Domain
-    ( BuildSummary(..), BuildState(Running, Init), BuildId(..) )
+    ( BuildSummary(..), BuildState(..), BuildId(..) )
 
 
 makePersistentService :: BuildStore -> BuildService
@@ -20,8 +20,9 @@ makePersistentService buildStore = BuildService {
 
 pGetBuildSummary :: BuildStore -> BuildId -> IO (Maybe BuildSummary)
 pGetBuildSummary buildStore buildId = do
-  records <- getBuildRecords buildStore buildId
-  if length records == 2
-    then return $ Just $ BuildSummary {slowState = Init, fastState = Running}
-    else return Nothing
-  
+  maybeBuildPair <- findBuildPair buildStore buildId
+  let maybeSummary = fmap extractSummary maybeBuildPair
+  return maybeSummary
+
+extractSummary :: BuildPair -> BuildSummary
+extractSummary bp = BuildSummary {slowState = state (slowBuild bp), fastState = state (fastBuild bp)}

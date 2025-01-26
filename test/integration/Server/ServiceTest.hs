@@ -33,14 +33,7 @@ tests =
 
 testGetSummary :: Test
 testGetSummary = TestCase $ do
-  let service =
-        BuildService
-          { getBuildSummary = \_ -> pure $ Just $ BuildSummary Init Init,
-            advanceFastResult = undefined,
-            advanceSlowResult = undefined,
-            failFastResult = undefined,
-            failSlowResult = undefined
-          }
+  let service = defaultService {getBuildSummary = \_ -> pure $ Just $ BuildSummary Init Init}
 
   app <- scottyApp $ makeApplication service
 
@@ -54,14 +47,7 @@ testGetSummary = TestCase $ do
 
 testGetSummaryNotFound :: Test
 testGetSummaryNotFound = TestCase $ do
-  let service =
-        BuildService
-          { getBuildSummary = \_ -> pure Nothing,
-            advanceFastResult = undefined,
-            advanceSlowResult = undefined,
-            failFastResult = undefined,
-            failSlowResult = undefined
-          }
+  let service = defaultService {getBuildSummary = \_ -> pure Nothing}
   app <- scottyApp $ makeApplication service
   runSession
     ( do
@@ -76,14 +62,10 @@ testUsesPathBuildId = TestCase $ do
   passedId <- IORef.newIORef ""
 
   let service =
-        BuildService
+        defaultService
           { getBuildSummary = \id -> do
               IORef.writeIORef passedId id
-              pure $ Just $ BuildSummary Init Init,
-            advanceFastResult = undefined,
-            advanceSlowResult = undefined,
-            failFastResult = undefined,
-            failSlowResult = undefined
+              pure $ Just $ BuildSummary Init Init
           }
 
   app <- scottyApp $ makeApplication service
@@ -102,19 +84,6 @@ testUsesPathBuildId = TestCase $ do
   actualId <- IORef.readIORef passedId
   assertEqual "Build ID" "test-build-42" actualId
 
-makePostRequest :: VersionId -> BuildId -> Text -> Text -> SRequest
-makePostRequest versionId buildId cadence action =
-  SRequest
-    defaultRequest
-      { requestMethod = "POST",
-        pathInfo = ["version", vid, "build", bid, cadence, action],
-        requestHeaders = [(hContentType, "application/json")]
-      }
-    "" -- No body needed for advance
-  where
-    (VersionId vid) = versionId
-    (BuildId bid) = buildId
-
 testUpdateBuild :: Text -> Text -> Test
 testUpdateBuild cadence action = TestCase $ do
   passedBuildId <- IORef.newIORef ""
@@ -125,9 +94,8 @@ testUpdateBuild cadence action = TestCase $ do
         IORef.writeIORef passedVersionId versionId
 
   let service =
-        BuildService
-          { getBuildSummary = undefined,
-            advanceFastResult = x,
+        defaultService
+          { advanceFastResult = x,
             advanceSlowResult = x,
             failFastResult = x,
             failSlowResult = x
@@ -147,3 +115,25 @@ testUpdateBuild cadence action = TestCase $ do
 
   actualVersionId <- IORef.readIORef passedVersionId
   assertEqual "version id" "version-123" actualVersionId
+
+defaultService :: BuildService
+defaultService =
+  BuildService
+    { getBuildSummary = undefined,
+      advanceFastResult = undefined,
+      advanceSlowResult = undefined,
+      failFastResult = undefined,
+      failSlowResult = undefined
+    }
+
+makePostRequest :: VersionId -> BuildId -> Text -> Text -> SRequest
+makePostRequest versionId buildId cadence action =
+  SRequest
+    defaultRequest
+      { requestMethod = "POST",
+        pathInfo = ["version", vid, "build", bid, cadence, action]
+      }
+    "" -- No body needed for advance
+  where
+    (VersionId vid) = versionId
+    (BuildId bid) = buildId

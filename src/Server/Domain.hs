@@ -6,6 +6,7 @@ module Server.Domain
     BuildSummary (..),
     VersionId(..),
     BuildId(..),
+    Cadence(..)
   )
 where
 
@@ -16,17 +17,20 @@ import Data.Text (Text)
 newtype VersionId = VersionId Text
   deriving (Show, Eq)
 
-newtype BuildId = BuildId Text
-  deriving (Show, Eq)
-
 -- Make it easy to use string literals
 instance IsString VersionId where
     fromString :: String -> VersionId
     fromString = VersionId . fromString
 
+newtype BuildId = BuildId Text
+  deriving (Show, Eq)
+
 instance IsString BuildId where
     fromString :: String -> BuildId
     fromString = BuildId . fromString
+
+data Cadence = Fast | Slow
+  deriving (Show, Eq)
 
 data BuildState = Init | Running | Passed | Failed
   deriving (Show, Eq)

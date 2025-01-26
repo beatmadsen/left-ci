@@ -1,18 +1,18 @@
 module Server.DataStore
   ( BuildStore (..),
-    BuildRow (..)
+    BuildRecord (..)
   )
 where
 
-import Data.Text (Text)
+import Server.Domain
 
-data BuildRow = BuildRow
-  { buildId :: Text
-  , versionId :: Text
-  , cadence :: Text  -- "slow" or "fast"
-  , state :: Text    -- raw state string from DB
+data BuildRecord = BuildRecord
+  { buildId :: BuildId
+  , versionId :: VersionId
+  , cadence :: Cadence
+  , state :: BuildState
   }
 
 data BuildStore = BuildStore 
-  { getBuildRows :: Text -> IO [BuildRow]  -- Takes a build ID, returns matching rows
+  { getBuildRecords :: BuildId -> IO [BuildRecord]  -- Takes a build ID, returns matching rows
   }

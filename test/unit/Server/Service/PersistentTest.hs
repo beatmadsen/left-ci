@@ -5,8 +5,8 @@ module Server.Service.PersistentTest
   )
 where
 
-import Server.DataStore (BuildRow (..), BuildStore (..))
-import Server.Domain (BuildId (..), BuildState (..), BuildSummary (..))
+import Server.DataStore (BuildStore (..), BuildRecord (..))
+import Server.Domain (BuildId (..), BuildState (..), BuildSummary (..), Cadence (..))
 import Server.Service (BuildService (..))
 import Server.Service.Persistent (makePersistentService)
 import Test.HUnit (Test (TestCase, TestLabel, TestList), (@?=))
@@ -19,11 +19,11 @@ tests =
     ]
 
 defaultStore :: BuildStore
-defaultStore = BuildStore {getBuildRows = undefined}
+defaultStore = BuildStore {getBuildRecords = undefined}
 
 testGetBuildSummaryNonExistent :: Test
 testGetBuildSummaryNonExistent = TestCase $ do
-  let service = makePersistentService defaultStore
+  let service = makePersistentService defaultStore {getBuildRecords = const $ pure []}
   actual <- getBuildSummary service (BuildId "123")
   let expected = Nothing
   actual @?= expected
@@ -33,11 +33,11 @@ testGetBuildSummaryTwoRows = TestCase $ do
   let service =
         makePersistentService
           defaultStore
-            { getBuildRows =
+            { getBuildRecords =
                 const $
                   pure
-                    [ BuildRow {buildId = "123", versionId = "04a66b1n", cadence = "slow", state = "init"},
-                      BuildRow {buildId = "123", versionId = "04a66b1n", cadence = "fast", state = "running"}
+                    [ BuildRecord {buildId = "123", versionId = "04a66b1n", cadence = Slow, state = Init},
+                      BuildRecord {buildId = "123", versionId = "04a66b1n", cadence = Fast, state = Running}
                     ]
             }
   actual <- getBuildSummary service (BuildId "123")

@@ -2,8 +2,6 @@
 
 - Server
   - Routes
-    - POST /build/:buildId/fast/advance and other actions should not include versionId in the path, it's already implied by the build id
-    - POST /version/:versionId/build/:buildId to create a build in Init state before we can advance
     - POST /build/:buildId/fast/advance and other actions should return 404 if the build id is not found
   - Service
     - layer that interacts with a data store abstraction

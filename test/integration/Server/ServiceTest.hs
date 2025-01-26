@@ -25,10 +25,11 @@ tests =
     [ TestLabel "Given a build id, when getting summary, then serialises a populated summary" testGetSummary,
       TestLabel "Given a non-existent build id, when getting summary, then returns status code 404 and empty body" testGetSummaryNotFound,
       TestLabel "Given a build id in URL, when getting summary, then passes build id to service" testUsesPathBuildId,
-      TestLabel "Given build and version ids, when posting advance fast, then passes those ids to service" (testUpdateBuild "fast" "advance"),
-      TestLabel "Given build and version ids, when posting advance slow, then passes those ids to service" (testUpdateBuild "slow" "advance"),
-      TestLabel "Given build and version ids, when posting fail fast, then passes those ids to service" (testUpdateBuild "fast" "fail"),
-      TestLabel "Given build and version ids, when posting fail slow, then passes those ids to service" (testUpdateBuild "slow" "fail")
+      TestLabel "Given a build id in URL, when posting advance fast, then passes build id to service" (testUpdateBuild "fast" "advance"),
+      TestLabel "Given a build id in URL, when posting advance slow, then passes build id to service" (testUpdateBuild "slow" "advance"),
+      TestLabel "Given a build id in URL, when posting fail fast, then passes build id to service" (testUpdateBuild "fast" "fail"),
+      TestLabel "Given a build id in URL, when posting fail slow, then passes build id to service" (testUpdateBuild "slow" "fail"),
+      TestLabel "Given version and build ids in URL, when creating build, then passes ids to service" (testCreateBuild)
     ]
 
 testGetSummary :: Test
@@ -103,10 +104,37 @@ testUpdateBuild cadence action = TestCase $ do
 
   runSession
     ( do
-        response <- srequest $ makePostRequest "build-42" cadence action
+        response <- srequest $ makeActionRequest "build-42" cadence action
         assertStatus 200 response
     )
     app
+
+  actualBuildId <- IORef.readIORef passedBuildId
+  assertEqual "build id" "build-42" actualBuildId
+
+testCreateBuild :: Test
+testCreateBuild = TestCase $ do
+  passedVersionId <- IORef.newIORef ""
+  passedBuildId <- IORef.newIORef ""
+
+  let service =
+        defaultService
+          { createBuild = \versionId buildId -> do
+              IORef.writeIORef passedVersionId versionId
+              IORef.writeIORef passedBuildId buildId
+          }
+
+  app <- scottyApp $ makeApplication service
+
+  runSession
+    ( do
+        response <- srequest $ makeCreateRequest (VersionId "version-123") (BuildId "build-42")
+        assertStatus 200 response
+    )
+    app
+
+  actualVersionId <- IORef.readIORef passedVersionId
+  assertEqual "version id" "version-123" actualVersionId
 
   actualBuildId <- IORef.readIORef passedBuildId
   assertEqual "build id" "build-42" actualBuildId
@@ -122,13 +150,20 @@ defaultService =
       failSlowResult = undefined
     }
 
-makePostRequest :: BuildId -> Text -> Text -> SRequest
-makePostRequest buildId cadence action =
+makeCreateRequest :: VersionId -> BuildId -> SRequest
+makeCreateRequest (VersionId vid) (BuildId bid) =
+  SRequest
+    defaultRequest
+      { requestMethod = "POST",
+        pathInfo = ["version", vid, "build", bid]
+      }
+    "" -- No body needed for create
+
+makeActionRequest :: BuildId -> Text -> Text -> SRequest
+makeActionRequest (BuildId bid) cadence action =
   SRequest
     defaultRequest
       { requestMethod = "POST",
         pathInfo = ["build", bid, cadence, action]
       }
     "" -- No body needed for advance
-  where
-    (BuildId bid) = buildId

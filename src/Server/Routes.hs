@@ -50,6 +50,12 @@ makeApplication service = do
       Nothing -> status status404
       Just summary -> json summary
 
+  post "/version/:v/build/:b" $ do
+    vid <- pathVersionId
+    bid <- pathBuildId
+    liftIO $ createBuild service vid bid
+    json ()
+
   post "/build/:b/fast/advance" $ do
     bid <- pathBuildId
     liftIO $ advanceFastResult service bid

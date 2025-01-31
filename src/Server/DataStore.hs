@@ -1,24 +1,30 @@
+{-# LANGUAGE RankNTypes #-}
+
 module Server.DataStore
   ( BuildStore (..),
     BuildRecord (..),
-    BuildPair (..)
+    BuildPair (..),
   )
 where
 
+import Server.DataStore.Atomic
 import Server.Domain
 
 data BuildRecord = BuildRecord
-  { buildId :: BuildId
-  , versionId :: VersionId
-  , state :: BuildState
-  } deriving (Show, Eq)
+  { buildId :: BuildId,
+    versionId :: VersionId,
+    state :: BuildState
+  }
+  deriving (Show, Eq)
 
 data BuildPair = BuildPair
-  { slowBuild :: BuildRecord
-  , fastBuild :: BuildRecord
-  } deriving (Show, Eq)
+  { slowBuild :: BuildRecord,
+    fastBuild :: BuildRecord
+  }
+  deriving (Show, Eq)
 
-data BuildStore = BuildStore 
-  { findBuildPair :: BuildId -> IO (Maybe BuildPair)  -- Takes a build ID, returns matching rows
-  , createBuildUnlessExists :: BuildId -> VersionId -> IO (Either () ())
+data BuildStore ctx = BuildStore
+  { findBuildPair :: BuildId -> AtomicM ctx (Maybe BuildPair),
+    createBuildUnlessExists :: BuildId -> VersionId -> AtomicM ctx (Either () ()),
+    atomically :: forall a. AtomicM ctx a -> IO a
   }

@@ -4,6 +4,7 @@ version: 0.1.0.0
 dependencies:
   - base >= 4.7 && < 5
   # - either >= 5
+  - mtl
   - text
   - containers
 
@@ -15,6 +16,7 @@ library:
     - Server.Service
     - Server.Service.Persistent
     - Server.DataStore
+    - Server.DataStore.Atomic
     - Server.Routes
     - Server.Domain
   dependencies:

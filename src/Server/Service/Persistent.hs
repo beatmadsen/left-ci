@@ -9,7 +9,7 @@ import Server.Domain
     ( BuildSummary(..), BuildState(..), BuildId(..), VersionId(..) )
 
 
-makePersistentService :: BuildStore -> BuildService
+makePersistentService :: BuildStore ctx -> BuildService
 makePersistentService buildStore = BuildService { 
     getBuildSummary = pGetBuildSummary buildStore,
     createBuild = pCreateBuild buildStore,
@@ -19,21 +19,22 @@ makePersistentService buildStore = BuildService {
     failSlowResult = undefined
   }
 
-pGetBuildSummary :: BuildStore -> BuildId -> IO (Maybe BuildSummary)
-pGetBuildSummary buildStore buildId = do
-  maybeBuildPair <- findBuildPair buildStore buildId
-  let maybeSummary = fmap extractSummary maybeBuildPair
-  return maybeSummary
+pGetBuildSummary :: BuildStore ctx -> BuildId -> IO (Maybe BuildSummary)
+pGetBuildSummary buildStore buildId = 
+  atomically buildStore $ do
+    maybeBuildPair <- findBuildPair buildStore buildId
+    pure $ fmap extractSummary maybeBuildPair
 
 extractSummary :: BuildPair -> BuildSummary
 extractSummary bp = BuildSummary {slowState = state (slowBuild bp), fastState = state (fastBuild bp)}
 
-pCreateBuild :: BuildStore -> VersionId -> BuildId -> IO Outcome
-pCreateBuild buildStore versionId buildId = do
-  result <- createBuildUnlessExists buildStore buildId versionId
-  return $ case result of
-    Left () -> Conflict
-    Right () -> Success
+pCreateBuild :: BuildStore ctx -> VersionId -> BuildId -> IO Outcome
+pCreateBuild buildStore versionId buildId = 
+  atomically buildStore $ do
+    result <- createBuildUnlessExists buildStore buildId versionId
+    pure $ case result of
+      Left () -> Conflict
+      Right () -> Success
 
-pAdvanceFastResult :: BuildStore -> BuildId -> IO ()
+pAdvanceFastResult :: BuildStore ctx -> BuildId -> IO ()
 pAdvanceFastResult buildStore buildId = undefined

@@ -2,19 +2,21 @@
 
 module Server.Service
   ( BuildService (..),
-    Outcome (..),
+    CreationOutcome (..),
+    StateChangeOutcome (..)
   )
 where
 
 import Server.Domain (BuildId, BuildState, BuildSummary, VersionId)
 
-data Outcome = Conflict | Success deriving (Show, Eq)
+data CreationOutcome = Conflict | SuccessfullyCreated deriving (Show, Eq)
+data StateChangeOutcome = NotFound | SuccessfullyChangedState deriving (Show, Eq)
 
 data BuildService = BuildService
   { getBuildSummary :: BuildId -> IO (Maybe BuildSummary),
-    createBuild :: VersionId -> BuildId -> IO Outcome,
-    advanceFastResult :: BuildId -> IO (),
-    advanceSlowResult :: BuildId -> IO (),
-    failFastResult :: BuildId -> IO (),
-    failSlowResult :: BuildId -> IO ()
+    createBuild :: VersionId -> BuildId -> IO CreationOutcome,
+    advanceFastResult :: BuildId -> IO StateChangeOutcome,
+    advanceSlowResult :: BuildId -> IO StateChangeOutcome,
+    failFastResult :: BuildId -> IO StateChangeOutcome,
+    failSlowResult :: BuildId -> IO StateChangeOutcome
   }

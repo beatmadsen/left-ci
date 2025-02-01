@@ -26,5 +26,7 @@ data BuildPair = BuildPair
 data BuildStore ctx = BuildStore
   { findBuildPair :: BuildId -> AtomicM ctx (Maybe BuildPair),
     createBuildUnlessExists :: BuildId -> VersionId -> AtomicM ctx (Either () ()),
-    atomically :: forall a. AtomicM ctx a -> IO a
+    atomically :: forall a. AtomicM ctx a -> IO a,
+    findFastState :: BuildId -> AtomicM ctx (Maybe BuildState),
+    updateFastState :: BuildId -> BuildState -> AtomicM ctx ()
   }

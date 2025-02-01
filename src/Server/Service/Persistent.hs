@@ -28,13 +28,18 @@ pGetBuildSummary buildStore buildId =
 extractSummary :: BuildPair -> BuildSummary
 extractSummary bp = BuildSummary {slowState = state (slowBuild bp), fastState = state (fastBuild bp)}
 
-pCreateBuild :: BuildStore ctx -> VersionId -> BuildId -> IO Outcome
+pCreateBuild :: BuildStore ctx -> VersionId -> BuildId -> IO CreationOutcome
 pCreateBuild buildStore versionId buildId = 
   atomically buildStore $ do
     result <- createBuildUnlessExists buildStore buildId versionId
     pure $ case result of
       Left () -> Conflict
-      Right () -> Success
+      Right () -> SuccessfullyCreated
 
-pAdvanceFastResult :: BuildStore ctx -> BuildId -> IO ()
-pAdvanceFastResult buildStore buildId = undefined
+pAdvanceFastResult :: BuildStore ctx -> BuildId -> IO StateChangeOutcome
+pAdvanceFastResult buildStore buildId = 
+  atomically buildStore $ do
+    maybeState <- findFastState buildStore buildId
+    case maybeState of
+      Nothing -> pure NotFound
+      Just state -> undefined

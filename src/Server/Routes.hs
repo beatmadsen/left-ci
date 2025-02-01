@@ -12,7 +12,7 @@ import Data.Aeson.Types (Parser)
 import Data.Either (Either (..))
 import Data.Text (Text)
 import Network.HTTP.Types.Status (status500, status404, status409)
-import Server.Service (BuildService (..), Outcome (..))
+import Server.Service (BuildService (..), CreationOutcome (..))
 import Server.Domain (BuildId (..), BuildState (..), VersionId (..))
 import Web.Scotty
   ( ActionM,
@@ -56,7 +56,7 @@ makeApplication service = do
     outcome <- liftIO $ createBuild service vid bid
     case outcome of
       Conflict -> status status409
-      Success -> json ()
+      SuccessfullyCreated -> json ()
 
   post "/build/:b/fast/advance" $ do
     bid <- pathBuildId

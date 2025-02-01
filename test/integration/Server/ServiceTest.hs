@@ -92,6 +92,7 @@ testUpdateBuild cadence action = TestCase $ do
 
   let x = \buildId -> do
         IORef.writeIORef passedBuildId buildId
+        pure SuccessfullyChangedState
 
   let service =
         defaultService
@@ -123,7 +124,7 @@ testCreateBuild = TestCase $ do
           { createBuild = \versionId buildId -> do
               IORef.writeIORef passedVersionId versionId
               IORef.writeIORef passedBuildId buildId
-              pure Success
+              pure SuccessfullyCreated
           }
 
   app <- scottyApp $ makeApplication service

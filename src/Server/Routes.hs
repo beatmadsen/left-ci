@@ -67,8 +67,10 @@ makeApplication service = do
 
   post "/build/:b/slow/advance" $ do
     bid <- pathBuildId
-    liftIO $ advanceSlowResult service bid
-    json ()
+    outcome <- liftIO $ advanceSlowResult service bid
+    case outcome of
+      NotFound -> status status404
+      SuccessfullyChangedState -> json ()
 
   post "/build/:b/fast/fail" $ do
     bid <- pathBuildId

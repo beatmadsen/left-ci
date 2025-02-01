@@ -30,7 +30,9 @@ tests =
       TestLabel "Given a build id in URL, when posting advance slow, then passes build id to service" (testUpdateBuild "slow" "advance"),
       TestLabel "Given a non-existing build id, when posting advance slow, then returns status code 404" testAdvanceSlowResultNonExistent,
       TestLabel "Given a build id in URL, when posting fail fast, then passes build id to service" (testUpdateBuild "fast" "fail"),
+      TestLabel "Given a non-existing build id, when posting fail fast, then returns status code 404" testFailFastResultNonExistent,
       TestLabel "Given a build id in URL, when posting fail slow, then passes build id to service" (testUpdateBuild "slow" "fail"),
+      TestLabel "Given a non-existing build id, when posting fail slow, then returns status code 404" testFailSlowResultNonExistent,
       TestLabel "Given version and build ids in URL, when creating build, then passes ids to service" testCreateBuild,
       TestLabel "Given a service that reports conflict, when creating build, then returns status code 409" testCreateBuildConflict
     ]
@@ -173,6 +175,28 @@ testAdvanceSlowResultNonExistent = TestCase $ do
   runSession
     ( do
         response <- srequest $ makeActionRequest "build-42" "slow" "advance"
+        assertStatus 404 response
+    )
+    app
+
+testFailFastResultNonExistent :: Test
+testFailFastResultNonExistent = TestCase $ do
+  let service = defaultService {failFastResult = const $ pure NotFound}
+  app <- scottyApp $ makeApplication service
+  runSession
+    ( do
+        response <- srequest $ makeActionRequest "build-42" "fast" "fail"
+        assertStatus 404 response
+    )
+    app
+
+testFailSlowResultNonExistent :: Test
+testFailSlowResultNonExistent = TestCase $ do
+  let service = defaultService {failSlowResult = const $ pure NotFound}
+  app <- scottyApp $ makeApplication service
+  runSession
+    ( do
+        response <- srequest $ makeActionRequest "build-42" "slow" "fail"
         assertStatus 404 response
     )
     app

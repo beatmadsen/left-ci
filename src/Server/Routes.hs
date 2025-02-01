@@ -11,9 +11,9 @@ import Data.Aeson (FromJSON (..), withObject, (.:))
 import Data.Aeson.Types (Parser)
 import Data.Either (Either (..))
 import Data.Text (Text)
-import Network.HTTP.Types.Status (status500, status404, status409)
+import Network.HTTP.Types.Status (status404, status409, status500)
+import Server.Domain (BuildId (..), BuildState (..), BuildSummary (..), VersionId (..))
 import Server.Service (BuildService (..), CreationOutcome (..), StateChangeOutcome (..))
-import Server.Domain (BuildId (..), BuildState (..), VersionId (..))
 import Web.Scotty
   ( ActionM,
     Parsable,
@@ -24,10 +24,8 @@ import Web.Scotty
     jsonData,
     pathParam,
     post,
-    status
+    status,
   )
-
-
 import Web.Scotty.Internal.Types (ActionError, ActionT)
 
 pathVersionId :: ActionM VersionId
@@ -42,42 +40,48 @@ pathBuildId = do
 
 makeApplication :: BuildService -> ScottyM ()
 makeApplication service = do
-
-  get "/build/:b" $ do    
-    bid <- pathBuildId    
-    s <- liftIO $ getBuildSummary service bid    
-    case s of
-      Nothing -> status status404
-      Just summary -> json summary
+  get "/build/:b" $ do
+    bid <- pathBuildId
+    s <- liftIO $ getBuildSummary service bid
+    respondToBuildSummary s
 
   post "/version/:v/build/:b" $ do
     vid <- pathVersionId
     bid <- pathBuildId
     outcome <- liftIO $ createBuild service vid bid
-    case outcome of
-      Conflict -> status status409
-      SuccessfullyCreated -> json ()
+    respondToCreationOutcome outcome
 
   post "/build/:b/fast/advance" $ do
     bid <- pathBuildId
     outcome <- liftIO $ advanceFastResult service bid
-    case outcome of
-      NotFound -> status status404
-      SuccessfullyChangedState -> json ()
+    respondToStateChange outcome
 
   post "/build/:b/slow/advance" $ do
     bid <- pathBuildId
     outcome <- liftIO $ advanceSlowResult service bid
-    case outcome of
-      NotFound -> status status404
-      SuccessfullyChangedState -> json ()
+    respondToStateChange outcome
 
   post "/build/:b/fast/fail" $ do
     bid <- pathBuildId
-    liftIO $ failFastResult service bid
-    json ()
+    outcome <- liftIO $ failFastResult service bid
+    respondToStateChange outcome
 
   post "/build/:b/slow/fail" $ do
     bid <- pathBuildId
-    liftIO $ failSlowResult service bid
-    json ()
+    outcome <- liftIO $ failSlowResult service bid
+    respondToStateChange outcome
+
+respondToStateChange :: StateChangeOutcome -> ActionM ()
+respondToStateChange outcome = case outcome of
+  NotFound -> status status404
+  SuccessfullyChangedState -> json ()
+
+respondToCreationOutcome :: CreationOutcome -> ActionM ()
+respondToCreationOutcome outcome = case outcome of
+  Conflict -> status status409
+  SuccessfullyCreated -> json ()
+
+respondToBuildSummary :: Maybe BuildSummary -> ActionM ()
+respondToBuildSummary summary = case summary of
+  Nothing -> status status404
+  Just summary -> json summary

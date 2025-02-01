@@ -26,6 +26,7 @@ tests =
       TestLabel "Given a non-existent build id, when getting summary, then returns status code 404 and empty body" testGetSummaryNotFound,
       TestLabel "Given a build id in URL, when getting summary, then passes build id to service" testUsesPathBuildId,
       TestLabel "Given a build id in URL, when posting advance fast, then passes build id to service" (testUpdateBuild "fast" "advance"),
+      TestLabel "Given a non-existing build id, when posting advance fast, then returns status code 404" testAdvanceFastResultNonExistent,
       TestLabel "Given a build id in URL, when posting advance slow, then passes build id to service" (testUpdateBuild "slow" "advance"),
       TestLabel "Given a build id in URL, when posting fail fast, then passes build id to service" (testUpdateBuild "fast" "fail"),
       TestLabel "Given a build id in URL, when posting fail slow, then passes build id to service" (testUpdateBuild "slow" "fail"),
@@ -150,6 +151,17 @@ testCreateBuildConflict = TestCase $ do
     ( do
         response <- srequest $ makeCreateRequest (VersionId "version-123") (BuildId "build-42")
         assertStatus 409 response
+    )
+    app
+
+testAdvanceFastResultNonExistent :: Test
+testAdvanceFastResultNonExistent = TestCase $ do
+  let service = defaultService {advanceFastResult = const $ pure NotFound}
+  app <- scottyApp $ makeApplication service
+  runSession
+    ( do
+        response <- srequest $ makeActionRequest "build-42" "fast" "advance"
+        assertStatus 404 response
     )
     app
 

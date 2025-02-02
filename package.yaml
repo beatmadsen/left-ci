@@ -17,6 +17,7 @@ library:
     - Server.Service.Persistent
     - Server.DataStore
     - Server.DataStore.Atomic
+    - Server.DataStore.SQLiteBuildStore
     - Server.Routes
     - Server.Domain
   dependencies:
@@ -28,7 +29,8 @@ library:
     - warp
     - aeson
     - bytestring
-
+    - sqlite-simple
+    - resource-pool
 
 executables:
   left-ci:
@@ -60,5 +62,7 @@ tests:
       - http-types
       - scotty
       - aeson
+      - sqlite-simple
+      - resource-pool
     main: Main.hs
     source-dirs: test/integration

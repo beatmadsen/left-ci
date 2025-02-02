@@ -3,9 +3,11 @@
 
 module Server.DataStore.Atomic
   ( AtomicM(..)
+  , executeAtomic
   ) where
 
-import Control.Monad.Reader
+import Control.Monad.Reader ( MonadIO, MonadReader, ReaderT(..), runReaderT )
+
 
 -- | Represents operations that should be performed atomically.
 -- The context type 'ctx' is determined by the specific implementation
@@ -19,3 +21,6 @@ newtype AtomicM ctx a = AtomicM
     , MonadIO
     , MonadReader ctx  -- This lets implementations access their context
     ) 
+
+executeAtomic :: AtomicM ctx a -> ctx -> IO a
+executeAtomic atomicAction context = runReaderT (runAtomicM atomicAction) context

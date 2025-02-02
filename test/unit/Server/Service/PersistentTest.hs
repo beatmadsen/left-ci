@@ -24,9 +24,9 @@ tests =
       TestLabel "given a store that returns two rows for a build id, getBuildSummary returns a summary" testGetBuildSummaryTwoRows,
       TestLabel "given a store that reports build id already exists, createBuild reports conflict" testCreateBuildAlreadyExists,
       TestLabel "given a store that reports build id does not exist, createBuild reports success" testCreateBuildSuccess,
-      TestLabel "given a store and a non-existent build id, advanceFastResult reports NotFound" testAdvanceFastResultNonExistent,
-      TestLabel "given a store that returns a fast state, and succeeds in updating it, advanceFastResult reports SuccessfullyChangedState" testAdvanceFastResultSuccess,
-      TestLabel "given a store that returns a fast state, advanceFastResult advances and updates the fast state" testAdvanceFastResultAdvancesAndUpdates
+      TestLabel "given a store and a non-existent build id, advanceFastSuite reports NotFound" testAdvanceFastResultNonExistent,
+      TestLabel "given a store that returns a fast state, and succeeds in updating it, advanceFastSuite reports SuccessfullyChangedState" testAdvanceFastResultSuccess,
+      TestLabel "given a store that returns a fast state, advanceFastSuite advances and updates the fast state" testAdvanceFastResultAdvancesAndUpdates
     ]
 
 
@@ -65,7 +65,7 @@ testCreateBuildSuccess = TestCase $ do
 testAdvanceFastResultNonExistent :: Test
 testAdvanceFastResultNonExistent = TestCase $ do
   let service = makePersistentService defaultStore { findFastState = const $ pure Nothing }
-  actual <- advanceFastResult service (BuildId "123")
+  actual <- advanceFastSuite service (BuildId "123")
   let expected = NotFound
   actual @?= expected
 
@@ -75,7 +75,7 @@ testAdvanceFastResultSuccess = TestCase $ do
     findFastState = const $ pure $ Just Running,
     updateFastState = (const . const) $ pure () 
     }
-  actual <- advanceFastResult service (BuildId "123")
+  actual <- advanceFastSuite service (BuildId "123")
   let expected = SuccessfullyChangedState
   actual @?= expected
 
@@ -87,7 +87,7 @@ testAdvanceFastResultAdvancesAndUpdates = TestCase $ do
     findFastState = const $ pure $ Just Init,
     updateFastState = \buildId newState -> liftIO $ writeIORef writtenState newState
     }
-  advanceFastResult service (BuildId "123")
+  advanceFastSuite service (BuildId "123")
   actual <- readIORef writtenState
   let expected = Running
   actual @?= expected

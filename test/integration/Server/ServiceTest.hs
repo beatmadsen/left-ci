@@ -100,10 +100,10 @@ testUpdateBuild cadence action = TestCase $ do
 
   let service =
         defaultService
-          { advanceFastResult = x,
-            advanceSlowResult = x,
-            failFastResult = x,
-            failSlowResult = x
+          { advanceFastSuite = x,
+            advanceSlowSuite = x,
+            failFastSuite = x,
+            failSlowSuite = x
           }
 
   app <- scottyApp $ makeApplication service
@@ -159,7 +159,7 @@ testCreateBuildConflict = TestCase $ do
 
 testAdvanceFastResultNonExistent :: Test
 testAdvanceFastResultNonExistent = TestCase $ do
-  let service = defaultService {advanceFastResult = const $ pure NotFound}
+  let service = defaultService {advanceFastSuite = const $ pure NotFound}
   app <- scottyApp $ makeApplication service
   runSession
     ( do
@@ -170,7 +170,7 @@ testAdvanceFastResultNonExistent = TestCase $ do
 
 testAdvanceSlowResultNonExistent :: Test
 testAdvanceSlowResultNonExistent = TestCase $ do
-  let service = defaultService {advanceSlowResult = const $ pure NotFound}
+  let service = defaultService {advanceSlowSuite = const $ pure NotFound}
   app <- scottyApp $ makeApplication service
   runSession
     ( do
@@ -181,7 +181,7 @@ testAdvanceSlowResultNonExistent = TestCase $ do
 
 testFailFastResultNonExistent :: Test
 testFailFastResultNonExistent = TestCase $ do
-  let service = defaultService {failFastResult = const $ pure NotFound}
+  let service = defaultService {failFastSuite = const $ pure NotFound}
   app <- scottyApp $ makeApplication service
   runSession
     ( do
@@ -192,7 +192,7 @@ testFailFastResultNonExistent = TestCase $ do
 
 testFailSlowResultNonExistent :: Test
 testFailSlowResultNonExistent = TestCase $ do
-  let service = defaultService {failSlowResult = const $ pure NotFound}
+  let service = defaultService {failSlowSuite = const $ pure NotFound}
   app <- scottyApp $ makeApplication service
   runSession
     ( do
@@ -206,10 +206,10 @@ defaultService =
   BuildService
     { getBuildSummary = undefined,
       createBuild = undefined,
-      advanceFastResult = undefined,
-      advanceSlowResult = undefined,
-      failFastResult = undefined,
-      failSlowResult = undefined
+      advanceFastSuite = undefined,
+      advanceSlowSuite = undefined,
+      failFastSuite = undefined,
+      failSlowSuite = undefined
     }
 
 makeCreateRequest :: VersionId -> BuildId -> SRequest

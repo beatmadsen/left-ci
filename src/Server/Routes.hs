@@ -53,22 +53,22 @@ makeApplication service = do
 
   post "/build/:b/fast/advance" $ do
     bid <- pathBuildId
-    outcome <- liftIO $ advanceFastResult service bid
+    outcome <- liftIO $ advanceFastSuite service bid
     respondToStateChange outcome
 
   post "/build/:b/slow/advance" $ do
     bid <- pathBuildId
-    outcome <- liftIO $ advanceSlowResult service bid
+    outcome <- liftIO $ advanceSlowSuite service bid
     respondToStateChange outcome
 
   post "/build/:b/fast/fail" $ do
     bid <- pathBuildId
-    outcome <- liftIO $ failFastResult service bid
+    outcome <- liftIO $ failFastSuite service bid
     respondToStateChange outcome
 
   post "/build/:b/slow/fail" $ do
     bid <- pathBuildId
-    outcome <- liftIO $ failSlowResult service bid
+    outcome <- liftIO $ failSlowSuite service bid
     respondToStateChange outcome
 
 respondToStateChange :: StateChangeOutcome -> ActionM ()

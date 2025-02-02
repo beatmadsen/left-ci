@@ -26,7 +26,13 @@ tests =
       TestLabel "given a store that reports build id does not exist, createBuild reports success" testCreateBuildSuccess,
       TestLabel "given a store and a non-existent build id, advanceFastSuite reports NotFound" testAdvanceFastResultNonExistent,
       TestLabel "given a store that returns a fast state, and succeeds in updating it, advanceFastSuite reports SuccessfullyChangedState" testAdvanceFastResultSuccess,
-      TestLabel "given a store that returns a fast state, advanceFastSuite advances and updates the fast state" testAdvanceFastResultAdvancesAndUpdates
+      TestLabel "given a store that returns a fast state, advanceFastSuite advances and updates the fast state" testAdvanceFastResultAdvancesAndUpdates,
+      TestLabel "given a store that returns a slow state, and succeeds in updating it, advanceSlowSuite reports SuccessfullyChangedState" testAdvanceSlowResultSuccess,
+      TestLabel "given a store that returns a slow state, advanceSlowSuite advances and updates the slow state" testAdvanceSlowResultAdvancesAndUpdates,
+      TestLabel "given a store that returns a fast state, and succeeds in updating it, failFastSuite reports SuccessfullyChangedState" testFailFastResultSuccess,
+      TestLabel "given a store that returns a fast state, failFastSuite advances and updates the fast state" testFailFastResultAdvancesAndUpdates,
+      TestLabel "given a store that returns a slow state, and succeeds in updating it, failSlowSuite reports SuccessfullyChangedState" testFailSlowResultSuccess,
+      TestLabel "given a store that returns a slow state, failSlowSuite advances and updates the slow state" testFailSlowResultAdvancesAndUpdates
     ]
 
 
@@ -85,11 +91,77 @@ testAdvanceFastResultAdvancesAndUpdates = TestCase $ do
 
   let service = makePersistentService defaultStore { 
     findFastState = const $ pure $ Just Init,
-    updateFastState = \buildId newState -> liftIO $ writeIORef writtenState newState
+    updateFastState = \_ newState -> liftIO $ writeIORef writtenState newState
     }
   advanceFastSuite service (BuildId "123")
   actual <- readIORef writtenState
   let expected = Running
+  actual @?= expected
+
+testAdvanceSlowResultSuccess :: Test
+testAdvanceSlowResultSuccess = TestCase $ do
+  let service = makePersistentService defaultStore { 
+    findSlowState = const $ pure $ Just Init,
+    updateSlowState = (const . const) $ pure () 
+    }
+  actual <- advanceSlowSuite service (BuildId "123")
+  let expected = SuccessfullyChangedState
+  actual @?= expected
+
+testAdvanceSlowResultAdvancesAndUpdates :: Test
+testAdvanceSlowResultAdvancesAndUpdates = TestCase $ do
+  writtenState <- newIORef Init
+  let service = makePersistentService defaultStore { 
+    findSlowState = const $ pure $ Just Init,
+    updateSlowState = \_ newState -> liftIO $ writeIORef writtenState newState
+    }
+  advanceSlowSuite service (BuildId "123")
+  actual <- readIORef writtenState
+  let expected = Running
+  actual @?= expected
+
+testFailFastResultSuccess :: Test
+testFailFastResultSuccess = TestCase $ do
+  let service = makePersistentService defaultStore { 
+    findFastState = const $ pure $ Just Running,
+    updateFastState = (const . const) $ pure () 
+    }
+  actual <- failFastSuite service (BuildId "123")
+  let expected = SuccessfullyChangedState
+  actual @?= expected
+
+testFailFastResultAdvancesAndUpdates :: Test
+testFailFastResultAdvancesAndUpdates = TestCase $ do
+  writtenState <- newIORef Running
+  let service = makePersistentService defaultStore { 
+    findFastState = const $ pure $ Just Running,
+    updateFastState = \_ newState -> liftIO $ writeIORef writtenState newState
+    }
+  failFastSuite service (BuildId "123")
+  actual <- readIORef writtenState
+  let expected = Failed
+  actual @?= expected
+
+testFailSlowResultSuccess :: Test
+testFailSlowResultSuccess = TestCase $ do
+  let service = makePersistentService defaultStore { 
+    findSlowState = const $ pure $ Just Running,
+    updateSlowState = (const . const) $ pure () 
+    }
+  actual <- failSlowSuite service (BuildId "123")
+  let expected = SuccessfullyChangedState
+  actual @?= expected
+
+testFailSlowResultAdvancesAndUpdates :: Test
+testFailSlowResultAdvancesAndUpdates = TestCase $ do
+  writtenState <- newIORef Running
+  let service = makePersistentService defaultStore { 
+    findSlowState = const $ pure $ Just Running,
+    updateSlowState = \_ newState -> liftIO $ writeIORef writtenState newState
+    }
+  failSlowSuite service (BuildId "123")
+  actual <- readIORef writtenState
+  let expected = Failed
   actual @?= expected
 
 defaultBuildPair :: BuildPair
@@ -105,5 +177,7 @@ defaultStore = BuildStore {
   findBuildPair = undefined, 
   createBuildUnlessExists = undefined,
   findFastState = undefined,
-  updateFastState = undefined
+  updateFastState = undefined,
+  findSlowState = undefined,
+  updateSlowState = undefined
   }

@@ -18,10 +18,10 @@ makePersistentService buildStore =
   BuildService
     { getBuildSummary = pGetBuildSummary buildStore,
       createBuild = pCreateBuild buildStore,
-      advanceFastSuite = pAdvanceFastResult buildStore,
-      advanceSlowSuite = undefined,
-      failFastSuite = undefined,
-      failSlowSuite = undefined
+      advanceFastSuite = pAdvanceFastSuite buildStore,
+      advanceSlowSuite = pAdvanceSlowSuite buildStore,
+      failFastSuite = pFailFastSuite buildStore,
+      failSlowSuite = pFailSlowSuite buildStore
     }
 
 pGetBuildSummary :: BuildStore ctx -> BuildId -> IO (Maybe BuildSummary)
@@ -41,12 +41,39 @@ pCreateBuild buildStore versionId buildId =
       Left () -> Conflict
       Right () -> SuccessfullyCreated
 
-pAdvanceFastResult :: BuildStore ctx -> BuildId -> IO StateChangeOutcome
-pAdvanceFastResult buildStore buildId = atomically buildStore $ do
+pAdvanceFastSuite :: BuildStore ctx -> BuildId -> IO StateChangeOutcome
+pAdvanceFastSuite buildStore buildId = atomically buildStore $ do
   maybeState <- findFastState buildStore buildId
   case maybeState of
     Nothing -> pure NotFound
     Just state -> advanceAndUpdate (updateFastState buildStore buildId) state
+
+pAdvanceSlowSuite :: BuildStore ctx -> BuildId -> IO StateChangeOutcome
+pAdvanceSlowSuite buildStore buildId = atomically buildStore $ do
+  maybeState <- findSlowState buildStore buildId
+  case maybeState of
+    Nothing -> pure NotFound
+    Just state -> advanceAndUpdate (updateSlowState buildStore buildId) state
+
+pFailFastSuite :: BuildStore ctx -> BuildId -> IO StateChangeOutcome
+pFailFastSuite buildStore buildId = atomically buildStore $ do
+  maybeState <- findFastState buildStore buildId
+  case maybeState of
+    Nothing -> pure NotFound
+    Just Failed -> pure SuccessfullyChangedState
+    Just _ -> do
+      updateFastState buildStore buildId Failed
+      pure SuccessfullyChangedState
+
+pFailSlowSuite :: BuildStore ctx -> BuildId -> IO StateChangeOutcome
+pFailSlowSuite buildStore buildId = atomically buildStore $ do
+  maybeState <- findSlowState buildStore buildId
+  case maybeState of
+    Nothing -> pure NotFound
+    Just Failed -> pure SuccessfullyChangedState
+    Just _ -> do
+      updateSlowState buildStore buildId Failed
+      pure SuccessfullyChangedState
 
 type StateUpdater ctx = BuildState -> AtomicM ctx ()
 

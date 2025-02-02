@@ -1,3 +1,4 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Server.Service.PersistentTest
@@ -5,17 +6,16 @@ module Server.Service.PersistentTest
   )
 where
 
+import Control.Monad.IO.Class (liftIO)
+import Control.Monad.Reader (runReaderT)
+import Control.Monad.Reader.Class (MonadReader)
+import Data.IORef
 import Server.DataStore (BuildPair (..), BuildRecord (..), BuildStore (..))
+import Server.DataStore.Atomic (AtomicM (..))
 import Server.Domain (BuildId (..), BuildState (..), BuildSummary (..), VersionId (..))
 import Server.Service (BuildService (..), CreationOutcome (..), StateChangeOutcome (..))
 import Server.Service.Persistent (makePersistentService)
 import Test.HUnit (Test (TestCase, TestLabel, TestList), assertBool, (@?=))
-import Control.Monad.Reader (runReaderT)
-import Control.Monad.Reader.Class (MonadReader)
-import Server.DataStore.Atomic (AtomicM(..))
-import Control.Monad.IO.Class (liftIO)
-
-import Data.IORef
 
 tests :: Test
 tests =
@@ -34,7 +34,6 @@ tests =
       TestLabel "given a store that returns a slow state, and succeeds in updating it, failSlowSuite reports SuccessfullyChangedState" testFailSlowResultSuccess,
       TestLabel "given a store that returns a slow state, failSlowSuite advances and updates the slow state" testFailSlowResultAdvancesAndUpdates
     ]
-
 
 testGetBuildSummaryNonExistent :: Test
 testGetBuildSummaryNonExistent = TestCase $ do
@@ -70,17 +69,14 @@ testCreateBuildSuccess = TestCase $ do
 
 testAdvanceFastResultNonExistent :: Test
 testAdvanceFastResultNonExistent = TestCase $ do
-  let service = makePersistentService defaultStore { findFastState = const $ pure Nothing }
+  let service = makePersistentService defaultStore {findFastState = const $ pure Nothing}
   actual <- advanceFastSuite service (BuildId "123")
   let expected = NotFound
   actual @?= expected
 
 testAdvanceFastResultSuccess :: Test
 testAdvanceFastResultSuccess = TestCase $ do
-  let service = makePersistentService defaultStore { 
-    findFastState = const $ pure $ Just Running,
-    updateFastState = (const . const) $ pure () 
-    }
+  let service = makeServiceWithFastStubs Running
   actual <- advanceFastSuite service (BuildId "123")
   let expected = SuccessfullyChangedState
   actual @?= expected
@@ -88,11 +84,7 @@ testAdvanceFastResultSuccess = TestCase $ do
 testAdvanceFastResultAdvancesAndUpdates :: Test
 testAdvanceFastResultAdvancesAndUpdates = TestCase $ do
   writtenState <- newIORef Init
-
-  let service = makePersistentService defaultStore { 
-    findFastState = const $ pure $ Just Init,
-    updateFastState = \_ newState -> liftIO $ writeIORef writtenState newState
-    }
+  let service = makeServiceWithFastMocks writtenState
   advanceFastSuite service (BuildId "123")
   actual <- readIORef writtenState
   let expected = Running
@@ -100,10 +92,7 @@ testAdvanceFastResultAdvancesAndUpdates = TestCase $ do
 
 testAdvanceSlowResultSuccess :: Test
 testAdvanceSlowResultSuccess = TestCase $ do
-  let service = makePersistentService defaultStore { 
-    findSlowState = const $ pure $ Just Init,
-    updateSlowState = (const . const) $ pure () 
-    }
+  let service = makeServiceWithSlowStubs Init
   actual <- advanceSlowSuite service (BuildId "123")
   let expected = SuccessfullyChangedState
   actual @?= expected
@@ -111,10 +100,7 @@ testAdvanceSlowResultSuccess = TestCase $ do
 testAdvanceSlowResultAdvancesAndUpdates :: Test
 testAdvanceSlowResultAdvancesAndUpdates = TestCase $ do
   writtenState <- newIORef Init
-  let service = makePersistentService defaultStore { 
-    findSlowState = const $ pure $ Just Init,
-    updateSlowState = \_ newState -> liftIO $ writeIORef writtenState newState
-    }
+  let service = makeServiceWithSlowMocks writtenState
   advanceSlowSuite service (BuildId "123")
   actual <- readIORef writtenState
   let expected = Running
@@ -122,10 +108,7 @@ testAdvanceSlowResultAdvancesAndUpdates = TestCase $ do
 
 testFailFastResultSuccess :: Test
 testFailFastResultSuccess = TestCase $ do
-  let service = makePersistentService defaultStore { 
-    findFastState = const $ pure $ Just Running,
-    updateFastState = (const . const) $ pure () 
-    }
+  let service = makeServiceWithFastStubs Running
   actual <- failFastSuite service (BuildId "123")
   let expected = SuccessfullyChangedState
   actual @?= expected
@@ -133,10 +116,7 @@ testFailFastResultSuccess = TestCase $ do
 testFailFastResultAdvancesAndUpdates :: Test
 testFailFastResultAdvancesAndUpdates = TestCase $ do
   writtenState <- newIORef Running
-  let service = makePersistentService defaultStore { 
-    findFastState = const $ pure $ Just Running,
-    updateFastState = \_ newState -> liftIO $ writeIORef writtenState newState
-    }
+  let service = makeServiceWithFastMocks writtenState
   failFastSuite service (BuildId "123")
   actual <- readIORef writtenState
   let expected = Failed
@@ -144,10 +124,7 @@ testFailFastResultAdvancesAndUpdates = TestCase $ do
 
 testFailSlowResultSuccess :: Test
 testFailSlowResultSuccess = TestCase $ do
-  let service = makePersistentService defaultStore { 
-    findSlowState = const $ pure $ Just Running,
-    updateSlowState = (const . const) $ pure () 
-    }
+  let service = makeServiceWithSlowStubs Running
   actual <- failSlowSuite service (BuildId "123")
   let expected = SuccessfullyChangedState
   actual @?= expected
@@ -155,29 +132,71 @@ testFailSlowResultSuccess = TestCase $ do
 testFailSlowResultAdvancesAndUpdates :: Test
 testFailSlowResultAdvancesAndUpdates = TestCase $ do
   writtenState <- newIORef Running
-  let service = makePersistentService defaultStore { 
-    findSlowState = const $ pure $ Just Running,
-    updateSlowState = \_ newState -> liftIO $ writeIORef writtenState newState
-    }
+  let service = makeServiceWithSlowMocks writtenState
   failSlowSuite service (BuildId "123")
   actual <- readIORef writtenState
   let expected = Failed
   actual @?= expected
 
+makeServiceWithFastStubs :: BuildState -> BuildService
+makeServiceWithFastStubs inital =
+  makePersistentService
+    defaultStore
+      { findFastState = makeStubbedFind inital,
+        updateFastState = makeStubbedUpdate
+      }
+
+makeServiceWithSlowStubs :: BuildState -> BuildService
+makeServiceWithSlowStubs inital =
+  makePersistentService
+    defaultStore
+      { findSlowState = makeStubbedFind inital,
+        updateSlowState = makeStubbedUpdate
+      }
+
+makeStubbedFind :: BuildState -> (BuildId -> AtomicM ctx (Maybe BuildState))
+makeStubbedFind state = const $ pure $ Just state
+
+makeStubbedUpdate :: (BuildId -> BuildState -> AtomicM ctx ())
+makeStubbedUpdate = (const . const) $ pure ()
+
+makeMockedFind :: IORef BuildState -> (BuildId -> AtomicM ctx (Maybe BuildState))
+makeMockedFind ref = const $ fmap Just $ liftIO $ readIORef ref
+
+makeMockedUpdate :: IORef BuildState -> (BuildId -> BuildState -> AtomicM ctx ())
+makeMockedUpdate ref = \_ newState -> liftIO $ writeIORef ref newState
+
+makeServiceWithFastMocks :: IORef BuildState -> BuildService
+makeServiceWithFastMocks ref =
+  makePersistentService
+    defaultStore
+      { findFastState = makeMockedFind ref,
+        updateFastState = makeMockedUpdate ref
+      }
+
+makeServiceWithSlowMocks :: IORef BuildState -> BuildService
+makeServiceWithSlowMocks ref =
+  makePersistentService
+    defaultStore
+      { findSlowState = makeMockedFind ref,
+        updateSlowState = makeMockedUpdate ref
+      }
+
 defaultBuildPair :: BuildPair
 defaultBuildPair = BuildPair {slowBuild = BuildRecord {buildId = "123", versionId = "04a66b1n", state = Init}, fastBuild = BuildRecord {buildId = "123", versionId = "04a66b1n", state = Running}}
 
 defaultAtomically :: AtomicM ctx a -> IO a
-defaultAtomically action = 
+defaultAtomically action =
   runReaderT (runAtomicM action) undefined
 
 defaultStore :: BuildStore ctx
-defaultStore = BuildStore {
-  atomically = defaultAtomically,
-  findBuildPair = undefined, 
-  createBuildUnlessExists = undefined,
-  findFastState = undefined,
-  updateFastState = undefined,
-  findSlowState = undefined,
-  updateSlowState = undefined
-  }
+defaultStore =
+  BuildStore
+    { atomically = defaultAtomically,
+      findBuildPair = undefined,
+      createBuildUnlessExists = undefined,
+      findFastState = undefined,
+      updateFastState = undefined,
+      findSlowState = undefined,
+      updateSlowState = undefined
+    }

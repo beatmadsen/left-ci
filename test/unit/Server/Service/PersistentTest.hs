@@ -13,6 +13,9 @@ import Test.HUnit (Test (TestCase, TestLabel, TestList), assertBool, (@?=))
 import Control.Monad.Reader (runReaderT)
 import Control.Monad.Reader.Class (MonadReader)
 import Server.DataStore.Atomic (AtomicM(..))
+import Control.Monad.IO.Class (liftIO)
+
+import Data.IORef
 
 tests :: Test
 tests =
@@ -21,7 +24,9 @@ tests =
       TestLabel "given a store that returns two rows for a build id, getBuildSummary returns a summary" testGetBuildSummaryTwoRows,
       TestLabel "given a store that reports build id already exists, createBuild reports conflict" testCreateBuildAlreadyExists,
       TestLabel "given a store that reports build id does not exist, createBuild reports success" testCreateBuildSuccess,
-      TestLabel "given a store and a non-existent build id, advanceFastResult reports NotFound" testAdvanceFastResultNonExistent
+      TestLabel "given a store and a non-existent build id, advanceFastResult reports NotFound" testAdvanceFastResultNonExistent,
+      TestLabel "given a store that returns a fast state, and succeeds in updating it, advanceFastResult reports SuccessfullyChangedState" testAdvanceFastResultSuccess,
+      TestLabel "given a store that returns a fast state, advanceFastResult advances and updates the fast state" testAdvanceFastResultAdvancesAndUpdates
     ]
 
 
@@ -64,6 +69,28 @@ testAdvanceFastResultNonExistent = TestCase $ do
   let expected = NotFound
   actual @?= expected
 
+testAdvanceFastResultSuccess :: Test
+testAdvanceFastResultSuccess = TestCase $ do
+  let service = makePersistentService defaultStore { 
+    findFastState = const $ pure $ Just Running,
+    updateFastState = (const . const) $ pure () 
+    }
+  actual <- advanceFastResult service (BuildId "123")
+  let expected = SuccessfullyChangedState
+  actual @?= expected
+
+testAdvanceFastResultAdvancesAndUpdates :: Test
+testAdvanceFastResultAdvancesAndUpdates = TestCase $ do
+  writtenState <- newIORef Init
+
+  let service = makePersistentService defaultStore { 
+    findFastState = const $ pure $ Just Init,
+    updateFastState = \buildId newState -> liftIO $ writeIORef writtenState newState
+    }
+  advanceFastResult service (BuildId "123")
+  actual <- readIORef writtenState
+  let expected = Running
+  actual @?= expected
 
 defaultBuildPair :: BuildPair
 defaultBuildPair = BuildPair {slowBuild = BuildRecord {buildId = "123", versionId = "04a66b1n", state = Init}, fastBuild = BuildRecord {buildId = "123", versionId = "04a66b1n", state = Running}}

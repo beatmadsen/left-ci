@@ -3,11 +3,12 @@
 module Server.Service
   ( BuildService (..),
     CreationOutcome (..),
-    StateChangeOutcome (..)
+    StateChangeOutcome (..),
+    advance
   )
 where
 
-import Server.Domain (BuildId, BuildState, BuildSummary, VersionId)
+import Server.Domain (BuildId, BuildState (..), BuildSummary, VersionId)
 
 data CreationOutcome = Conflict | SuccessfullyCreated deriving (Show, Eq)
 data StateChangeOutcome = NotFound | SuccessfullyChangedState deriving (Show, Eq)
@@ -20,3 +21,8 @@ data BuildService = BuildService
     failFastResult :: BuildId -> IO StateChangeOutcome,
     failSlowResult :: BuildId -> IO StateChangeOutcome
   }
+
+advance :: BuildState -> BuildState
+advance Init = Running
+advance Running = Passed
+advance s = s

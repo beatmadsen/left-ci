@@ -42,4 +42,7 @@ pAdvanceFastResult buildStore buildId =
     maybeState <- findFastState buildStore buildId
     case maybeState of
       Nothing -> pure NotFound
-      Just state -> undefined
+      Just state -> do
+        let newState = advance state
+        updateFastState buildStore buildId newState
+        pure SuccessfullyChangedState

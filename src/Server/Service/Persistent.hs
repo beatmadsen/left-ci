@@ -31,7 +31,7 @@ pGetBuildSummary buildStore buildId =
     pure $ fmap extractSummary maybeBuildPair
 
 extractSummary :: BuildPair -> BuildSummary
-extractSummary bp = BuildSummary {slowState = state (slowBuild bp), fastState = state (fastBuild bp)}
+extractSummary bp = BuildSummary {slowState = state (slowSuite bp), fastState = state (fastSuite bp)}
 
 pCreateBuild :: BuildStore ctx -> VersionId -> BuildId -> IO CreationOutcome
 pCreateBuild buildStore versionId buildId =

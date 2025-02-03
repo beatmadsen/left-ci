@@ -6,7 +6,6 @@ module Server.Domain
     BuildSummary (..),
     VersionId(..),
     BuildId(..),
-    Cadence(..)
   )
 where
 
@@ -28,9 +27,6 @@ newtype BuildId = BuildId Text
 instance IsString BuildId where
     fromString :: String -> BuildId
     fromString = BuildId . fromString
-
-data Cadence = Fast | Slow
-  deriving (Show, Eq)
 
 data BuildState = Init | Running | Passed | Failed
   deriving (Show, Eq)

@@ -17,7 +17,7 @@ library:
     - Server.Service.Persistent
     - Server.DataStore
     - Server.DataStore.Atomic
-    - Server.DataStore.SQLiteBuildStore
+    - Server.DataStore.SQLiteStore
     - Server.Routes
     - Server.Domain
   dependencies:

@@ -18,15 +18,15 @@ data BuildRecord = BuildRecord
   deriving (Show, Eq)
 
 data BuildPair = BuildPair
-  { slowBuild :: BuildRecord,
-    fastBuild :: BuildRecord
+  { slowSuite :: BuildRecord,
+    fastSuite :: BuildRecord
   }
   deriving (Show, Eq)
 
 data BuildStore ctx = BuildStore
-  { findBuildPair :: BuildId -> AtomicM ctx (Maybe BuildPair),
+  { atomically :: forall a. AtomicM ctx a -> IO a,
+    findBuildPair :: BuildId -> AtomicM ctx (Maybe BuildPair),
     createBuildUnlessExists :: BuildId -> VersionId -> AtomicM ctx (Either () ()),
-    atomically :: forall a. AtomicM ctx a -> IO a,
     findFastState :: BuildId -> AtomicM ctx (Maybe BuildState),
     updateFastState :: BuildId -> BuildState -> AtomicM ctx (),
     findSlowState :: BuildId -> AtomicM ctx (Maybe BuildState),

@@ -183,7 +183,7 @@ makeServiceWithSlowMocks ref =
       }
 
 defaultBuildPair :: BuildPair
-defaultBuildPair = BuildPair {slowBuild = BuildRecord {buildId = "123", versionId = "04a66b1n", state = Init}, fastBuild = BuildRecord {buildId = "123", versionId = "04a66b1n", state = Running}}
+defaultBuildPair = BuildPair {slowSuite = BuildRecord {buildId = "123", versionId = "04a66b1n", state = Init}, fastSuite = BuildRecord {buildId = "123", versionId = "04a66b1n", state = Running}}
 
 defaultAtomically :: AtomicM ctx a -> IO a
 defaultAtomically action =

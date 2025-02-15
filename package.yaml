@@ -32,6 +32,7 @@ library:
     - bytestring
     - sqlite-simple
     - resource-pool
+    - filepath
 
 executables:
   left-ci:
@@ -65,5 +66,8 @@ tests:
       - aeson
       - sqlite-simple
       - resource-pool
+      - filepath
+      - random
+      - uuid
     main: Main.hs
     source-dirs: test/integration

@@ -22,9 +22,8 @@ initSQLiteDatabase subDir = do
   dbDir <- tmpDir subDir
   let dbPath = dbDir </> "left-ci.db"
   conn <- openConnection dbPath 
-  
-  -- Create tables and set up initial schema
-  execute_ conn "CREATE TABLE IF NOT EXISTS build (id INTEGER PRIMARY KEY)"
+  -- create versions table
+  execute_ conn "CREATE TABLE IF NOT EXISTS versions (id INTEGER PRIMARY KEY, commit_hash TEXT NOT NULL UNIQUE, created_at DATETIME NOT NULL)"
   
   close conn
   -- Return a function that creates fresh connections

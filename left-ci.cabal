@@ -66,6 +66,7 @@ test-suite integration
   main-is: Main.hs
   other-modules:
       Config.ValidatorTest
+      RandomHelper
       Server.DataStore.SQLiteSetupTest
       Server.DataStore.TmpDirTest
       Server.ServiceTest

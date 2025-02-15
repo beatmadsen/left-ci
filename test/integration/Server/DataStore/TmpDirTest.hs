@@ -8,9 +8,7 @@ import Server.DataStore.TmpDir
 import System.Directory (doesDirectoryExist, removeDirectoryRecursive, doesFileExist)
 import Test.HUnit
 import System.FilePath ((</>))
-import Control.Monad (replicateM)
-import System.Random (randomRIO)
-
+import RandomHelper (getUniqueDirName)
 
 tests :: Test
 tests =
@@ -60,14 +58,6 @@ testFileCreation = TestCase $ bracket
     actual <- doesFileExist filePath
     assertEqual "File is created" True actual
   )
-
-getUniqueDirName :: IO FilePath
-getUniqueDirName = do
-  replicateM 10 $ do
-    i <- randomRIO (0, length alphabet - 1)
-    return $ alphabet !! i
-  where
-    alphabet = ['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9']
 
 createFile :: FilePath -> IO ()
 createFile path = do

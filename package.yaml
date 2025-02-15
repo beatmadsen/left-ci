@@ -18,6 +18,7 @@ library:
     - Server.DataStore
     - Server.DataStore.Atomic
     - Server.DataStore.SQLiteStore
+    - Server.DataStore.TmpDir
     - Server.Routes
     - Server.Domain
   dependencies:

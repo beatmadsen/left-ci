@@ -1,12 +1,11 @@
 - Branch out into different functions for running the server and installing the application
 
 - Server
-  - Routes
-    - POST /build/:buildId/fast/advance and other actions should return 404 if the build id is not found
   - Service
     - DataStore
-      - Support atomic operations
-    - Test advancing state inside db transaction; How do we represent that/abstract it away in the BuildStore?
+      - SQLiteStore
+        - Create or locate the database file in $TMPDIR/left-ci/left-ci.db
+
 
 - Installer
   - Create .left-ci directory

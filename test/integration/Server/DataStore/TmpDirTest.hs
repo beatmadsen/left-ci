@@ -61,7 +61,7 @@ testFileCreation = TestCase $ bracket
     assertEqual "File is created" True actual
   )
 
-getUniqueDirName :: IO String
+getUniqueDirName :: IO FilePath
 getUniqueDirName = do
   replicateM 10 $ do
     i <- randomRIO (0, length alphabet - 1)

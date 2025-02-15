@@ -1,50 +1,41 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Server.DataStore.SQLiteStore
-  (
-  -- We'll add exports here as we implement them
+  ( makeSQLiteBuildStore,
   )
 where
 
 import Control.Monad.Reader (local)
-import Data.Pool (Pool, takeResource)
-import Database.SQLite.Simple (Connection, Query(..), execute_, open, close)
+import Database.SQLite.Simple (Connection, Query (..), close, execute_, open)
 import Server.DataStore (BuildPair (..), BuildStore (..))
 import Server.DataStore.Atomic (AtomicM (..), executeAtomic)
+import Server.DataStore.SQLiteSetup
 import Server.Domain (BuildId, BuildState, VersionId)
 
 newtype OngoingTransaction = OngoingTransaction
   { connection :: Connection
   }
 
-setupSchema :: IO ()
-setupSchema = do
-  connection <- open "buildstore.db"
-  execute_ connection 
-    " CREATE TABLE IF NOT EXISTS builds (id TEXT PRIMARY KEY, version_id TEXT, fast_state TEXT, slow_state TEXT)\
-    \ "
-  
-  close connection
-
-makeSQLiteBuildStore :: IO (BuildStore OngoingTransaction)
-makeSQLiteBuildStore = do
-  pool <- newPool
+makeSQLiteBuildStore :: FilePath -> IO (BuildStore OngoingTransaction)
+makeSQLiteBuildStore subDir = do
+  (dbDir, dbPath, client) <- initSQLiteDatabase subDir
   pure
     BuildStore
       { findBuildPair = sqlFindBuildPair,
         createBuildUnlessExists = sqlCreateBuildUnlessExists,
-        atomically = sqlAtomically pool,
+        atomically = sqlAtomically client,
         findFastState = sqlFindFastState,
         updateFastState = sqlUpdateFastState,
         findSlowState = sqlFindSlowState,
         updateSlowState = sqlUpdateSlowState
       }
 
-sqlAtomically :: Pool Connection -> AtomicM OngoingTransaction a -> IO a
-sqlAtomically pool atomicAction = do
-  ot <- makeOngoingTransaction pool
+sqlAtomically :: SQLiteClient -> AtomicM OngoingTransaction a -> IO a
+sqlAtomically client atomicAction = do
+  connection <- client
+  ot <- beginTransaction connection
   result <- executeAtomic atomicAction ot
-  commitOngoingTransaction pool ot
+  commitOngoingTransaction ot
   return result
 
 sqlFindBuildPair :: BuildId -> AtomicM OngoingTransaction (Maybe BuildPair)
@@ -67,19 +58,8 @@ sqlUpdateSlowState buildId state = undefined
 
 -- helpers and ideas
 
-newPool :: IO (Pool Connection)
-newPool = undefined
-
-checkoutConnection :: Pool Connection -> IO Connection
-checkoutConnection = undefined
-
 beginTransaction :: Connection -> IO OngoingTransaction
 beginTransaction connection = undefined
 
-makeOngoingTransaction :: Pool Connection -> IO OngoingTransaction
-makeOngoingTransaction pool = do
-  connection <- checkoutConnection pool
-  beginTransaction connection
-
-commitOngoingTransaction :: Pool Connection -> OngoingTransaction -> IO ()
-commitOngoingTransaction pool = undefined
+commitOngoingTransaction :: OngoingTransaction -> IO ()
+commitOngoingTransaction ot = undefined

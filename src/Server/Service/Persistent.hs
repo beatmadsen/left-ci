@@ -25,21 +25,19 @@ makePersistentService buildStore =
     }
 
 pGetBuildSummary :: BuildStore ctx -> BuildId -> IO (Maybe BuildSummary)
-pGetBuildSummary buildStore buildId =
-  atomically buildStore $ do
-    maybeBuildPair <- findBuildPair buildStore buildId
-    pure $ fmap extractSummary maybeBuildPair
+pGetBuildSummary buildStore buildId = do
+  maybeBuildPair <- atomically buildStore $ findBuildPair buildStore buildId
+  pure $ fmap extractSummary maybeBuildPair
 
 extractSummary :: BuildPair -> BuildSummary
 extractSummary bp = BuildSummary {slowState = state (slowSuite bp), fastState = state (fastSuite bp)}
 
 pCreateBuild :: BuildStore ctx -> VersionId -> BuildId -> IO CreationOutcome
-pCreateBuild buildStore versionId buildId =
-  atomically buildStore $ do
-    result <- createBuildUnlessExists buildStore buildId versionId
-    pure $ case result of
-      Left () -> Conflict
-      Right () -> SuccessfullyCreated
+pCreateBuild buildStore versionId buildId = do
+  result <- atomically buildStore $ createBuildUnlessExists buildStore buildId versionId
+  pure $ case result of
+    Left () -> Conflict
+    Right () -> SuccessfullyCreated
 
 pAdvanceFastSuite :: BuildStore ctx -> BuildId -> IO StateChangeOutcome
 pAdvanceFastSuite buildStore buildId = atomically buildStore $ do

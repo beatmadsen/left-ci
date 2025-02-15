@@ -3,6 +3,7 @@
 - Server
   - Service
     - DataStore
+      - Remove atomically from indicated query functions
       - SQLiteStore
         - Create or locate the database file in $TMPDIR/left-ci/left-ci.db
 

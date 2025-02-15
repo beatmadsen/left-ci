@@ -17,6 +17,7 @@ library
       Server.DataStore
       Server.DataStore.Atomic
       Server.DataStore.SQLiteStore
+      Server.DataStore.SQLiteSetup
       Server.DataStore.TmpDir
       Server.Routes
       Server.Domain
@@ -64,6 +65,7 @@ test-suite integration
   main-is: Main.hs
   other-modules:
       Config.ValidatorTest
+      Server.DataStore.SQLiteSetupTest
       Server.DataStore.TmpDirTest
       Server.ServiceTest
       Paths_left_ci

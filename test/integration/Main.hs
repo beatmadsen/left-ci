@@ -6,6 +6,7 @@ import qualified Config.ValidatorTest ( tests )
 import qualified Server.ServiceTest ( tests )
 import qualified Server.DataStore.TmpDirTest ( tests )
 import qualified Server.DataStore.SQLiteSetupTest ( tests )
+import qualified Server.DataStore.SQLiteStoreTest ( tests )
 main :: IO ()
 main = do
     counts <- runTestTT $ TestList 
@@ -13,6 +14,7 @@ main = do
         , Server.ServiceTest.tests
         , Server.DataStore.TmpDirTest.tests
         , Server.DataStore.SQLiteSetupTest.tests
+        , Server.DataStore.SQLiteStoreTest.tests
         ]
     putStrLn $ "Tests run: " ++ show (tried counts)
     putStrLn $ "Failures: " ++ show (failures counts)

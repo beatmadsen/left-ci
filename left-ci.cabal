@@ -68,6 +68,7 @@ test-suite integration
       Config.ValidatorTest
       RandomHelper
       Server.DataStore.SQLiteSetupTest
+      Server.DataStore.SQLiteStoreTest
       Server.DataStore.TmpDirTest
       Server.ServiceTest
       Paths_left_ci

@@ -23,10 +23,6 @@ newtype OngoingTransaction = OngoingTransaction
   { connection :: Connection
   }
 
-type BuildKey = Int
-
-type VersionKey = Int
-
 makeSQLiteBuildStore :: FilePath -> IO (BuildStore OngoingTransaction)
 makeSQLiteBuildStore subDir = do
   (dbDir, dbPath, client) <- initSQLiteDatabase subDir
@@ -127,20 +123,19 @@ createVersionAndBuildAndExecutions :: Connection -> VersionId -> BuildId -> IO (
 createVersionAndBuildAndExecutions connection versionId buildId = do
   now <- getCurrentTime
   insertOrIgnoreVersion connection versionId now
-  buildKey <- insertBuild connection versionId buildId now
-  insertFastExecution connection buildKey now
-  insertSlowExecution connection buildKey now
+  insertBuild connection versionId buildId now
+  insertFastExecution connection buildId now
+  insertSlowExecution connection buildId now
 
-insertOrIgnoreVersion :: Connection -> VersionId -> UTCTime -> IO VersionKey
+insertOrIgnoreVersion :: Connection -> VersionId -> UTCTime -> IO ()
 insertOrIgnoreVersion connection versionId now = do
   let VersionId commitHash = versionId
   execute
     connection
     "INSERT OR IGNORE INTO versions (commit_hash, created_at) VALUES (?, ?)"
     (commitHash, now)
-  getVersionKey connection versionId
 
-insertBuild :: Connection -> VersionId -> BuildId -> UTCTime -> IO BuildKey
+insertBuild :: Connection -> VersionId -> BuildId -> UTCTime -> IO ()
 insertBuild connection (VersionId commitHash) buildId now = do
   let BuildId globalId = buildId
   execute
@@ -152,39 +147,30 @@ insertBuild connection (VersionId commitHash) buildId now = do
       WHERE v.commit_hash = ?
     |]
     (globalId, now, commitHash)
-  getBuildKey connection buildId
 
-getVersionKey :: Connection -> VersionId -> IO VersionKey
-getVersionKey connection (VersionId versionId) = do
-  [Only versionKey] <-
-    query
-      connection
-      "SELECT id FROM versions WHERE commit_hash = ?"
-      (Only versionId)
-  return versionKey
-
-getBuildKey :: Connection -> BuildId -> IO BuildKey
-getBuildKey connection (BuildId buildId) = do
-  [Only buildKey] <-
-    query
-      connection
-      "SELECT id FROM builds WHERE global_id = ?"
-      (Only buildId)
-  return buildKey
-
-insertFastExecution :: Connection -> BuildKey -> UTCTime -> IO ()
-insertFastExecution connection buildKey now = do
+insertFastExecution :: Connection -> BuildId -> UTCTime -> IO ()
+insertFastExecution connection (BuildId globalId) now = do
   execute
     connection
-    "INSERT INTO executions (suite_id, build_id, state, created_at, updated_at) VALUES (200, ?, ?, ?, ?)"
-    (buildKey, (show Init), now, now)
+    [sql|
+      INSERT INTO executions (suite_id, build_id, state, created_at, updated_at)
+      SELECT s.id, b.id, ?, ?, ?
+      FROM builds b, suites s
+      WHERE b.global_id = ? AND s.name = 'fast'
+    |]
+    (show Init, now, now, globalId)
 
-insertSlowExecution :: Connection -> BuildKey -> UTCTime -> IO ()
-insertSlowExecution connection buildKey now = do
+insertSlowExecution :: Connection -> BuildId -> UTCTime -> IO ()
+insertSlowExecution connection (BuildId globalId) now = do
   execute
     connection
-    "INSERT INTO executions (suite_id, build_id, state, created_at, updated_at) VALUES (100, ?, ?, ?, ?)"
-    (buildKey, (show Init), now, now)
+    [sql|
+      INSERT INTO executions (suite_id, build_id, state, created_at, updated_at)
+      SELECT s.id, b.id, ?, ?, ?
+      FROM builds b, suites s
+      WHERE b.global_id = ? AND s.name = 'slow'
+    |]
+    (show Init, now, now, globalId)
 
 sqlFindFastState :: BuildId -> AtomicM OngoingTransaction (Maybe BuildState)
 sqlFindFastState buildId = do

@@ -124,8 +124,8 @@ createVersionAndBuildAndExecutions connection versionId buildId = do
   now <- getCurrentTime
   insertOrIgnoreVersion connection versionId now
   insertBuild connection versionId buildId now
-  insertFastExecution connection buildId now
-  insertSlowExecution connection buildId now
+  insertExecution "fast" connection buildId now
+  insertExecution "slow" connection buildId now
 
 insertOrIgnoreVersion :: Connection -> VersionId -> UTCTime -> IO ()
 insertOrIgnoreVersion connection versionId now = do
@@ -148,29 +148,17 @@ insertBuild connection (VersionId commitHash) buildId now = do
     |]
     (globalId, now, commitHash)
 
-insertFastExecution :: Connection -> BuildId -> UTCTime -> IO ()
-insertFastExecution connection (BuildId globalId) now = do
+insertExecution :: String -> Connection -> BuildId -> UTCTime -> IO ()
+insertExecution suiteName connection (BuildId globalId) now = do
   execute
     connection
     [sql|
       INSERT INTO executions (suite_id, build_id, state, created_at, updated_at)
       SELECT s.id, b.id, ?, ?, ?
       FROM builds b, suites s
-      WHERE b.global_id = ? AND s.name = 'fast'
+      WHERE b.global_id = ? AND s.name = ?
     |]
-    (show Init, now, now, globalId)
-
-insertSlowExecution :: Connection -> BuildId -> UTCTime -> IO ()
-insertSlowExecution connection (BuildId globalId) now = do
-  execute
-    connection
-    [sql|
-      INSERT INTO executions (suite_id, build_id, state, created_at, updated_at)
-      SELECT s.id, b.id, ?, ?, ?
-      FROM builds b, suites s
-      WHERE b.global_id = ? AND s.name = 'slow'
-    |]
-    (show Init, now, now, globalId)
+    (show Init, now, now, globalId, suiteName)
 
 sqlFindFastState :: BuildId -> AtomicM OngoingTransaction (Maybe BuildState)
 sqlFindFastState buildId = do

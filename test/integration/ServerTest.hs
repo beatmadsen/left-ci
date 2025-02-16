@@ -15,7 +15,6 @@ import Control.Concurrent (forkIO, threadDelay, killThread)
 import Network.HTTP.Client (newManager, defaultManagerSettings, parseRequest, httpNoBody, HttpException(..), Response, httpLbs, responseBody, responseStatus, Request(..))
 import Control.Exception (catch)
 import Control.Monad (when)
-import qualified Data.ByteString.Lazy.Char8 as BL
 import Network.HTTP.Types (statusCode, methodPost, Method)
 
 tests :: Test
@@ -41,20 +40,20 @@ testX = TestCase $ do
   manager <- newManager defaultManagerSettings
   request <- parseRequest $ "http://localhost:" ++ show port ++ "/version/abcd1234/build/abcdef"
   let postRequest = request { method = methodPost }
-  result <- (
+  (statusOk, result) <- (
     do
       response <- httpLbs postRequest manager
-      putStrLn $ "Status code: " ++ (show $ statusCode $ responseStatus response)
-      putStrLn $ "Server response: " ++ (BL.unpack $ responseBody response)
-      return True
+      let status = statusCode $ responseStatus response
+      return (status == 200, True)
     ) `catch` errorHandler
-    
+  
   -- Clean up
   killThread threadId
   exists <- doesFileExist dbDir
   when exists $ removeDirectoryRecursive dbDir
   
   assertBool "Server should start successfully" result
+  assertBool "Status code should be 200" statusOk
 
-errorHandler :: HttpException -> IO Bool
-errorHandler _ = return False
+errorHandler :: HttpException -> IO (Bool, Bool)
+errorHandler _ = return (False, False)

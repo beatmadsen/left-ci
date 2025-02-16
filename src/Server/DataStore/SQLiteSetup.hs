@@ -30,7 +30,6 @@ initSQLiteDatabase subDir = do
 openConnection :: FilePath -> IO Connection
 openConnection dbPath = do
   conn <- open dbPath
-  putStrLn $ "Opened connection in client to: " ++ dbPath
   execute_ conn "PRAGMA foreign_keys = ON"
   execute_ conn "PRAGMA journal_mode = WAL"
   return conn

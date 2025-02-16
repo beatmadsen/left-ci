@@ -1,5 +1,6 @@
 module RandomHelper(
-  getUniqueDirName
+  getUniqueDirName,
+  getEphemeralPort
 ) where
 
 import Control.Monad (replicateM)
@@ -12,3 +13,8 @@ getUniqueDirName = do
     return $ alphabet !! i
   where
     alphabet = ['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9']
+
+
+getEphemeralPort :: IO Int
+getEphemeralPort = do
+  randomRIO (49152, 65535)

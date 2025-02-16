@@ -62,6 +62,7 @@ tests:
       - directory
       - network
       - wai
+      - warp
       - bytestring
       - wai-extra
       - http-types
@@ -72,5 +73,6 @@ tests:
       - filepath
       - random
       - sqlite-simple
+      - http-client
     main: Main.hs
     source-dirs: test/integration

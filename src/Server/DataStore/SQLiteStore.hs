@@ -18,6 +18,10 @@ newtype OngoingTransaction = OngoingTransaction
   { connection :: Connection
   }
 
+type BuildKey = Int
+
+type VersionKey = Int
+
 makeSQLiteBuildStore :: FilePath -> IO (BuildStore OngoingTransaction)
 makeSQLiteBuildStore subDir = do
   (dbDir, dbPath, client) <- initSQLiteDatabase subDir
@@ -50,15 +54,17 @@ sqlCreateBuildUnlessExists buildId versionId = do
     alreadyExists <- doesBuildExist connection buildId
     if alreadyExists
       then return $ Left ()
-      else do        
+      else do
         createVersionAndBuildAndExecutions connection versionId buildId
         return $ Right ()
 
 doesBuildExist :: Connection -> BuildId -> IO Bool
-doesBuildExist connection buildId = undefined
-
-type BuildKey = Int
-type VersionKey = Int
+doesBuildExist connection (BuildId buildId) = do
+  results <- query
+    connection
+    "SELECT 1 FROM builds WHERE global_id = ?"
+    (Only buildId) :: IO [Only Int]
+  return $ not $ null results
 
 createVersionAndBuildAndExecutions :: Connection -> VersionId -> BuildId -> IO ()
 createVersionAndBuildAndExecutions connection versionId buildId = do
@@ -69,7 +75,13 @@ createVersionAndBuildAndExecutions connection versionId buildId = do
   insertSlowExecution connection buildKey now
 
 insertOrIgnoreVersion :: Connection -> VersionId -> UTCTime -> IO VersionKey
-insertOrIgnoreVersion connection versionId now = undefined
+insertOrIgnoreVersion connection versionId now = do
+  let VersionId vId = versionId
+  execute
+    connection
+    "INSERT OR IGNORE INTO versions (commit_hash, created_at) VALUES (?, ?)"
+    (vId, now)
+  getVersionKey connection versionId
 
 insertBuild :: Connection -> VersionKey -> BuildId -> UTCTime -> IO BuildKey
 insertBuild connection versionKey buildId now = do

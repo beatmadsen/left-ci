@@ -19,23 +19,16 @@ import Server.DataStore (BuildPair(..), BuildRecord(..))
 tests :: Test
 tests =
   TestList
-    [ TestLabel "Given a created build, when querying, then we can find complete build records for fast and slow suites" testBuildCreation]
+    [ TestLabel "Given a created build, when querying, then we can find complete build records for fast and slow suites" testBuildCreation,
+      TestLabel "Given a created build, after finding a fast execution, then we can update it" testUpdateFastExecution
+    ]
 
 testBuildCreation :: Test
 testBuildCreation = TestCase $ bracket
   -- setup
-  (do
-    dbDir <- getUniqueDirName
-    buildStore <- makeSQLiteBuildStore dbDir
-    atomically buildStore $ do
-      createBuildUnlessExists buildStore (BuildId "build1") (VersionId "version1")
-    return (dbDir, buildStore)
-  )
+  (storeWithBuild makeSQLiteBuildStore)
   -- teardown
-  (\(dbDir, buildStore) -> do
-    exists <- doesFileExist dbDir
-    when exists $ removeDirectoryRecursive dbDir
-  )
+  removeDbDir
   -- test
   (\(dbDir, buildStore) -> do
     maybeBuildPair <- atomically buildStore $ findBuildPair buildStore (BuildId "build1")
@@ -47,3 +40,29 @@ testBuildCreation = TestCase $ bracket
       expected maybeBuildPair
   )  
   
+testUpdateFastExecution :: Test
+testUpdateFastExecution = TestCase $ bracket
+  -- setup
+  (storeWithBuild makeSQLiteBuildStore)
+  -- teardown
+  removeDbDir
+  -- test
+  (\(dbDir, buildStore) -> do
+    atomically buildStore $ do
+      maybeState <- findFastState buildStore (BuildId "build1")
+      return ()
+    return ()
+  )
+
+removeDbDir :: (FilePath, a) -> IO ()
+removeDbDir (dbDir, _) = do
+  exists <- doesFileExist dbDir
+  when exists $ removeDirectoryRecursive dbDir
+
+storeWithBuild :: (FilePath -> IO (BuildStore tx)) -> IO (FilePath, BuildStore tx)
+storeWithBuild makeBuildStore = do
+  dbDir <- getUniqueDirName
+  buildStore <- makeBuildStore dbDir
+  atomically buildStore $ do
+    createBuildUnlessExists buildStore (BuildId "build1") (VersionId "version1")
+  return (dbDir, buildStore)

@@ -1,14 +1,12 @@
 - Branch out into different functions for running the server and installing the application
 
-- Server
-  - Service
-    - DataStore
-      - Remove atomically from indicated query functions
-      - SQLiteStore
-        - Create or locate the database file in $TMPDIR/left-ci/left-ci.db
-
+- Web UI
+  - Served from the server using static files
+  - Show build history
+  - Show build status
 
 - Installer
+  - Demo packaging of template inside binary
   - Create .left-ci directory
   - Create .left-ci/ci.sh that assigns build id and runs the scripts under .left-ci/fast and .left-ci/slow
   - Create git commit hook that runs .left-ci/ci.sh
@@ -22,4 +20,11 @@
     - Create .left-ci/slow/ci.sh that calls the other scripts that does not block
     - Create .left-ci/slow/test.sh that runs the tests
     - Create .left-ci/slow/publish-result.sh that sends test outcome and build id to the server
+  - Set up git commit hook that runs .left-ci/ci.sh
 
+- Distribution
+  - Consider best location to install binary -> Winner: ~/.local/bin 
+    ✅ Should be on PATH 
+    ✅ Should not require sudo
+    ✅ Should not be in the way of user's local installations
+    ✅ Normal user should have write access to the directory

@@ -16,6 +16,11 @@ import Server.DataStore
 import Server.Domain (BuildId(..), VersionId(..), BuildState(..))
 import Server.DataStore (BuildPair(..), BuildRecord(..))
 
+import Server.DataStore.Atomic (AtomicM(..))
+
+import Control.Monad.Except (ExceptT(..), runExceptT)
+
+
 tests :: Test
 tests =
   TestList
@@ -39,7 +44,8 @@ testBuildCreation = TestCase $ bracket
       "Build pair should exist" 
       expected maybeBuildPair
   )  
-  
+
+
 testUpdateFastExecution :: Test
 testUpdateFastExecution = TestCase $ bracket
   -- setup
@@ -48,11 +54,35 @@ testUpdateFastExecution = TestCase $ bracket
   removeDbDir
   -- test
   (\(dbDir, buildStore) -> do
-    atomically buildStore $ do
-      maybeState <- findFastState buildStore (BuildId "build1")
-      return ()
-    return ()
+    let buildId = BuildId "build1"
+    
+    foundAndUpdatedE <- ioFindAndUpdateFastState buildStore buildId
+    
+    foundAgainE <- case foundAndUpdatedE of
+      Left _ -> return $ Left ()
+      Right _ -> ioFindFastState buildStore buildId
+    
+    case foundAgainE of
+      Left _ -> assertFailure "Should find again"
+      Right state -> assertEqual "Should be running" Running state
   )
+
+ioFindFastState :: BuildStore tx -> BuildId -> IO (Either () BuildState)
+ioFindFastState buildStore buildId = do
+  atomically buildStore $ justToRight <$> findFastState buildStore buildId
+    
+
+ioFindAndUpdateFastState :: BuildStore tx -> BuildId -> IO (Either () ())
+ioFindAndUpdateFastState buildStore buildId = do
+  atomically buildStore $ do
+    stateE <- justToRight <$> findFastState buildStore buildId
+    case stateE of
+      Right _ -> Right <$> updateFastState buildStore buildId Running
+      Left _ -> return $ Left ()
+
+justToRight :: Maybe a -> Either () a
+justToRight (Just a) = Right a
+justToRight Nothing = Left ()
 
 removeDbDir :: (FilePath, a) -> IO ()
 removeDbDir (dbDir, _) = do

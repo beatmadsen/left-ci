@@ -126,27 +126,32 @@ doesBuildExist connection (BuildId buildId) = do
 createVersionAndBuildAndExecutions :: Connection -> VersionId -> BuildId -> IO ()
 createVersionAndBuildAndExecutions connection versionId buildId = do
   now <- getCurrentTime
-  versionKey <- insertOrIgnoreVersion connection versionId now
-  buildKey <- insertBuild connection versionKey buildId now
+  insertOrIgnoreVersion connection versionId now
+  buildKey <- insertBuild connection versionId buildId now
   insertFastExecution connection buildKey now
   insertSlowExecution connection buildKey now
 
 insertOrIgnoreVersion :: Connection -> VersionId -> UTCTime -> IO VersionKey
 insertOrIgnoreVersion connection versionId now = do
-  let VersionId vId = versionId
+  let VersionId commitHash = versionId
   execute
     connection
     "INSERT OR IGNORE INTO versions (commit_hash, created_at) VALUES (?, ?)"
-    (vId, now)
+    (commitHash, now)
   getVersionKey connection versionId
 
-insertBuild :: Connection -> VersionKey -> BuildId -> UTCTime -> IO BuildKey
-insertBuild connection versionKey buildId now = do
-  let BuildId bId = buildId
+insertBuild :: Connection -> VersionId -> BuildId -> UTCTime -> IO BuildKey
+insertBuild connection (VersionId commitHash) buildId now = do
+  let BuildId globalId = buildId
   execute
     connection
-    "INSERT INTO builds (version_id, global_id, created_at) VALUES (?, ?, ?)"
-    (versionKey, bId, now)
+    [sql|
+      INSERT INTO builds (version_id, global_id, created_at)
+      SELECT v.id, ?, ?
+      FROM versions v
+      WHERE v.commit_hash = ?
+    |]
+    (globalId, now, commitHash)
   getBuildKey connection buildId
 
 getVersionKey :: Connection -> VersionId -> IO VersionKey

@@ -53,7 +53,7 @@ sqlFindBuildPair buildId = do
   return $ mapExecutions executions
 
 data Execution = Execution
-  { suiteName :: Text,
+  { suiteName :: SuiteName,
     buildGlobalId :: Text,
     versionCommitHash :: Text,
     executionState :: Text
@@ -69,8 +69,8 @@ instance FromRow Execution where
 
 mapExecutions :: [Execution] -> Maybe BuildPair
 mapExecutions executions =
-  let allFast = [e | e <- executions, suiteName e == "fast"]
-      allSlow = [e | e <- executions, suiteName e == "slow"]
+  let allFast = [e | e <- executions, suiteName e == Fast]
+      allSlow = [e | e <- executions, suiteName e == Slow]
    in case (allFast, allSlow) of
         ([], []) -> Nothing
         ([], _) -> error "No fast suite execution found"

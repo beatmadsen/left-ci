@@ -8,16 +8,16 @@ where
 
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Reader (ask, local)
+import Data.String (fromString)
+import Data.Text (Text, unpack)
 import Data.Time.Clock (UTCTime, getCurrentTime)
 import Database.SQLite.Simple
+import Database.SQLite.Simple.FromRow (FromRow, field)
 import Database.SQLite.Simple.QQ (sql)
-import Server.DataStore (BuildPair (..), BuildStore (..), BuildRecord (..))
+import Server.DataStore (BuildPair (..), BuildRecord (..), BuildStore (..))
 import Server.DataStore.Atomic (AtomicM (..), executeAtomic)
 import Server.DataStore.SQLiteSetup
 import Server.Domain (BuildId (..), BuildState (..), VersionId (..))
-import Database.SQLite.Simple.FromRow (FromRow, field)
-import Data.String (fromString)
-import Data.Text (Text, unpack)
 
 newtype OngoingTransaction = OngoingTransaction
   { connection :: Connection
@@ -74,16 +74,16 @@ mapExecutions :: [Execution] -> Maybe BuildPair
 mapExecutions executions =
   let allFast = [e | e <- executions, suiteName e == "fast"]
       allSlow = [e | e <- executions, suiteName e == "slow"]
-  in case (allFast, allSlow) of
-    ([], []) -> Nothing
-    ([], _) -> error "No fast suite execution found"
-    (_, []) -> error "No slow suite execution found" 
-    ([fast], [slow]) -> Just (BuildPair (mapExecution slow) (mapExecution fast))
-    _ -> error "Multiple executions found for a single suite"
+   in case (allFast, allSlow) of
+        ([], []) -> Nothing
+        ([], _) -> error "No fast suite execution found"
+        (_, []) -> error "No slow suite execution found"
+        ([fast], [slow]) -> Just (BuildPair (mapExecution slow) (mapExecution fast))
+        _ -> error "Multiple executions found for a single suite"
 
 mapExecution :: Execution -> BuildRecord
 mapExecution ex =
-  BuildRecord 
+  BuildRecord
     (BuildId (buildGlobalId ex))
     (VersionId (versionCommitHash ex))
     (fromString . unpack . executionState $ ex)
@@ -182,7 +182,27 @@ insertSlowExecution connection buildKey now = do
     (buildKey, (show Init), now, now)
 
 sqlFindFastState :: BuildId -> AtomicM OngoingTransaction (Maybe BuildState)
-sqlFindFastState buildId = undefined
+sqlFindFastState buildId = do
+  OngoingTransaction connection <- ask
+  results <- liftIO $ queryFastState connection buildId
+  return $ takeFirstState results
+
+queryFastState :: Connection -> BuildId -> IO [Only String]
+queryFastState connection (BuildId buildId) = 
+  query 
+    connection
+    [sql| 
+      SELECT e.state 
+      FROM executions e 
+      JOIN builds b ON e.build_id = b.id 
+      WHERE b.global_id = ? AND e.suite_id = 200 
+    |]
+    (Only buildId) :: IO [Only String]
+
+takeFirstState :: [Only String] -> Maybe BuildState
+takeFirstState results = case results of
+  [] -> Nothing
+  (Only state) : _ -> Just $ fromString state
 
 sqlUpdateFastState :: BuildId -> BuildState -> AtomicM OngoingTransaction ()
 sqlUpdateFastState buildId state = undefined

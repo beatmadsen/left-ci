@@ -14,6 +14,7 @@ import Database.SQLite.Simple.ToRow
 import Server.DataStore.TmpDir
 import System.Directory (doesFileExist, removeDirectoryRecursive)
 import System.FilePath ((</>))
+import Server.DataStore.SQLiteTypes (SuiteName (..))
 
 -- A SQLiteClient is a function that can create fresh connections when needed
 type SQLiteClient = IO Connection
@@ -77,10 +78,10 @@ createAndPopulateSuitesTable conn = do
         name TEXT NOT NULL UNIQUE
     )
   |]
-  execute_ conn [sql| 
+  execute conn [sql| 
     INSERT INTO suites (id, name) 
-    VALUES (100, 'slow'), (200, 'fast')
-   |] 
+    VALUES (100, ?), (200, ?)
+   |] (Slow, Fast)
 
 createExecutionsTable :: Connection -> IO ()
 createExecutionsTable conn = do

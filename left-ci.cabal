@@ -24,6 +24,7 @@ library
   other-modules:
       Config.InstallerValidator
       Config.ServerValidator
+      Server.DataStore.SQLiteTypes
       Paths_left_ci
   hs-source-dirs:
       src

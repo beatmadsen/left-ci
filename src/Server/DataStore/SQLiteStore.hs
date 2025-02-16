@@ -9,7 +9,6 @@ where
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Reader (ask, local)
 import Data.String (fromString)
-import Data.Text (Text, unpack)
 import Data.Time.Clock (UTCTime, getCurrentTime)
 import Database.SQLite.Simple
 import Database.SQLite.Simple.FromRow (FromRow, field)
@@ -18,7 +17,7 @@ import Server.DataStore (BuildPair (..), BuildRecord (..), BuildStore (..))
 import Server.DataStore.Atomic (AtomicM (..), executeAtomic)
 import Server.DataStore.SQLiteSetup
 import Server.Domain (BuildId (..), BuildState (..), VersionId (..))
-import Server.DataStore.SQLiteTypes (SuiteName (..))
+import Server.DataStore.SQLiteTypes
 
 newtype OngoingTransaction = OngoingTransaction
   { connection :: Connection
@@ -52,21 +51,6 @@ sqlFindBuildPair buildId = do
   executions <- liftIO $ findExecutions connection buildId
   return $ mapExecutions executions
 
-data Execution = Execution
-  { suiteName :: SuiteName,
-    buildGlobalId :: Text,
-    versionCommitHash :: Text,
-    executionState :: Text
-  }
-
-instance FromRow Execution where
-  fromRow =
-    Execution
-      <$> field -- suite_name
-      <*> field -- build_global_id
-      <*> field -- version_commit_hash
-      <*> field -- state
-
 mapExecutions :: [Execution] -> Maybe BuildPair
 mapExecutions executions =
   let allFast = [e | e <- executions, suiteName e == Fast]
@@ -81,9 +65,9 @@ mapExecutions executions =
 mapExecution :: Execution -> BuildRecord
 mapExecution ex =
   BuildRecord
-    (BuildId (buildGlobalId ex))
-    (VersionId (versionCommitHash ex))
-    (fromString . unpack . executionState $ ex)
+    (buildGlobalId ex)
+    (versionCommitHash ex)
+    (executionState ex)
 
 findExecutions :: Connection -> BuildId -> IO [Execution]
 findExecutions connection (BuildId buildId) =
@@ -191,15 +175,13 @@ sqlUpdateState suiteName (BuildId globalId) state = do
   liftIO $ do
     execute
       connection
-        [sql|
-          UPDATE executions
-          SET state = ?
-          WHERE suite_id IN (SELECT id FROM suites WHERE name = ?)
-          AND build_id IN (SELECT id FROM builds WHERE global_id = ?)
-        |]
+      [sql|
+        UPDATE executions
+        SET state = ?
+        WHERE suite_id IN (SELECT id FROM suites WHERE name = ?)
+        AND build_id IN (SELECT id FROM builds WHERE global_id = ?)
+      |]
       (show state, suiteName, globalId)
-
--- helpers and ideas
 
 beginTransaction :: Connection -> IO OngoingTransaction
 beginTransaction connection = do

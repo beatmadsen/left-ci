@@ -31,10 +31,10 @@ makeSQLiteBuildStore subDir = do
       { findBuildPair = sqlFindBuildPair,
         createBuildUnlessExists = sqlCreateBuildUnlessExists,
         atomically = sqlAtomically client,
-        findFastState = sqlFindFastState,
-        updateFastState = sqlUpdateFastState,
-        findSlowState = sqlFindSlowState,
-        updateSlowState = sqlUpdateSlowState
+        findFastState = sqlFindState "fast",
+        updateFastState = sqlUpdateState "fast",
+        findSlowState = sqlFindState "slow",
+        updateSlowState = sqlUpdateState "slow"
       }
 
 sqlAtomically :: SQLiteClient -> AtomicM OngoingTransaction a -> IO a
@@ -160,31 +160,32 @@ insertExecution suiteName connection (BuildId globalId) now = do
     |]
     (show Init, now, now, globalId, suiteName)
 
-sqlFindFastState :: BuildId -> AtomicM OngoingTransaction (Maybe BuildState)
-sqlFindFastState buildId = do
+sqlFindState :: String -> BuildId -> AtomicM OngoingTransaction (Maybe BuildState)
+sqlFindState suiteName buildId = do
   OngoingTransaction connection <- ask
-  results <- liftIO $ queryFastState connection buildId
+  results <- liftIO $ queryState suiteName connection buildId
   return $ takeFirstState results
 
-queryFastState :: Connection -> BuildId -> IO [Only String]
-queryFastState connection (BuildId buildId) = 
+queryState :: String -> Connection -> BuildId -> IO [Only String]
+queryState suiteName connection (BuildId globalId) = 
   query 
     connection
     [sql| 
       SELECT e.state 
       FROM executions e 
-      JOIN builds b ON e.build_id = b.id 
-      WHERE b.global_id = ? AND e.suite_id = 200 
+      JOIN builds b ON e.build_id = b.id
+      JOIN suites s ON e.suite_id = s.id
+      WHERE b.global_id = ? AND s.name = ?
     |]
-    (Only buildId) :: IO [Only String]
+    (globalId, suiteName) :: IO [Only String]
 
 takeFirstState :: [Only String] -> Maybe BuildState
 takeFirstState results = case results of
   [] -> Nothing
   (Only state) : _ -> Just $ fromString state
 
-sqlUpdateFastState :: BuildId -> BuildState -> AtomicM OngoingTransaction ()
-sqlUpdateFastState (BuildId globalId) state = do
+sqlUpdateState :: String -> BuildId -> BuildState -> AtomicM OngoingTransaction ()
+sqlUpdateState suiteName (BuildId globalId) state = do
   OngoingTransaction connection <- ask
   liftIO $ do
     execute
@@ -192,16 +193,10 @@ sqlUpdateFastState (BuildId globalId) state = do
         [sql|
           UPDATE executions
           SET state = ?
-          WHERE suite_id = 200
+          WHERE suite_id IN (SELECT id FROM suites WHERE name = ?)
           AND build_id IN (SELECT id FROM builds WHERE global_id = ?)
         |]
-      (show state, globalId)
-
-sqlFindSlowState :: BuildId -> AtomicM OngoingTransaction (Maybe BuildState)
-sqlFindSlowState buildId = undefined
-
-sqlUpdateSlowState :: BuildId -> BuildState -> AtomicM OngoingTransaction ()
-sqlUpdateSlowState buildId state = undefined
+      (show state, suiteName, globalId)
 
 -- helpers and ideas
 

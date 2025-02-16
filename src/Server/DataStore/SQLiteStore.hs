@@ -205,7 +205,18 @@ takeFirstState results = case results of
   (Only state) : _ -> Just $ fromString state
 
 sqlUpdateFastState :: BuildId -> BuildState -> AtomicM OngoingTransaction ()
-sqlUpdateFastState buildId state = undefined
+sqlUpdateFastState (BuildId globalId) state = do
+  OngoingTransaction connection <- ask
+  liftIO $ do
+    execute
+      connection
+        [sql|
+          UPDATE executions
+          SET state = ?
+          WHERE suite_id = 200
+          AND build_id IN (SELECT id FROM builds WHERE global_id = ?)
+        |]
+      (show state, globalId)
 
 sqlFindSlowState :: BuildId -> AtomicM OngoingTransaction (Maybe BuildState)
 sqlFindSlowState buildId = undefined

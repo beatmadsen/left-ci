@@ -11,10 +11,13 @@ import Control.Monad.Reader (ask, local)
 import Data.Time.Clock (UTCTime, getCurrentTime)
 import Database.SQLite.Simple
 import Database.SQLite.Simple.QQ (sql)
-import Server.DataStore (BuildPair (..), BuildStore (..))
+import Server.DataStore (BuildPair (..), BuildStore (..), BuildRecord (..))
 import Server.DataStore.Atomic (AtomicM (..), executeAtomic)
 import Server.DataStore.SQLiteSetup
 import Server.Domain (BuildId (..), BuildState (..), VersionId (..))
+import Database.SQLite.Simple.FromRow (FromRow, field)
+import Data.String (fromString)
+import Data.Text (Text, unpack)
 
 newtype OngoingTransaction = OngoingTransaction
   { connection :: Connection
@@ -54,28 +57,47 @@ sqlFindBuildPair buildId = do
     return Nothing
 
 data Execution = Execution
-  { suiteId :: Int,
-    buildId :: Int,
-    versionId :: Int,
-    state :: String
+  { suiteName :: Text,
+    buildGlobalId :: Text,
+    versionCommitHash :: Text,
+    executionState :: Text
   }
 
 instance FromRow Execution where
   fromRow =
     Execution
-      <$> field -- suite_id
-      <*> field -- build_id
-      <*> field -- version_id
+      <$> field -- suite_name
+      <*> field -- build_global_id
+      <*> field -- version_commit_hash
       <*> field -- state
+
+mapExecutions :: [Execution] -> BuildPair
+mapExecutions executions =
+  let allFast = [e | e <- executions, suiteName e == "fast"]
+      allSlow = [e | e <- executions, suiteName e == "slow"]
+  in case (allFast, allSlow) of
+    ([], _) -> error "No fast suite execution found"
+    (_, []) -> error "No slow suite execution found" 
+    ([fast], [slow]) -> BuildPair (mapExecution slow) (mapExecution fast)
+    _ -> error "Multiple executions found for a single suite"
+
+mapExecution :: Execution -> BuildRecord
+mapExecution ex =
+  BuildRecord 
+    (BuildId (buildGlobalId ex))
+    (VersionId (versionCommitHash ex))
+    (fromString . unpack . executionState $ ex)
 
 findExecutions :: Connection -> BuildId -> IO [Execution]
 findExecutions connection (BuildId buildId) =
   query
     connection
     [sql|
-      SELECT e.suite_id, e.build_id, b.version_id, e.state 
+      SELECT s.name, b.global_id, v.commit_hash, e.state 
       FROM executions e 
       JOIN builds b ON e.build_id = b.id 
+      JOIN versions v ON b.version_id = v.id
+      JOIN suites s ON e.suite_id = s.id
       WHERE b.global_id = ?
       |]
     (Only buildId)

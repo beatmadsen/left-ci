@@ -31,6 +31,17 @@ instance IsString BuildId where
 data BuildState = Init | Running | Passed | Failed
   deriving (Show, Eq)
 
+instance IsString BuildState where
+    fromString :: String -> BuildState
+    fromString "init" = Init
+    fromString "Init" = Init
+    fromString "running" = Running
+    fromString "Running" = Running
+    fromString "passed" = Passed
+    fromString "Passed" = Passed
+    fromString "failed" = Failed
+    fromString "Failed" = Failed
+
 data BuildSummary = BuildSummary
   { fastState :: BuildState,
     slowState :: BuildState

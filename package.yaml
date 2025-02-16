@@ -14,6 +14,7 @@ library:
   exposed-modules:
     - Config.ApplicationConfig
     - Config.Validator
+    - Server
     - Server.Service
     - Server.Service.Persistent
     - Server.DataStore

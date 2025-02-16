@@ -12,6 +12,7 @@ library
   exposed-modules:
       Config.ApplicationConfig
       Config.Validator
+      Server
       Server.Service
       Server.Service.Persistent
       Server.DataStore
@@ -73,6 +74,7 @@ test-suite integration
       Server.DataStore.SQLiteStoreTest
       Server.DataStore.TmpDirTest
       Server.ServiceTest
+      ServerTest
       Paths_left_ci
   hs-source-dirs:
       test/integration

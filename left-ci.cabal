@@ -61,6 +61,7 @@ executable left-ci
     , mtl
     , sqlite-simple
     , text
+    , unix
     , warp
   default-language: Haskell2010
 

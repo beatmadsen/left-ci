@@ -3,7 +3,6 @@ version: 0.1.0.0
 
 dependencies:
   - base >= 4.7 && < 5
-  # - either >= 5
   - mtl
   - text
   - containers
@@ -44,6 +43,7 @@ executables:
     dependencies:
       - left-ci
       - warp
+      - unix
 
 
 

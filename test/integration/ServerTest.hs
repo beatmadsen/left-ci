@@ -34,7 +34,7 @@ testX = TestCase $ do
   threadId <- forkIO $ run port app
   
   -- Give the server a moment to start
-  threadDelay 1000000 -- 1 seconds
+  threadDelay 100000 -- 100ms
   
   -- Try to connect to verify the server is running
   manager <- newManager defaultManagerSettings

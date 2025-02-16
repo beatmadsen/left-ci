@@ -78,7 +78,7 @@ createAndPopulateSuitesTable conn = do
     )
   |]
   execute conn [sql| 
-    INSERT INTO suites (id, name) 
+    INSERT OR IGNORE INTO suites (id, name) 
     VALUES (100, ?), (200, ?)
    |] (Slow, Fast)
 

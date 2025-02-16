@@ -35,7 +35,7 @@ library:
     - sqlite-simple
     - resource-pool
     - filepath
-
+    - time
 executables:
   left-ci:
     main: Main.hs

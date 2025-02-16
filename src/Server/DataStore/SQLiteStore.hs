@@ -52,9 +52,8 @@ sqlAtomically client atomicAction = do
 sqlFindBuildPair :: BuildId -> AtomicM OngoingTransaction (Maybe BuildPair)
 sqlFindBuildPair buildId = do
   OngoingTransaction connection <- ask
-  liftIO $ do
-    executions <- findExecutions connection buildId
-    return Nothing
+  executions <- liftIO $ findExecutions connection buildId
+  return $ mapExecutions executions
 
 data Execution = Execution
   { suiteName :: Text,
@@ -71,14 +70,15 @@ instance FromRow Execution where
       <*> field -- version_commit_hash
       <*> field -- state
 
-mapExecutions :: [Execution] -> BuildPair
+mapExecutions :: [Execution] -> Maybe BuildPair
 mapExecutions executions =
   let allFast = [e | e <- executions, suiteName e == "fast"]
       allSlow = [e | e <- executions, suiteName e == "slow"]
   in case (allFast, allSlow) of
+    ([], []) -> Nothing
     ([], _) -> error "No fast suite execution found"
     (_, []) -> error "No slow suite execution found" 
-    ([fast], [slow]) -> BuildPair (mapExecution slow) (mapExecution fast)
+    ([fast], [slow]) -> Just (BuildPair (mapExecution slow) (mapExecution fast))
     _ -> error "Multiple executions found for a single suite"
 
 mapExecution :: Execution -> BuildRecord

@@ -39,7 +39,11 @@ testBuildCreation = TestCase $ bracket
   -- test
   (\(dbDir, buildStore) -> do
     maybeBuildPair <- atomically buildStore $ findBuildPair buildStore (BuildId "build1")
+
+    let expected = (Just (BuildPair (BuildRecord (BuildId "build1") (VersionId "version1") Init) (BuildRecord (BuildId "build1") (VersionId "version1") Init)))
     
-    assertEqual "Build pair should exist" (Just (BuildPair (BuildRecord "version1" "build1" Init) (BuildRecord "version1" "build1" Init))) maybeBuildPair
+    assertEqual 
+      "Build pair should exist" 
+      expected maybeBuildPair
   )  
   

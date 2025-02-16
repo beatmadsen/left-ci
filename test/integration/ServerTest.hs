@@ -12,9 +12,11 @@ import RandomHelper (getUniqueDirName, getEphemeralPort)
 import Server (makeWaiApp)
 import Network.Wai.Handler.Warp (run)
 import Control.Concurrent (forkIO, threadDelay, killThread)
-import Network.HTTP.Client (newManager, defaultManagerSettings, parseRequest, httpNoBody, HttpException(..))
+import Network.HTTP.Client (newManager, defaultManagerSettings, parseRequest, httpNoBody, HttpException(..), Response, httpLbs, responseBody, responseStatus, Request(..))
 import Control.Exception (catch)
 import Control.Monad (when)
+import qualified Data.ByteString.Lazy.Char8 as BL
+import Network.HTTP.Types (statusCode, methodPost, Method)
 
 tests :: Test
 tests =
@@ -37,10 +39,13 @@ testX = TestCase $ do
   
   -- Try to connect to verify the server is running
   manager <- newManager defaultManagerSettings
-  request <- parseRequest $ "http://localhost:" ++ show port ++ "/build/dummy"
+  request <- parseRequest $ "http://localhost:" ++ show port ++ "/version/abcd1234/build/abcdef"
+  let postRequest = request { method = methodPost }
   result <- (
     do
-      _ <- httpNoBody request manager
+      response <- httpLbs postRequest manager
+      putStrLn $ "Status code: " ++ (show $ statusCode $ responseStatus response)
+      putStrLn $ "Server response: " ++ (BL.unpack $ responseBody response)
       return True
     ) `catch` errorHandler
     

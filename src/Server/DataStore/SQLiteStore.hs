@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 
 module Server.DataStore.SQLiteStore
   ( makeSQLiteBuildStore,
@@ -9,6 +10,7 @@ import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Reader (ask, local)
 import Data.Time.Clock (UTCTime, getCurrentTime)
 import Database.SQLite.Simple
+import Database.SQLite.Simple.QQ (sql)
 import Server.DataStore (BuildPair (..), BuildStore (..))
 import Server.DataStore.Atomic (AtomicM (..), executeAtomic)
 import Server.DataStore.SQLiteSetup
@@ -45,7 +47,38 @@ sqlAtomically client atomicAction = do
   return result
 
 sqlFindBuildPair :: BuildId -> AtomicM OngoingTransaction (Maybe BuildPair)
-sqlFindBuildPair buildId = undefined
+sqlFindBuildPair buildId = do
+  OngoingTransaction connection <- ask
+  liftIO $ do
+    executions <- findExecutions connection buildId
+    return Nothing
+
+data Execution = Execution
+  { suiteId :: Int,
+    buildId :: Int,
+    versionId :: Int,
+    state :: String
+  }
+
+instance FromRow Execution where
+  fromRow =
+    Execution
+      <$> field -- suite_id
+      <*> field -- build_id
+      <*> field -- version_id
+      <*> field -- state
+
+findExecutions :: Connection -> BuildId -> IO [Execution]
+findExecutions connection (BuildId buildId) =
+  query
+    connection
+    [sql|
+      SELECT e.suite_id, e.build_id, b.version_id, e.state 
+      FROM executions e 
+      JOIN builds b ON e.build_id = b.id 
+      WHERE b.global_id = ?
+      |]
+    (Only buildId)
 
 sqlCreateBuildUnlessExists :: BuildId -> VersionId -> AtomicM OngoingTransaction (Either () ())
 sqlCreateBuildUnlessExists buildId versionId = do
@@ -60,10 +93,12 @@ sqlCreateBuildUnlessExists buildId versionId = do
 
 doesBuildExist :: Connection -> BuildId -> IO Bool
 doesBuildExist connection (BuildId buildId) = do
-  results <- query
-    connection
-    "SELECT 1 FROM builds WHERE global_id = ?"
-    (Only buildId) :: IO [Only Int]
+  results <-
+    query
+      connection
+      "SELECT 1 FROM builds WHERE global_id = ?"
+      (Only buildId) ::
+      IO [Only Int]
   return $ not $ null results
 
 createVersionAndBuildAndExecutions :: Connection -> VersionId -> BuildId -> IO ()

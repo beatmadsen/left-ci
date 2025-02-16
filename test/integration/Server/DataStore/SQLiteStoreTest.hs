@@ -25,7 +25,8 @@ tests :: Test
 tests =
   TestList
     [ TestLabel "Given a created build, when querying, then we can find complete build records for fast and slow suites" testBuildCreation,
-      TestLabel "Given a created build, after finding a fast execution, then we can update it" testUpdateFastExecution
+      TestLabel "Given a created build, after finding and updating a fast execution of that build, then we can see it updated" testUpdateFastExecution,
+      TestLabel "Given a created build, after finding and updating a slow execution of that build, then we can see it updated" testUpdateSlowExecution
     ]
 
 testBuildCreation :: Test
@@ -67,9 +68,35 @@ testUpdateFastExecution = TestCase $ bracket
       Right state -> assertEqual "Should be running" Running state
   )
 
+testUpdateSlowExecution :: Test
+testUpdateSlowExecution = TestCase $ bracket
+  -- setup
+  (storeWithBuild makeSQLiteBuildStore)
+  -- teardown
+  removeDbDir
+  -- test
+  (\(dbDir, buildStore) -> do
+    let buildId = BuildId "build1"
+    
+    foundAndUpdatedE <- ioFindAndUpdateSlowState buildStore buildId
+    
+    foundAgainE <- case foundAndUpdatedE of
+      Left _ -> return $ Left ()
+      Right _ -> ioFindSlowState buildStore buildId
+    
+    case foundAgainE of
+      Left _ -> assertFailure "Should find again"
+      Right state -> assertEqual "Should be running" Running state
+  )
+
+
 ioFindFastState :: BuildStore tx -> BuildId -> IO (Either () BuildState)
 ioFindFastState buildStore buildId = do
   atomically buildStore $ justToRight <$> findFastState buildStore buildId
+
+ioFindSlowState :: BuildStore tx -> BuildId -> IO (Either () BuildState)
+ioFindSlowState buildStore buildId = do
+  atomically buildStore $ justToRight <$> findSlowState buildStore buildId
     
 
 ioFindAndUpdateFastState :: BuildStore tx -> BuildId -> IO (Either () ())
@@ -78,6 +105,14 @@ ioFindAndUpdateFastState buildStore buildId = do
     stateE <- justToRight <$> findFastState buildStore buildId
     case stateE of
       Right _ -> Right <$> updateFastState buildStore buildId Running
+      Left _ -> return $ Left ()
+
+ioFindAndUpdateSlowState :: BuildStore tx -> BuildId -> IO (Either () ())
+ioFindAndUpdateSlowState buildStore buildId = do
+  atomically buildStore $ do
+    stateE <- justToRight <$> findSlowState buildStore buildId
+    case stateE of
+      Right _ -> Right <$> updateSlowState buildStore buildId Running
       Left _ -> return $ Left ()
 
 justToRight :: Maybe a -> Either () a

@@ -12,7 +12,7 @@ import Database.SQLite.Simple
 import Server.DataStore (BuildPair (..), BuildStore (..))
 import Server.DataStore.Atomic (AtomicM (..), executeAtomic)
 import Server.DataStore.SQLiteSetup
-import Server.Domain (BuildId (..), BuildState, VersionId (..))
+import Server.Domain (BuildId (..), BuildState (..), VersionId (..))
 
 newtype OngoingTransaction = OngoingTransaction
   { connection :: Connection
@@ -111,10 +111,18 @@ getBuildKey connection (BuildId buildId) = do
   return buildKey
 
 insertFastExecution :: Connection -> BuildKey -> UTCTime -> IO ()
-insertFastExecution connection buildKey now = undefined
+insertFastExecution connection buildKey now = do
+  execute
+    connection
+    "INSERT INTO executions (suite_id, build_id, state, created_at, updated_at) VALUES (200, ?, ?, ?, ?)"
+    (buildKey, (show Init), now, now)
 
 insertSlowExecution :: Connection -> BuildKey -> UTCTime -> IO ()
-insertSlowExecution connection buildKey now = undefined
+insertSlowExecution connection buildKey now = do
+  execute
+    connection
+    "INSERT INTO executions (suite_id, build_id, state, created_at, updated_at) VALUES (100, ?, ?, ?, ?)"
+    (buildKey, (show Init), now, now)
 
 sqlFindFastState :: BuildId -> AtomicM OngoingTransaction (Maybe BuildState)
 sqlFindFastState buildId = undefined

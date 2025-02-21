@@ -35,7 +35,10 @@ tests =
       TestLabel "Given a non-existing build id, when posting fail slow, then returns status code 404" testFailSlowResultNonExistent,
       TestLabel "Given version and build ids in URL, when creating build, then passes ids to service" testCreateBuild,
       TestLabel "Given a service that reports conflict, when creating build, then returns status code 409" testCreateBuildConflict,
-      TestLabel "Given a non-existing project name, when listing builds, then returns status code 404 and empty body" testListProjectBuildsNotFound
+      TestLabel "Given a non-existing project name, when listing builds, then returns status code 404 and empty body" testListProjectBuildsNotFound,
+      TestLabel "Given a project with no builds, when listing builds, then returns empty list" testListProjectBuildsEmpty,
+      TestLabel "Given a project with builds, when listing builds, then returns list of builds" testListProjectBuilds,
+      TestLabel "Given a project name in URL, when listing builds, then passes project name to service" testUsesPathProjectName
     ]
 
 testGetSummary :: Test
@@ -209,7 +212,7 @@ testFailSlowResultNonExistent = TestCase $ do
 
 testListProjectBuildsNotFound :: Test
 testListProjectBuildsNotFound = TestCase $ do
-  let service = defaultService {listProjectBuilds = const $ pure []}
+  let service = defaultService {listProjectBuilds = const $ pure Nothing}
   app <- scottyApp $ makeApplication service
   runSession
     ( do  
@@ -217,6 +220,49 @@ testListProjectBuildsNotFound = TestCase $ do
         assertStatus 404 response
     )
     app
+
+testListProjectBuildsEmpty :: Test
+testListProjectBuildsEmpty = TestCase $ do
+  let service = defaultService {listProjectBuilds = const $ pure (Just [])}
+  app <- scottyApp $ makeApplication service
+  runSession
+    ( do
+        response <- srequest $ makeListRequest (Project "project-123")
+        assertStatus 200 response
+        assertBody "[]" response
+    )
+    app
+
+testListProjectBuilds :: Test
+testListProjectBuilds = TestCase $ do
+  let service = defaultService {listProjectBuilds = const $ pure (Just [BuildSummary Init Init, BuildSummary Running Running])}
+  app <- scottyApp $ makeApplication service
+  runSession
+    ( do
+        response <- srequest $ makeListRequest (Project "project-123")
+        assertStatus 200 response
+        assertBody "[{\"fast\":\"init\",\"slow\":\"init\"},{\"fast\":\"running\",\"slow\":\"running\"}]" response
+    )
+    app
+
+testUsesPathProjectName :: Test
+testUsesPathProjectName = TestCase $ do
+  passedProject <- IORef.newIORef ""
+  let service = defaultService {listProjectBuilds = \project -> do
+      IORef.writeIORef passedProject project
+      pure (Just [BuildSummary Init Init, BuildSummary Running Running])} 
+
+  app <- scottyApp $ makeApplication service
+
+  runSession
+    ( do
+        response <- srequest $ makeListRequest (Project "project-123")
+        assertStatus 200 response
+    )
+    app
+
+  actualProject <- IORef.readIORef passedProject
+  assertEqual "project" "project-123" actualProject
 
 defaultService :: BuildService
 defaultService =

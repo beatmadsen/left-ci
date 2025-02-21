@@ -45,6 +45,12 @@ pathProject = do
 
 makeApplication :: BuildService -> ScottyM ()
 makeApplication service = do
+  -- list all builds for a project
+  get "/projects/:p/builds" $ do
+    pid <- pathProject
+    s <- liftIO $ listProjectBuilds service pid
+    respondToBuildSummaries s
+
   get "/builds/:b" $ do
     bid <- pathBuild
     s <- liftIO $ getBuildSummary service bid
@@ -92,3 +98,8 @@ respondToBuildSummary :: Maybe BuildSummary -> ActionM ()
 respondToBuildSummary summary = case summary of
   Nothing -> status status404
   Just summary -> json summary
+
+respondToBuildSummaries :: Maybe [BuildSummary] -> ActionM ()
+respondToBuildSummaries summaries = case summaries of
+  Nothing -> status status404
+  Just summaries -> json summaries

@@ -29,6 +29,7 @@ makeSQLiteBuildStore subDir = do
   pure
     BuildStore
       { findBuildPair = sqlFindBuildPair,
+        findProject = sqlFindProject,
         findBuildPairs = sqlFindBuildPairs,
         createBuildUnlessExists = sqlCreateBuildUnlessExists,
         atomically = sqlAtomically client,
@@ -51,6 +52,9 @@ sqlFindBuildPair buildId = do
   OngoingTransaction connection <- ask
   executions <- liftIO $ findExecutions connection buildId
   return $ mapExecutions executions
+
+sqlFindProject :: Project -> AtomicM OngoingTransaction (Maybe Project)
+sqlFindProject project = undefined
 
 sqlFindBuildPairs :: Project -> AtomicM OngoingTransaction [BuildPair]
 sqlFindBuildPairs project = undefined

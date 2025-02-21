@@ -194,6 +194,8 @@ defaultStore =
   BuildStore
     { atomically = defaultAtomically,
       findBuildPair = undefined,
+      findProject = undefined,
+      findBuildPairs = undefined,
       createBuildUnlessExists = undefined,
       findFastState = undefined,
       updateFastState = undefined,

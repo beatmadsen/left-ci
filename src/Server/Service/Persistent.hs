@@ -31,10 +31,15 @@ pGetBuildSummary buildStore buildId = do
   maybeBuildPair <- atomically buildStore $ findBuildPair buildStore buildId
   pure $ fmap extractSummary maybeBuildPair
 
-pListProjectBuilds :: BuildStore ctx -> Project -> IO [BuildSummary]
+pListProjectBuilds :: BuildStore ctx -> Project -> IO (Maybe [BuildSummary])
 pListProjectBuilds buildStore project = do
-  maybeBuildPairs <- atomically buildStore $ findBuildPairs buildStore project
-  pure $ map extractSummary maybeBuildPairs
+  atomically buildStore $ do
+    maybeProject <- findProject buildStore project
+    case maybeProject of
+      Nothing -> pure Nothing
+      Just _ -> do
+        maybeBuildPairs <- findBuildPairs buildStore project
+        pure $ Just $ map extractSummary maybeBuildPairs
 
 extractSummary :: BuildPair -> BuildSummary
 extractSummary bp = BuildSummary {slowState = state (slowSuite bp), fastState = state (fastSuite bp)}

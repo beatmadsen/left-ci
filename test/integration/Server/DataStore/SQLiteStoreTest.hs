@@ -13,7 +13,7 @@ import Database.SQLite.Simple (close, execute_)
 import RandomHelper (getUniqueDirName)
 import Control.Monad (when)
 import Server.DataStore
-import Server.Domain (BuildId(..), VersionId(..), BuildState(..))
+import Server.Domain (Build(..), Version(..), BuildState(..))
 import Server.DataStore (BuildPair(..), BuildRecord(..))
 
 import Server.DataStore.Atomic (AtomicM(..))
@@ -37,9 +37,9 @@ testBuildCreation = TestCase $ bracket
   removeDbDir
   -- test
   (\(dbDir, buildStore) -> do
-    maybeBuildPair <- atomically buildStore $ findBuildPair buildStore (BuildId "build1")
+    maybeBuildPair <- atomically buildStore $ findBuildPair buildStore (GlobalId "build1")
 
-    let expected = (Just (BuildPair (BuildRecord (BuildId "build1") (VersionId "version1") Init) (BuildRecord (BuildId "build1") (VersionId "version1") Init)))
+    let expected = (Just (BuildPair (BuildRecord (GlobalId "build1") (CommitHash "version1") Init) (BuildRecord (GlobalId "build1") (CommitHash "version1") Init)))
     
     assertEqual 
       "Build pair should exist" 
@@ -55,7 +55,7 @@ testUpdateFastExecution = TestCase $ bracket
   removeDbDir
   -- test
   (\(dbDir, buildStore) -> do
-    let buildId = BuildId "build1"
+    let buildId = GlobalId "build1"
     
     foundAndUpdatedE <- ioFindAndUpdateFastState buildStore buildId
     
@@ -76,7 +76,7 @@ testUpdateSlowExecution = TestCase $ bracket
   removeDbDir
   -- test
   (\(dbDir, buildStore) -> do
-    let buildId = BuildId "build1"
+    let buildId = GlobalId "build1"
     
     foundAndUpdatedE <- ioFindAndUpdateSlowState buildStore buildId
     
@@ -90,16 +90,16 @@ testUpdateSlowExecution = TestCase $ bracket
   )
 
 
-ioFindFastState :: BuildStore tx -> BuildId -> IO (Either () BuildState)
+ioFindFastState :: BuildStore tx -> Build -> IO (Either () BuildState)
 ioFindFastState buildStore buildId = do
   atomically buildStore $ justToRight <$> findFastState buildStore buildId
 
-ioFindSlowState :: BuildStore tx -> BuildId -> IO (Either () BuildState)
+ioFindSlowState :: BuildStore tx -> Build -> IO (Either () BuildState)
 ioFindSlowState buildStore buildId = do
   atomically buildStore $ justToRight <$> findSlowState buildStore buildId
     
 
-ioFindAndUpdateFastState :: BuildStore tx -> BuildId -> IO (Either () ())
+ioFindAndUpdateFastState :: BuildStore tx -> Build -> IO (Either () ())
 ioFindAndUpdateFastState buildStore buildId = do
   atomically buildStore $ do
     stateE <- justToRight <$> findFastState buildStore buildId
@@ -107,7 +107,7 @@ ioFindAndUpdateFastState buildStore buildId = do
       Right _ -> Right <$> updateFastState buildStore buildId Running
       Left _ -> return $ Left ()
 
-ioFindAndUpdateSlowState :: BuildStore tx -> BuildId -> IO (Either () ())
+ioFindAndUpdateSlowState :: BuildStore tx -> Build -> IO (Either () ())
 ioFindAndUpdateSlowState buildStore buildId = do
   atomically buildStore $ do
     stateE <- justToRight <$> findSlowState buildStore buildId
@@ -129,5 +129,5 @@ storeWithBuild makeBuildStore = do
   dbDir <- getUniqueDirName
   buildStore <- makeBuildStore dbDir
   atomically buildStore $ do
-    createBuildUnlessExists buildStore (BuildId "build1") (VersionId "version1")
+    createBuildUnlessExists buildStore (GlobalId "build1") (CommitHash "version1")
   return (dbDir, buildStore)

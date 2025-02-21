@@ -12,7 +12,7 @@ import Control.Monad.Reader.Class (MonadReader)
 import Data.IORef
 import Server.DataStore (BuildPair (..), BuildRecord (..), BuildStore (..))
 import Server.DataStore.Atomic (AtomicM (..))
-import Server.Domain (BuildId (..), BuildState (..), BuildSummary (..), VersionId (..))
+import Server.Domain (Build (..), BuildState (..), BuildSummary (..), Version (..))
 import Server.Service (BuildService (..), CreationOutcome (..), StateChangeOutcome (..))
 import Server.Service.Persistent (makePersistentService)
 import Test.HUnit (Test (TestCase, TestLabel, TestList), assertBool, (@?=))
@@ -38,7 +38,7 @@ tests =
 testGetBuildSummaryNonExistent :: Test
 testGetBuildSummaryNonExistent = TestCase $ do
   let service = makePersistentService defaultStore {findBuildPair = const $ pure Nothing}
-  actual <- getBuildSummary service (BuildId "123")
+  actual <- getBuildSummary service (GlobalId "123")
   let expected = Nothing
   actual @?= expected
 
@@ -49,35 +49,35 @@ testGetBuildSummaryTwoRows = TestCase $ do
           defaultStore
             { findBuildPair = const $ pure $ Just defaultBuildPair
             }
-  actual <- getBuildSummary service (BuildId "123")
+  actual <- getBuildSummary service (GlobalId "123")
   let expected = Just $ BuildSummary {slowState = Init, fastState = Running}
   actual @?= expected
 
 testCreateBuildAlreadyExists :: Test
 testCreateBuildAlreadyExists = TestCase $ do
   let service = makePersistentService defaultStore {createBuildUnlessExists = (const . const) $ pure $ Left ()}
-  actual <- createBuild service (VersionId "123") (BuildId "456")
+  actual <- createBuild service (CommitHash "123") (GlobalId "456")
   let expected = Conflict
   actual @?= expected
 
 testCreateBuildSuccess :: Test
 testCreateBuildSuccess = TestCase $ do
   let service = makePersistentService defaultStore {createBuildUnlessExists = (const . const) $ pure $ Right ()}
-  actual <- createBuild service (VersionId "123") (BuildId "456")
+  actual <- createBuild service (CommitHash "123") (GlobalId "456")
   let expected = SuccessfullyCreated
   actual @?= expected
 
 testAdvanceFastResultNonExistent :: Test
 testAdvanceFastResultNonExistent = TestCase $ do
   let service = makePersistentService defaultStore {findFastState = const $ pure Nothing}
-  actual <- advanceFastSuite service (BuildId "123")
+  actual <- advanceFastSuite service (GlobalId "123")
   let expected = NotFound
   actual @?= expected
 
 testAdvanceFastResultSuccess :: Test
 testAdvanceFastResultSuccess = TestCase $ do
   let service = makeServiceWithFastStubs Running
-  actual <- advanceFastSuite service (BuildId "123")
+  actual <- advanceFastSuite service (GlobalId "123")
   let expected = SuccessfullyChangedState
   actual @?= expected
 
@@ -85,7 +85,7 @@ testAdvanceFastResultAdvancesAndUpdates :: Test
 testAdvanceFastResultAdvancesAndUpdates = TestCase $ do
   writtenState <- newIORef Init
   let service = makeServiceWithFastMocks writtenState
-  advanceFastSuite service (BuildId "123")
+  advanceFastSuite service (GlobalId "123")
   actual <- readIORef writtenState
   let expected = Running
   actual @?= expected
@@ -93,7 +93,7 @@ testAdvanceFastResultAdvancesAndUpdates = TestCase $ do
 testAdvanceSlowResultSuccess :: Test
 testAdvanceSlowResultSuccess = TestCase $ do
   let service = makeServiceWithSlowStubs Init
-  actual <- advanceSlowSuite service (BuildId "123")
+  actual <- advanceSlowSuite service (GlobalId "123")
   let expected = SuccessfullyChangedState
   actual @?= expected
 
@@ -101,7 +101,7 @@ testAdvanceSlowResultAdvancesAndUpdates :: Test
 testAdvanceSlowResultAdvancesAndUpdates = TestCase $ do
   writtenState <- newIORef Init
   let service = makeServiceWithSlowMocks writtenState
-  advanceSlowSuite service (BuildId "123")
+  advanceSlowSuite service (GlobalId "123")
   actual <- readIORef writtenState
   let expected = Running
   actual @?= expected
@@ -109,7 +109,7 @@ testAdvanceSlowResultAdvancesAndUpdates = TestCase $ do
 testFailFastResultSuccess :: Test
 testFailFastResultSuccess = TestCase $ do
   let service = makeServiceWithFastStubs Running
-  actual <- failFastSuite service (BuildId "123")
+  actual <- failFastSuite service (GlobalId "123")
   let expected = SuccessfullyChangedState
   actual @?= expected
 
@@ -117,7 +117,7 @@ testFailFastResultAdvancesAndUpdates :: Test
 testFailFastResultAdvancesAndUpdates = TestCase $ do
   writtenState <- newIORef Running
   let service = makeServiceWithFastMocks writtenState
-  failFastSuite service (BuildId "123")
+  failFastSuite service (GlobalId "123")
   actual <- readIORef writtenState
   let expected = Failed
   actual @?= expected
@@ -125,7 +125,7 @@ testFailFastResultAdvancesAndUpdates = TestCase $ do
 testFailSlowResultSuccess :: Test
 testFailSlowResultSuccess = TestCase $ do
   let service = makeServiceWithSlowStubs Running
-  actual <- failSlowSuite service (BuildId "123")
+  actual <- failSlowSuite service (GlobalId "123")
   let expected = SuccessfullyChangedState
   actual @?= expected
 
@@ -133,7 +133,7 @@ testFailSlowResultAdvancesAndUpdates :: Test
 testFailSlowResultAdvancesAndUpdates = TestCase $ do
   writtenState <- newIORef Running
   let service = makeServiceWithSlowMocks writtenState
-  failSlowSuite service (BuildId "123")
+  failSlowSuite service (GlobalId "123")
   actual <- readIORef writtenState
   let expected = Failed
   actual @?= expected
@@ -154,16 +154,16 @@ makeServiceWithSlowStubs inital =
         updateSlowState = makeStubbedUpdate
       }
 
-makeStubbedFind :: BuildState -> (BuildId -> AtomicM ctx (Maybe BuildState))
+makeStubbedFind :: BuildState -> (Build -> AtomicM ctx (Maybe BuildState))
 makeStubbedFind state = const $ pure $ Just state
 
-makeStubbedUpdate :: (BuildId -> BuildState -> AtomicM ctx ())
+makeStubbedUpdate :: (Build -> BuildState -> AtomicM ctx ())
 makeStubbedUpdate = (const . const) $ pure ()
 
-makeMockedFind :: IORef BuildState -> (BuildId -> AtomicM ctx (Maybe BuildState))
+makeMockedFind :: IORef BuildState -> (Build -> AtomicM ctx (Maybe BuildState))
 makeMockedFind ref = const $ fmap Just $ liftIO $ readIORef ref
 
-makeMockedUpdate :: IORef BuildState -> (BuildId -> BuildState -> AtomicM ctx ())
+makeMockedUpdate :: IORef BuildState -> (Build -> BuildState -> AtomicM ctx ())
 makeMockedUpdate ref = \_ newState -> liftIO $ writeIORef ref newState
 
 makeServiceWithFastMocks :: IORef BuildState -> BuildService

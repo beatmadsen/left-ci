@@ -135,7 +135,7 @@ testCreateBuild = TestCase $ do
 
   runSession
     ( do
-        response <- srequest $ makeCreateRequest (VersionId "version-123") (BuildId "build-42")
+        response <- srequest $ makeCreateRequest (CommitHash "version-123") (GlobalId "build-42")
         assertStatus 200 response
     )
     app
@@ -152,7 +152,7 @@ testCreateBuildConflict = TestCase $ do
   app <- scottyApp $ makeApplication service
   runSession
     ( do
-        response <- srequest $ makeCreateRequest (VersionId "version-123") (BuildId "build-42")
+        response <- srequest $ makeCreateRequest (CommitHash "version-123") (GlobalId "build-42")
         assertStatus 409 response
     )
     app
@@ -163,7 +163,7 @@ testAdvanceFastResultNonExistent = TestCase $ do
   app <- scottyApp $ makeApplication service
   runSession
     ( do
-        response <- srequest $ makeActionRequest "build-42" "fast" "advance"
+        response <- srequest $ makeActionRequest (GlobalId "build-42") "fast" "advance"
         assertStatus 404 response
     )
     app
@@ -174,7 +174,7 @@ testAdvanceSlowResultNonExistent = TestCase $ do
   app <- scottyApp $ makeApplication service
   runSession
     ( do
-        response <- srequest $ makeActionRequest "build-42" "slow" "advance"
+        response <- srequest $ makeActionRequest (GlobalId "build-42") "slow" "advance"
         assertStatus 404 response
     )
     app
@@ -185,7 +185,7 @@ testFailFastResultNonExistent = TestCase $ do
   app <- scottyApp $ makeApplication service
   runSession
     ( do
-        response <- srequest $ makeActionRequest "build-42" "fast" "fail"
+        response <- srequest $ makeActionRequest (GlobalId "build-42") "fast" "fail"
         assertStatus 404 response
     )
     app
@@ -196,7 +196,7 @@ testFailSlowResultNonExistent = TestCase $ do
   app <- scottyApp $ makeApplication service
   runSession
     ( do
-        response <- srequest $ makeActionRequest "build-42" "slow" "fail"
+        response <- srequest $ makeActionRequest (GlobalId "build-42") "slow" "fail"
         assertStatus 404 response
     )
     app
@@ -212,8 +212,8 @@ defaultService =
       failSlowSuite = undefined
     }
 
-makeCreateRequest :: VersionId -> BuildId -> SRequest
-makeCreateRequest (VersionId vid) (BuildId bid) =
+makeCreateRequest :: Version -> Build -> SRequest
+makeCreateRequest (CommitHash vid) (GlobalId bid) =
   SRequest
     defaultRequest
       { requestMethod = "POST",
@@ -221,8 +221,8 @@ makeCreateRequest (VersionId vid) (BuildId bid) =
       }
     "" -- No body needed for create
 
-makeActionRequest :: BuildId -> Text -> Text -> SRequest
-makeActionRequest (BuildId bid) cadence action =
+makeActionRequest :: Build -> Text -> Text -> SRequest
+makeActionRequest (GlobalId bid) cadence action =
   SRequest
     defaultRequest
       { requestMethod = "POST",

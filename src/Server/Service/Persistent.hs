@@ -6,10 +6,10 @@ where
 import Server.DataStore (BuildPair (..), BuildRecord (..), BuildStore (..))
 import Server.DataStore.Atomic (AtomicM)
 import Server.Domain
-  ( BuildId (..),
+  ( Build (..),
     BuildState (..),
     BuildSummary (..),
-    VersionId (..),
+    Version (..),
   )
 import Server.Service
 
@@ -24,7 +24,7 @@ makePersistentService buildStore =
       failSlowSuite = pFailSlowSuite buildStore
     }
 
-pGetBuildSummary :: BuildStore ctx -> BuildId -> IO (Maybe BuildSummary)
+pGetBuildSummary :: BuildStore ctx -> Build -> IO (Maybe BuildSummary)
 pGetBuildSummary buildStore buildId = do
   maybeBuildPair <- atomically buildStore $ findBuildPair buildStore buildId
   pure $ fmap extractSummary maybeBuildPair
@@ -32,28 +32,28 @@ pGetBuildSummary buildStore buildId = do
 extractSummary :: BuildPair -> BuildSummary
 extractSummary bp = BuildSummary {slowState = state (slowSuite bp), fastState = state (fastSuite bp)}
 
-pCreateBuild :: BuildStore ctx -> VersionId -> BuildId -> IO CreationOutcome
+pCreateBuild :: BuildStore ctx -> Version -> Build -> IO CreationOutcome
 pCreateBuild buildStore versionId buildId = do
   result <- atomically buildStore $ createBuildUnlessExists buildStore buildId versionId
   pure $ case result of
     Left () -> Conflict
     Right () -> SuccessfullyCreated
 
-pAdvanceFastSuite :: BuildStore ctx -> BuildId -> IO StateChangeOutcome
+pAdvanceFastSuite :: BuildStore ctx -> Build -> IO StateChangeOutcome
 pAdvanceFastSuite buildStore buildId = atomically buildStore $ do
   maybeState <- findFastState buildStore buildId
   case maybeState of
     Nothing -> pure NotFound
     Just state -> advanceAndUpdate (updateFastState buildStore buildId) state
 
-pAdvanceSlowSuite :: BuildStore ctx -> BuildId -> IO StateChangeOutcome
+pAdvanceSlowSuite :: BuildStore ctx -> Build -> IO StateChangeOutcome
 pAdvanceSlowSuite buildStore buildId = atomically buildStore $ do
   maybeState <- findSlowState buildStore buildId
   case maybeState of
     Nothing -> pure NotFound
     Just state -> advanceAndUpdate (updateSlowState buildStore buildId) state
 
-pFailFastSuite :: BuildStore ctx -> BuildId -> IO StateChangeOutcome
+pFailFastSuite :: BuildStore ctx -> Build -> IO StateChangeOutcome
 pFailFastSuite buildStore buildId = atomically buildStore $ do
   maybeState <- findFastState buildStore buildId
   case maybeState of
@@ -63,7 +63,7 @@ pFailFastSuite buildStore buildId = atomically buildStore $ do
       updateFastState buildStore buildId Failed
       pure SuccessfullyChangedState
 
-pFailSlowSuite :: BuildStore ctx -> BuildId -> IO StateChangeOutcome
+pFailSlowSuite :: BuildStore ctx -> Build -> IO StateChangeOutcome
 pFailSlowSuite buildStore buildId = atomically buildStore $ do
   maybeState <- findSlowState buildStore buildId
   case maybeState of

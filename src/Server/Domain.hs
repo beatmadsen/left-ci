@@ -4,8 +4,8 @@
 module Server.Domain
   ( BuildState (..),
     BuildSummary (..),
-    VersionId(..),
-    BuildId(..),
+    Version(..),
+    Build(..),
   )
 where
 
@@ -13,20 +13,20 @@ import Data.Aeson (ToJSON (..), object, (.=))
 import Data.String (IsString(..))
 import Data.Text (Text)
 
-newtype VersionId = VersionId Text
+newtype Version = CommitHash Text
   deriving (Show, Eq)
 
 -- Make it easy to use string literals
-instance IsString VersionId where
-    fromString :: String -> VersionId
-    fromString = VersionId . fromString
+instance IsString Version where
+    fromString :: String -> Version
+    fromString = CommitHash . fromString
 
-newtype BuildId = BuildId Text
+newtype Build = GlobalId Text
   deriving (Show, Eq)
 
-instance IsString BuildId where
-    fromString :: String -> BuildId
-    fromString = BuildId . fromString
+instance IsString Build where
+    fromString :: String -> Build
+    fromString = GlobalId . fromString
 
 data BuildState = Init | Running | Passed | Failed
   deriving (Show, Eq)

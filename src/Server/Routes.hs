@@ -12,7 +12,7 @@ import Data.Aeson.Types (Parser)
 import Data.Either (Either (..))
 import Data.Text (Text)
 import Network.HTTP.Types.Status (status404, status409, status500)
-import Server.Domain (BuildId (..), BuildState (..), BuildSummary (..), VersionId (..))
+import Server.Domain (Build (..), BuildState (..), BuildSummary (..), Version (..))
 import Server.Service (BuildService (..), CreationOutcome (..), StateChangeOutcome (..))
 import Web.Scotty
   ( ActionM,
@@ -28,15 +28,15 @@ import Web.Scotty
   )
 import Web.Scotty.Internal.Types (ActionError, ActionT)
 
-pathVersionId :: ActionM VersionId
+pathVersionId :: ActionM Version
 pathVersionId = do
   vid <- pathParam "v"
-  return $ VersionId vid
+  return $ CommitHash vid
 
-pathBuildId :: ActionM BuildId
+pathBuildId :: ActionM Build
 pathBuildId = do
   bid <- pathParam "b"
-  return $ BuildId bid
+  return $ GlobalId bid
 
 makeApplication :: BuildService -> ScottyM ()
 makeApplication service = do

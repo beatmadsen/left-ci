@@ -16,7 +16,7 @@ import Database.SQLite.Simple.QQ (sql)
 import Server.DataStore (BuildPair (..), BuildRecord (..), BuildStore (..))
 import Server.DataStore.Atomic (AtomicM (..), executeAtomic)
 import Server.DataStore.SQLiteSetup
-import Server.Domain (BuildId (..), BuildState (..), VersionId (..))
+import Server.Domain (Build (..), BuildState (..), Version (..))
 import Server.DataStore.SQLiteTypes
 
 newtype OngoingTransaction = OngoingTransaction
@@ -45,7 +45,7 @@ sqlAtomically client atomicAction = do
   commitOngoingTransaction ot
   return result
 
-sqlFindBuildPair :: BuildId -> AtomicM OngoingTransaction (Maybe BuildPair)
+sqlFindBuildPair :: Build -> AtomicM OngoingTransaction (Maybe BuildPair)
 sqlFindBuildPair buildId = do
   OngoingTransaction connection <- ask
   executions <- liftIO $ findExecutions connection buildId
@@ -69,8 +69,8 @@ mapExecution ex =
     (versionCommitHash ex)
     (executionState ex)
 
-findExecutions :: Connection -> BuildId -> IO [Execution]
-findExecutions connection (BuildId buildId) =
+findExecutions :: Connection -> Build -> IO [Execution]
+findExecutions connection (GlobalId buildId) =
   query
     connection
     [sql|
@@ -83,7 +83,7 @@ findExecutions connection (BuildId buildId) =
       |]
     (Only buildId)
 
-sqlCreateBuildUnlessExists :: BuildId -> VersionId -> AtomicM OngoingTransaction (Either () ())
+sqlCreateBuildUnlessExists :: Build -> Version -> AtomicM OngoingTransaction (Either () ())
 sqlCreateBuildUnlessExists buildId versionId = do
   OngoingTransaction connection <- ask
   liftIO $ do
@@ -94,8 +94,8 @@ sqlCreateBuildUnlessExists buildId versionId = do
         createVersionAndBuildAndExecutions connection versionId buildId
         return $ Right ()
 
-doesBuildExist :: Connection -> BuildId -> IO Bool
-doesBuildExist connection (BuildId buildId) = do
+doesBuildExist :: Connection -> Build -> IO Bool
+doesBuildExist connection (GlobalId buildId) = do
   results <-
     query
       connection
@@ -104,7 +104,7 @@ doesBuildExist connection (BuildId buildId) = do
       IO [Only Int]
   return $ not $ null results
 
-createVersionAndBuildAndExecutions :: Connection -> VersionId -> BuildId -> IO ()
+createVersionAndBuildAndExecutions :: Connection -> Version -> Build -> IO ()
 createVersionAndBuildAndExecutions connection versionId buildId = do
   now <- getCurrentTime
   insertOrIgnoreVersion connection versionId now
@@ -112,17 +112,17 @@ createVersionAndBuildAndExecutions connection versionId buildId = do
   insertExecution Fast connection buildId now
   insertExecution Slow connection buildId now
 
-insertOrIgnoreVersion :: Connection -> VersionId -> UTCTime -> IO ()
+insertOrIgnoreVersion :: Connection -> Version -> UTCTime -> IO ()
 insertOrIgnoreVersion connection versionId now = do
-  let VersionId commitHash = versionId
+  let CommitHash commitHash = versionId
   execute
     connection
     "INSERT OR IGNORE INTO versions (commit_hash, created_at) VALUES (?, ?)"
     (commitHash, now)
 
-insertBuild :: Connection -> VersionId -> BuildId -> UTCTime -> IO ()
-insertBuild connection (VersionId commitHash) buildId now = do
-  let BuildId globalId = buildId
+insertBuild :: Connection -> Version -> Build -> UTCTime -> IO ()
+insertBuild connection (CommitHash commitHash) buildId now = do
+  let GlobalId globalId = buildId
   execute
     connection
     [sql|
@@ -133,8 +133,8 @@ insertBuild connection (VersionId commitHash) buildId now = do
     |]
     (globalId, now, commitHash)
 
-insertExecution :: SuiteName -> Connection -> BuildId -> UTCTime -> IO ()
-insertExecution suiteName connection (BuildId globalId) now = do
+insertExecution :: SuiteName -> Connection -> Build -> UTCTime -> IO ()
+insertExecution suiteName connection (GlobalId globalId) now = do
   execute
     connection
     [sql|
@@ -145,14 +145,14 @@ insertExecution suiteName connection (BuildId globalId) now = do
     |]
     (show Init, now, now, globalId, suiteName)
 
-sqlFindState :: SuiteName -> BuildId -> AtomicM OngoingTransaction (Maybe BuildState)
+sqlFindState :: SuiteName -> Build -> AtomicM OngoingTransaction (Maybe BuildState)
 sqlFindState suiteName buildId = do
   OngoingTransaction connection <- ask
   results <- liftIO $ queryState suiteName connection buildId
   return $ takeFirstState results
 
-queryState :: SuiteName -> Connection -> BuildId -> IO [Only String]
-queryState suiteName connection (BuildId globalId) = 
+queryState :: SuiteName -> Connection -> Build -> IO [Only String]
+queryState suiteName connection (GlobalId globalId) = 
   query 
     connection
     [sql| 
@@ -169,8 +169,8 @@ takeFirstState results = case results of
   [] -> Nothing
   (Only state) : _ -> Just $ fromString state
 
-sqlUpdateState :: SuiteName -> BuildId -> BuildState -> AtomicM OngoingTransaction ()
-sqlUpdateState suiteName (BuildId globalId) state = do
+sqlUpdateState :: SuiteName -> Build -> BuildState -> AtomicM OngoingTransaction ()
+sqlUpdateState suiteName (GlobalId globalId) state = do
   OngoingTransaction connection <- ask
   liftIO $ do
     execute

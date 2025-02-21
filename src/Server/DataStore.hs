@@ -11,8 +11,8 @@ import Server.DataStore.Atomic
 import Server.Domain
 
 data BuildRecord = BuildRecord
-  { buildId :: BuildId,
-    versionId :: VersionId,
+  { buildId :: Build,
+    versionId :: Version,
     state :: BuildState
   }
   deriving (Show, Eq)
@@ -26,12 +26,12 @@ data BuildPair = BuildPair
 data BuildStore ctx = BuildStore
   { atomically :: forall a. AtomicM ctx a -> IO a,
     -- TODO: does not need to be atomic
-    findBuildPair :: BuildId -> AtomicM ctx (Maybe BuildPair),
+    findBuildPair :: Build -> AtomicM ctx (Maybe BuildPair),
     
-    createBuildUnlessExists :: BuildId -> VersionId -> AtomicM ctx (Either () ()),
+    createBuildUnlessExists :: Build -> Version -> AtomicM ctx (Either () ()),
     
-    findFastState :: BuildId -> AtomicM ctx (Maybe BuildState),
-    updateFastState :: BuildId -> BuildState -> AtomicM ctx (),
-    findSlowState :: BuildId -> AtomicM ctx (Maybe BuildState),
-    updateSlowState :: BuildId -> BuildState -> AtomicM ctx ()
+    findFastState :: Build -> AtomicM ctx (Maybe BuildState),
+    updateFastState :: Build -> BuildState -> AtomicM ctx (),
+    findSlowState :: Build -> AtomicM ctx (Maybe BuildState),
+    updateSlowState :: Build -> BuildState -> AtomicM ctx ()
   }

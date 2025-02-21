@@ -6,12 +6,21 @@ module Server.Domain
     BuildSummary (..),
     Version(..),
     Build(..),
+    Project(..)
   )
 where
 
 import Data.Aeson (ToJSON (..), object, (.=))
 import Data.String (IsString(..))
 import Data.Text (Text)
+
+newtype Project = Project {
+  getName :: Text
+} deriving (Show, Eq)
+
+instance IsString Project where
+    fromString :: String -> Project
+    fromString = Project . fromString
 
 newtype Version = Version { 
   getCommitHash :: Text 

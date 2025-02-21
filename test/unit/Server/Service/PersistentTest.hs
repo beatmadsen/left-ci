@@ -12,7 +12,7 @@ import Control.Monad.Reader.Class (MonadReader)
 import Data.IORef
 import Server.DataStore (BuildPair (..), BuildRecord (..), BuildStore (..))
 import Server.DataStore.Atomic (AtomicM (..))
-import Server.Domain (Build (..), BuildState (..), BuildSummary (..), Version (..))
+import Server.Domain (Build (..), BuildState (..), BuildSummary (..), Version (..), Project (..))
 import Server.Service (BuildService (..), CreationOutcome (..), StateChangeOutcome (..))
 import Server.Service.Persistent (makePersistentService)
 import Test.HUnit (Test (TestCase, TestLabel, TestList), assertBool, (@?=))
@@ -55,15 +55,15 @@ testGetBuildSummaryTwoRows = TestCase $ do
 
 testCreateBuildAlreadyExists :: Test
 testCreateBuildAlreadyExists = TestCase $ do
-  let service = makePersistentService defaultStore {createBuildUnlessExists = (const . const) $ pure $ Left ()}
-  actual <- createBuild service (Version "123") (Build "456")
+  let service = makePersistentService defaultStore {createBuildUnlessExists = (const . const . const) $ pure $ Left ()}
+  actual <- createBuild service (Project "abc") (Version "123") (Build "456")
   let expected = Conflict
   actual @?= expected
 
 testCreateBuildSuccess :: Test
 testCreateBuildSuccess = TestCase $ do
-  let service = makePersistentService defaultStore {createBuildUnlessExists = (const . const) $ pure $ Right ()}
-  actual <- createBuild service (Version "123") (Build "456")
+  let service = makePersistentService defaultStore {createBuildUnlessExists = (const . const . const) $ pure $ Right ()}
+  actual <- createBuild service (Project "abc") (Version "123") (Build "456")
   let expected = SuccessfullyCreated
   actual @?= expected
 

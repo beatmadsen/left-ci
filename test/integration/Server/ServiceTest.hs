@@ -120,14 +120,16 @@ testUpdateBuild cadence action = TestCase $ do
 
 testCreateBuild :: Test
 testCreateBuild = TestCase $ do
-  passedVersionId <- IORef.newIORef ""
-  passedBuildId <- IORef.newIORef ""
+  passedProject <- IORef.newIORef ""
+  passedVersion <- IORef.newIORef ""
+  passedBuild <- IORef.newIORef ""
 
   let service =
         defaultService
-          { createBuild = \versionId buildId -> do
-              IORef.writeIORef passedVersionId versionId
-              IORef.writeIORef passedBuildId buildId
+          { createBuild = \project version build -> do
+              IORef.writeIORef passedProject project
+              IORef.writeIORef passedVersion version
+              IORef.writeIORef passedBuild build
               pure SuccessfullyCreated
           }
 
@@ -135,24 +137,27 @@ testCreateBuild = TestCase $ do
 
   runSession
     ( do
-        response <- srequest $ makeCreateRequest (Version "version-123") (Build "build-42")
+        response <- srequest $ makeCreateRequest (Project "project-123") (Version "version-123") (Build "build-42")
         assertStatus 200 response
     )
     app
 
-  actualVersionId <- IORef.readIORef passedVersionId
-  assertEqual "version id" "version-123" actualVersionId
+  actualProject <- IORef.readIORef passedProject
+  assertEqual "project" "project-123" actualProject
 
-  actualBuildId <- IORef.readIORef passedBuildId
-  assertEqual "build id" "build-42" actualBuildId
+  actualVersion <- IORef.readIORef passedVersion
+  assertEqual "version" "version-123" actualVersion
+
+  actualBuild <- IORef.readIORef passedBuild
+  assertEqual "build" "build-42" actualBuild
 
 testCreateBuildConflict :: Test
 testCreateBuildConflict = TestCase $ do
-  let service = defaultService {createBuild = (const . const) $ pure Conflict}
+  let service = defaultService {createBuild = (const . const . const) $ pure Conflict}
   app <- scottyApp $ makeApplication service
   runSession
     ( do
-        response <- srequest $ makeCreateRequest (Version "version-123") (Build "build-42")
+        response <- srequest $ makeCreateRequest (Project "project-123") (Version "version-123") (Build "build-42")
         assertStatus 409 response
     )
     app
@@ -212,12 +217,12 @@ defaultService =
       failSlowSuite = undefined
     }
 
-makeCreateRequest :: Version -> Build -> SRequest
-makeCreateRequest (Version vid) (Build bid) =
+makeCreateRequest :: Project -> Version -> Build -> SRequest
+makeCreateRequest (Project name) (Version vid) (Build bid) =
   SRequest
     defaultRequest
       { requestMethod = "POST",
-        pathInfo = ["version", vid, "build", bid]
+        pathInfo = ["project", name, "version", vid, "build", bid]
       }
     "" -- No body needed for create
 

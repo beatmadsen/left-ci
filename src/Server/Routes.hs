@@ -12,7 +12,7 @@ import Data.Aeson.Types (Parser)
 import Data.Either (Either (..))
 import Data.Text (Text)
 import Network.HTTP.Types.Status (status404, status409, status500)
-import Server.Domain (Build (..), BuildState (..), BuildSummary (..), Version (..))
+import Server.Domain (Build (..), BuildState (..), BuildSummary (..), Version (..), Project (..))
 import Server.Service (BuildService (..), CreationOutcome (..), StateChangeOutcome (..))
 import Web.Scotty
   ( ActionM,
@@ -28,46 +28,53 @@ import Web.Scotty
   )
 import Web.Scotty.Internal.Types (ActionError, ActionT)
 
-pathVersionId :: ActionM Version
-pathVersionId = do
+pathVersion :: ActionM Version
+pathVersion = do
   vid <- pathParam "v"
   return $ Version vid
 
-pathBuildId :: ActionM Build
-pathBuildId = do
+pathBuild :: ActionM Build
+pathBuild = do
   bid <- pathParam "b"
   return $ Build bid
+
+pathProject :: ActionM Project
+pathProject = do
+  pid <- pathParam "p"
+  return $ Project pid
 
 makeApplication :: BuildService -> ScottyM ()
 makeApplication service = do
   get "/build/:b" $ do
-    bid <- pathBuildId
+    bid <- pathBuild
     s <- liftIO $ getBuildSummary service bid
     respondToBuildSummary s
 
-  post "/version/:v/build/:b" $ do
-    vid <- pathVersionId
-    bid <- pathBuildId
-    outcome <- liftIO $ createBuild service vid bid
+  -- create a build
+  post "/project/:p/version/:v/build/:b" $ do
+    pid <- pathProject
+    vid <- pathVersion
+    bid <- pathBuild
+    outcome <- liftIO $ createBuild service pid vid bid
     respondToCreationOutcome outcome
 
   post "/build/:b/fast/advance" $ do
-    bid <- pathBuildId
+    bid <- pathBuild
     outcome <- liftIO $ advanceFastSuite service bid
     respondToStateChange outcome
 
   post "/build/:b/slow/advance" $ do
-    bid <- pathBuildId
+    bid <- pathBuild
     outcome <- liftIO $ advanceSlowSuite service bid
     respondToStateChange outcome
 
   post "/build/:b/fast/fail" $ do
-    bid <- pathBuildId
+    bid <- pathBuild
     outcome <- liftIO $ failFastSuite service bid
     respondToStateChange outcome
 
   post "/build/:b/slow/fail" $ do
-    bid <- pathBuildId
+    bid <- pathBuild
     outcome <- liftIO $ failSlowSuite service bid
     respondToStateChange outcome
 

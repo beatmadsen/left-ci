@@ -10,6 +10,7 @@ import Server.Domain
     BuildState (..),
     BuildSummary (..),
     Version (..),
+    Project (..)
   )
 import Server.Service
 
@@ -32,9 +33,9 @@ pGetBuildSummary buildStore buildId = do
 extractSummary :: BuildPair -> BuildSummary
 extractSummary bp = BuildSummary {slowState = state (slowSuite bp), fastState = state (fastSuite bp)}
 
-pCreateBuild :: BuildStore ctx -> Version -> Build -> IO CreationOutcome
-pCreateBuild buildStore versionId buildId = do
-  result <- atomically buildStore $ createBuildUnlessExists buildStore buildId versionId
+pCreateBuild :: BuildStore ctx -> Project -> Version -> Build -> IO CreationOutcome
+pCreateBuild buildStore project version build = do
+  result <- atomically buildStore $ createBuildUnlessExists buildStore project version build
   pure $ case result of
     Left () -> Conflict
     Right () -> SuccessfullyCreated

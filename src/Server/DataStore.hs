@@ -28,7 +28,7 @@ data BuildStore ctx = BuildStore
     -- TODO: does not need to be atomic
     findBuildPair :: Build -> AtomicM ctx (Maybe BuildPair),
     
-    createBuildUnlessExists :: Build -> Version -> AtomicM ctx (Either () ()),
+    createBuildUnlessExists :: Project -> Version -> Build -> AtomicM ctx (Either () ()),
     
     findFastState :: Build -> AtomicM ctx (Maybe BuildState),
     updateFastState :: Build -> BuildState -> AtomicM ctx (),

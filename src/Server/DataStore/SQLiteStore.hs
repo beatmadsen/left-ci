@@ -16,7 +16,7 @@ import Database.SQLite.Simple.QQ (sql)
 import Server.DataStore (BuildPair (..), BuildRecord (..), BuildStore (..))
 import Server.DataStore.Atomic (AtomicM (..), executeAtomic)
 import Server.DataStore.SQLiteSetup
-import Server.Domain (Build (..), BuildState (..), Version (..))
+import Server.Domain (Build (..), BuildState (..), Version (..), Project (..))
 import Server.DataStore.SQLiteTypes
 
 newtype OngoingTransaction = OngoingTransaction
@@ -83,15 +83,15 @@ findExecutions connection (Build buildId) =
       |]
     (Only buildId)
 
-sqlCreateBuildUnlessExists :: Build -> Version -> AtomicM OngoingTransaction (Either () ())
-sqlCreateBuildUnlessExists buildId versionId = do
+sqlCreateBuildUnlessExists :: Project -> Version -> Build -> AtomicM OngoingTransaction (Either () ())
+sqlCreateBuildUnlessExists project version build = do
   OngoingTransaction connection <- ask
   liftIO $ do
-    alreadyExists <- doesBuildExist connection buildId
+    alreadyExists <- doesBuildExist connection build
     if alreadyExists
       then return $ Left ()
       else do
-        createVersionAndBuildAndExecutions connection versionId buildId
+        createEntities connection project version build
         return $ Right ()
 
 doesBuildExist :: Connection -> Build -> IO Bool
@@ -104,13 +104,21 @@ doesBuildExist connection (Build buildId) = do
       IO [Only Int]
   return $ not $ null results
 
-createVersionAndBuildAndExecutions :: Connection -> Version -> Build -> IO ()
-createVersionAndBuildAndExecutions connection versionId buildId = do
+createEntities :: Connection -> Project -> Version -> Build -> IO ()
+createEntities connection project versionId buildId = do
   now <- getCurrentTime
+  insertOrIgnoreProject connection project
   insertOrIgnoreVersion connection versionId now
   insertBuild connection versionId buildId now
   insertExecution Fast connection buildId now
   insertExecution Slow connection buildId now
+
+insertOrIgnoreProject :: Connection -> Project -> IO ()
+insertOrIgnoreProject connection project = do  
+  execute
+    connection
+    "INSERT OR IGNORE INTO projects (name) VALUES (?)"
+    project
 
 insertOrIgnoreVersion :: Connection -> Version -> UTCTime -> IO ()
 insertOrIgnoreVersion connection versionId now = do

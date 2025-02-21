@@ -13,7 +13,7 @@ import Database.SQLite.Simple (close, execute_)
 import RandomHelper (getUniqueDirName)
 import Control.Monad (when)
 import Server.DataStore
-import Server.Domain (Build(..), Version(..), BuildState(..))
+import Server.Domain (Project(..), Version(..), Build(..), BuildState(..))
 import Server.DataStore (BuildPair(..), BuildRecord(..))
 
 import Server.DataStore.Atomic (AtomicM(..))
@@ -129,5 +129,5 @@ storeWithBuild makeBuildStore = do
   dbDir <- getUniqueDirName
   buildStore <- makeBuildStore dbDir
   atomically buildStore $ do
-    createBuildUnlessExists buildStore (Build "build1") (Version "version1")
+    createBuildUnlessExists buildStore (Project "project1") (Version "version1") (Build "build1")
   return (dbDir, buildStore)

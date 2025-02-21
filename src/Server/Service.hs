@@ -8,14 +8,14 @@ module Server.Service
   )
 where
 
-import Server.Domain (Build, BuildState (..), BuildSummary, Version)
+import Server.Domain (Build, BuildState (..), BuildSummary, Version, Project)
 
 data CreationOutcome = Conflict | SuccessfullyCreated deriving (Show, Eq)
 data StateChangeOutcome = NotFound | SuccessfullyChangedState deriving (Show, Eq)
 
 data BuildService = BuildService
   { getBuildSummary :: Build -> IO (Maybe BuildSummary),
-    createBuild :: Version -> Build -> IO CreationOutcome,
+    createBuild :: Project -> Version -> Build -> IO CreationOutcome,
     advanceFastSuite :: Build -> IO StateChangeOutcome,
     advanceSlowSuite :: Build -> IO StateChangeOutcome,
     failFastSuite :: Build -> IO StateChangeOutcome,

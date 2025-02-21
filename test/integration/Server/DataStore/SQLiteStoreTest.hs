@@ -37,9 +37,9 @@ testBuildCreation = TestCase $ bracket
   removeDbDir
   -- test
   (\(dbDir, buildStore) -> do
-    maybeBuildPair <- atomically buildStore $ findBuildPair buildStore (GlobalId "build1")
+    maybeBuildPair <- atomically buildStore $ findBuildPair buildStore (Build "build1")
 
-    let expected = (Just (BuildPair (BuildRecord (GlobalId "build1") (CommitHash "version1") Init) (BuildRecord (GlobalId "build1") (CommitHash "version1") Init)))
+    let expected = (Just (BuildPair (BuildRecord (Build "build1") (CommitHash "version1") Init) (BuildRecord (Build "build1") (CommitHash "version1") Init)))
     
     assertEqual 
       "Build pair should exist" 
@@ -55,7 +55,7 @@ testUpdateFastExecution = TestCase $ bracket
   removeDbDir
   -- test
   (\(dbDir, buildStore) -> do
-    let buildId = GlobalId "build1"
+    let buildId = Build "build1"
     
     foundAndUpdatedE <- ioFindAndUpdateFastState buildStore buildId
     
@@ -76,7 +76,7 @@ testUpdateSlowExecution = TestCase $ bracket
   removeDbDir
   -- test
   (\(dbDir, buildStore) -> do
-    let buildId = GlobalId "build1"
+    let buildId = Build "build1"
     
     foundAndUpdatedE <- ioFindAndUpdateSlowState buildStore buildId
     
@@ -129,5 +129,5 @@ storeWithBuild makeBuildStore = do
   dbDir <- getUniqueDirName
   buildStore <- makeBuildStore dbDir
   atomically buildStore $ do
-    createBuildUnlessExists buildStore (GlobalId "build1") (CommitHash "version1")
+    createBuildUnlessExists buildStore (Build "build1") (CommitHash "version1")
   return (dbDir, buildStore)

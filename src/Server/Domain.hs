@@ -21,12 +21,13 @@ instance IsString Version where
     fromString :: String -> Version
     fromString = CommitHash . fromString
 
-newtype Build = GlobalId Text
-  deriving (Show, Eq)
+newtype Build = Build {
+  getGlobalId :: Text
+} deriving (Show, Eq)
 
 instance IsString Build where
     fromString :: String -> Build
-    fromString = GlobalId . fromString
+    fromString = Build . fromString
 
 data BuildState = Init | Running | Passed | Failed
   deriving (Show, Eq)

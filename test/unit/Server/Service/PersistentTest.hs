@@ -38,7 +38,7 @@ tests =
 testGetBuildSummaryNonExistent :: Test
 testGetBuildSummaryNonExistent = TestCase $ do
   let service = makePersistentService defaultStore {findBuildPair = const $ pure Nothing}
-  actual <- getBuildSummary service (GlobalId "123")
+  actual <- getBuildSummary service (Build "123")
   let expected = Nothing
   actual @?= expected
 
@@ -49,35 +49,35 @@ testGetBuildSummaryTwoRows = TestCase $ do
           defaultStore
             { findBuildPair = const $ pure $ Just defaultBuildPair
             }
-  actual <- getBuildSummary service (GlobalId "123")
+  actual <- getBuildSummary service (Build "123")
   let expected = Just $ BuildSummary {slowState = Init, fastState = Running}
   actual @?= expected
 
 testCreateBuildAlreadyExists :: Test
 testCreateBuildAlreadyExists = TestCase $ do
   let service = makePersistentService defaultStore {createBuildUnlessExists = (const . const) $ pure $ Left ()}
-  actual <- createBuild service (CommitHash "123") (GlobalId "456")
+  actual <- createBuild service (CommitHash "123") (Build "456")
   let expected = Conflict
   actual @?= expected
 
 testCreateBuildSuccess :: Test
 testCreateBuildSuccess = TestCase $ do
   let service = makePersistentService defaultStore {createBuildUnlessExists = (const . const) $ pure $ Right ()}
-  actual <- createBuild service (CommitHash "123") (GlobalId "456")
+  actual <- createBuild service (CommitHash "123") (Build "456")
   let expected = SuccessfullyCreated
   actual @?= expected
 
 testAdvanceFastResultNonExistent :: Test
 testAdvanceFastResultNonExistent = TestCase $ do
   let service = makePersistentService defaultStore {findFastState = const $ pure Nothing}
-  actual <- advanceFastSuite service (GlobalId "123")
+  actual <- advanceFastSuite service (Build "123")
   let expected = NotFound
   actual @?= expected
 
 testAdvanceFastResultSuccess :: Test
 testAdvanceFastResultSuccess = TestCase $ do
   let service = makeServiceWithFastStubs Running
-  actual <- advanceFastSuite service (GlobalId "123")
+  actual <- advanceFastSuite service (Build "123")
   let expected = SuccessfullyChangedState
   actual @?= expected
 
@@ -85,7 +85,7 @@ testAdvanceFastResultAdvancesAndUpdates :: Test
 testAdvanceFastResultAdvancesAndUpdates = TestCase $ do
   writtenState <- newIORef Init
   let service = makeServiceWithFastMocks writtenState
-  advanceFastSuite service (GlobalId "123")
+  advanceFastSuite service (Build "123")
   actual <- readIORef writtenState
   let expected = Running
   actual @?= expected
@@ -93,7 +93,7 @@ testAdvanceFastResultAdvancesAndUpdates = TestCase $ do
 testAdvanceSlowResultSuccess :: Test
 testAdvanceSlowResultSuccess = TestCase $ do
   let service = makeServiceWithSlowStubs Init
-  actual <- advanceSlowSuite service (GlobalId "123")
+  actual <- advanceSlowSuite service (Build "123")
   let expected = SuccessfullyChangedState
   actual @?= expected
 
@@ -101,7 +101,7 @@ testAdvanceSlowResultAdvancesAndUpdates :: Test
 testAdvanceSlowResultAdvancesAndUpdates = TestCase $ do
   writtenState <- newIORef Init
   let service = makeServiceWithSlowMocks writtenState
-  advanceSlowSuite service (GlobalId "123")
+  advanceSlowSuite service (Build "123")
   actual <- readIORef writtenState
   let expected = Running
   actual @?= expected
@@ -109,7 +109,7 @@ testAdvanceSlowResultAdvancesAndUpdates = TestCase $ do
 testFailFastResultSuccess :: Test
 testFailFastResultSuccess = TestCase $ do
   let service = makeServiceWithFastStubs Running
-  actual <- failFastSuite service (GlobalId "123")
+  actual <- failFastSuite service (Build "123")
   let expected = SuccessfullyChangedState
   actual @?= expected
 
@@ -117,7 +117,7 @@ testFailFastResultAdvancesAndUpdates :: Test
 testFailFastResultAdvancesAndUpdates = TestCase $ do
   writtenState <- newIORef Running
   let service = makeServiceWithFastMocks writtenState
-  failFastSuite service (GlobalId "123")
+  failFastSuite service (Build "123")
   actual <- readIORef writtenState
   let expected = Failed
   actual @?= expected
@@ -125,7 +125,7 @@ testFailFastResultAdvancesAndUpdates = TestCase $ do
 testFailSlowResultSuccess :: Test
 testFailSlowResultSuccess = TestCase $ do
   let service = makeServiceWithSlowStubs Running
-  actual <- failSlowSuite service (GlobalId "123")
+  actual <- failSlowSuite service (Build "123")
   let expected = SuccessfullyChangedState
   actual @?= expected
 
@@ -133,7 +133,7 @@ testFailSlowResultAdvancesAndUpdates :: Test
 testFailSlowResultAdvancesAndUpdates = TestCase $ do
   writtenState <- newIORef Running
   let service = makeServiceWithSlowMocks writtenState
-  failSlowSuite service (GlobalId "123")
+  failSlowSuite service (Build "123")
   actual <- readIORef writtenState
   let expected = Failed
   actual @?= expected

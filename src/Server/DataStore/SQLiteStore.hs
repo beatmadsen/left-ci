@@ -70,7 +70,7 @@ mapExecution ex =
     (executionState ex)
 
 findExecutions :: Connection -> Build -> IO [Execution]
-findExecutions connection (GlobalId buildId) =
+findExecutions connection (Build buildId) =
   query
     connection
     [sql|
@@ -95,7 +95,7 @@ sqlCreateBuildUnlessExists buildId versionId = do
         return $ Right ()
 
 doesBuildExist :: Connection -> Build -> IO Bool
-doesBuildExist connection (GlobalId buildId) = do
+doesBuildExist connection (Build buildId) = do
   results <-
     query
       connection
@@ -122,7 +122,7 @@ insertOrIgnoreVersion connection versionId now = do
 
 insertBuild :: Connection -> Version -> Build -> UTCTime -> IO ()
 insertBuild connection (CommitHash commitHash) buildId now = do
-  let GlobalId globalId = buildId
+  let Build globalId = buildId
   execute
     connection
     [sql|
@@ -134,7 +134,7 @@ insertBuild connection (CommitHash commitHash) buildId now = do
     (globalId, now, commitHash)
 
 insertExecution :: SuiteName -> Connection -> Build -> UTCTime -> IO ()
-insertExecution suiteName connection (GlobalId globalId) now = do
+insertExecution suiteName connection (Build globalId) now = do
   execute
     connection
     [sql|
@@ -152,7 +152,7 @@ sqlFindState suiteName buildId = do
   return $ takeFirstState results
 
 queryState :: SuiteName -> Connection -> Build -> IO [Only String]
-queryState suiteName connection (GlobalId globalId) = 
+queryState suiteName connection (Build globalId) = 
   query 
     connection
     [sql| 
@@ -170,7 +170,7 @@ takeFirstState results = case results of
   (Only state) : _ -> Just $ fromString state
 
 sqlUpdateState :: SuiteName -> Build -> BuildState -> AtomicM OngoingTransaction ()
-sqlUpdateState suiteName (GlobalId globalId) state = do
+sqlUpdateState suiteName (Build globalId) state = do
   OngoingTransaction connection <- ask
   liftIO $ do
     execute

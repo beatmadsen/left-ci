@@ -36,7 +36,7 @@ pathVersionId = do
 pathBuildId :: ActionM Build
 pathBuildId = do
   bid <- pathParam "b"
-  return $ GlobalId bid
+  return $ Build bid
 
 makeApplication :: BuildService -> ScottyM ()
 makeApplication service = do

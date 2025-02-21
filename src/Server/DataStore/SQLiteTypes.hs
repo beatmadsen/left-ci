@@ -35,7 +35,7 @@ data Execution = Execution
     executionState :: BuildState
   }
 instance FromField Build where
-  fromField = fmap GlobalId . fromField
+  fromField = fmap Build . fromField
 
 instance FromField Version where
   fromField = fmap CommitHash . fromField

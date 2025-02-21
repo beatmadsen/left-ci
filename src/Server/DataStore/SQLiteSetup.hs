@@ -42,18 +42,30 @@ initDb dbPath = do
 
 initTables :: Connection -> IO ()
 initTables conn = do
+  createProjectsTable conn
   createVersionsTable conn
   createBuildsTable conn
   createAndPopulateSuitesTable conn
   createExecutionsTable conn
+
+createProjectsTable :: Connection -> IO ()
+createProjectsTable conn = do
+  execute_ conn [sql|
+    CREATE TABLE IF NOT EXISTS projects (
+        id INTEGER PRIMARY KEY,
+        name TEXT NOT NULL UNIQUE
+    )
+  |]
 
 createVersionsTable :: Connection -> IO ()
 createVersionsTable conn = do
   execute_ conn [sql|
     CREATE TABLE IF NOT EXISTS versions (
         id INTEGER PRIMARY KEY,
+        project_id INTEGER NOT NULL,
         commit_hash TEXT NOT NULL UNIQUE,
-        created_at DATETIME NOT NULL
+        created_at DATETIME NOT NULL,
+        FOREIGN KEY (project_id) REFERENCES projects(id)
     )
   |]
 

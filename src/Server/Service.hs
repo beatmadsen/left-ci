@@ -15,6 +15,7 @@ data StateChangeOutcome = NotFound | SuccessfullyChangedState deriving (Show, Eq
 
 data BuildService = BuildService
   { getBuildSummary :: Build -> IO (Maybe BuildSummary),
+    listProjectBuilds :: Project -> IO [BuildSummary],
     createBuild :: Project -> Version -> Build -> IO CreationOutcome,
     advanceFastSuite :: Build -> IO StateChangeOutcome,
     advanceSlowSuite :: Build -> IO StateChangeOutcome,

@@ -18,6 +18,7 @@ makePersistentService :: BuildStore ctx -> BuildService
 makePersistentService buildStore =
   BuildService
     { getBuildSummary = pGetBuildSummary buildStore,
+      listProjectBuilds = pListProjectBuilds buildStore,
       createBuild = pCreateBuild buildStore,
       advanceFastSuite = pAdvanceFastSuite buildStore,
       advanceSlowSuite = pAdvanceSlowSuite buildStore,
@@ -29,6 +30,11 @@ pGetBuildSummary :: BuildStore ctx -> Build -> IO (Maybe BuildSummary)
 pGetBuildSummary buildStore buildId = do
   maybeBuildPair <- atomically buildStore $ findBuildPair buildStore buildId
   pure $ fmap extractSummary maybeBuildPair
+
+pListProjectBuilds :: BuildStore ctx -> Project -> IO [BuildSummary]
+pListProjectBuilds buildStore project = do
+  maybeBuildPairs <- atomically buildStore $ findBuildPairs buildStore project
+  pure $ map extractSummary maybeBuildPairs
 
 extractSummary :: BuildPair -> BuildSummary
 extractSummary bp = BuildSummary {slowState = state (slowSuite bp), fastState = state (fastSuite bp)}

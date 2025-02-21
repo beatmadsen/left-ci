@@ -34,7 +34,8 @@ tests =
       TestLabel "Given a build id in URL, when posting fail slow, then passes build id to service" (testUpdateBuild "slow" "fail"),
       TestLabel "Given a non-existing build id, when posting fail slow, then returns status code 404" testFailSlowResultNonExistent,
       TestLabel "Given version and build ids in URL, when creating build, then passes ids to service" testCreateBuild,
-      TestLabel "Given a service that reports conflict, when creating build, then returns status code 409" testCreateBuildConflict
+      TestLabel "Given a service that reports conflict, when creating build, then returns status code 409" testCreateBuildConflict,
+      TestLabel "Given a non-existing project name, when listing builds, then returns status code 404 and empty body" testListProjectBuildsNotFound
     ]
 
 testGetSummary :: Test
@@ -45,7 +46,7 @@ testGetSummary = TestCase $ do
 
   runSession
     ( do
-        response <- request $ defaultRequest {pathInfo = ["build", "123"]}
+        response <- request $ defaultRequest {pathInfo = ["builds", "123"]}
         assertStatus 200 response
         assertBody "{\"fast\":\"init\",\"slow\":\"init\"}" response
     )
@@ -57,7 +58,7 @@ testGetSummaryNotFound = TestCase $ do
   app <- scottyApp $ makeApplication service
   runSession
     ( do
-        response <- request $ defaultRequest {pathInfo = ["build", "123"]}
+        response <- request $ defaultRequest {pathInfo = ["builds", "123"]}
         assertStatus 404 response
         assertBody "" response
     )
@@ -81,7 +82,7 @@ testUsesPathBuildId = TestCase $ do
         response <-
           request $
             defaultRequest
-              { pathInfo = ["build", "test-build-42"]
+              { pathInfo = ["builds", "test-build-42"]
               }
         assertStatus 200 response
     )
@@ -206,10 +207,22 @@ testFailSlowResultNonExistent = TestCase $ do
     )
     app
 
+testListProjectBuildsNotFound :: Test
+testListProjectBuildsNotFound = TestCase $ do
+  let service = defaultService {listProjectBuilds = const $ pure []}
+  app <- scottyApp $ makeApplication service
+  runSession
+    ( do  
+        response <- srequest $ makeListRequest (Project "project-123")
+        assertStatus 404 response
+    )
+    app
+
 defaultService :: BuildService
 defaultService =
   BuildService
     { getBuildSummary = undefined,
+      listProjectBuilds = undefined,
       createBuild = undefined,
       advanceFastSuite = undefined,
       advanceSlowSuite = undefined,
@@ -217,12 +230,21 @@ defaultService =
       failSlowSuite = undefined
     }
 
+makeListRequest :: Project -> SRequest
+makeListRequest (Project name) =
+  SRequest
+    defaultRequest
+      { requestMethod = "GET",
+        pathInfo = ["projects", name, "builds"]
+      }
+    "" -- No body needed for list
+
 makeCreateRequest :: Project -> Version -> Build -> SRequest
 makeCreateRequest (Project name) (Version vid) (Build bid) =
   SRequest
     defaultRequest
       { requestMethod = "POST",
-        pathInfo = ["project", name, "version", vid, "build", bid]
+        pathInfo = ["projects", name, "versions", vid, "builds", bid]
       }
     "" -- No body needed for create
 
@@ -231,6 +253,6 @@ makeActionRequest (Build bid) cadence action =
   SRequest
     defaultRequest
       { requestMethod = "POST",
-        pathInfo = ["build", bid, cadence, action]
+        pathInfo = ["builds", bid, cadence, action]
       }
     "" -- No body needed for advance

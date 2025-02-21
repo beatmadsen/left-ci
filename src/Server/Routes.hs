@@ -45,35 +45,35 @@ pathProject = do
 
 makeApplication :: BuildService -> ScottyM ()
 makeApplication service = do
-  get "/build/:b" $ do
+  get "/builds/:b" $ do
     bid <- pathBuild
     s <- liftIO $ getBuildSummary service bid
     respondToBuildSummary s
 
   -- create a build
-  post "/project/:p/version/:v/build/:b" $ do
+  post "/projects/:p/versions/:v/builds/:b" $ do
     pid <- pathProject
     vid <- pathVersion
     bid <- pathBuild
     outcome <- liftIO $ createBuild service pid vid bid
     respondToCreationOutcome outcome
 
-  post "/build/:b/fast/advance" $ do
+  post "/builds/:b/fast/advance" $ do
     bid <- pathBuild
     outcome <- liftIO $ advanceFastSuite service bid
     respondToStateChange outcome
 
-  post "/build/:b/slow/advance" $ do
+  post "/builds/:b/slow/advance" $ do
     bid <- pathBuild
     outcome <- liftIO $ advanceSlowSuite service bid
     respondToStateChange outcome
 
-  post "/build/:b/fast/fail" $ do
+  post "/builds/:b/fast/fail" $ do
     bid <- pathBuild
     outcome <- liftIO $ failFastSuite service bid
     respondToStateChange outcome
 
-  post "/build/:b/slow/fail" $ do
+  post "/builds/:b/slow/fail" $ do
     bid <- pathBuild
     outcome <- liftIO $ failSlowSuite service bid
     respondToStateChange outcome

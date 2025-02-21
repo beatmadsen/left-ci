@@ -27,6 +27,7 @@ data BuildStore ctx = BuildStore
   { atomically :: forall a. AtomicM ctx a -> IO a,
     -- TODO: does not need to be atomic
     findBuildPair :: Build -> AtomicM ctx (Maybe BuildPair),
+    findBuildPairs :: Project -> AtomicM ctx [BuildPair],
     
     createBuildUnlessExists :: Project -> Version -> Build -> AtomicM ctx (Either () ()),
     

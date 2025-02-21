@@ -38,7 +38,7 @@ testX = TestCase $ do
   
   -- Try to connect to verify the server is running
   manager <- newManager defaultManagerSettings
-  request <- parseRequest $ "http://localhost:" ++ show port ++ "/project/p1/version/abcd1234/build/abcdef"
+  request <- parseRequest $ "http://localhost:" ++ show port ++ "/projects/p1/versions/abcd1234/builds/abcdef"
   let postRequest = request { method = methodPost }
   (statusOk, result) <- (
     do

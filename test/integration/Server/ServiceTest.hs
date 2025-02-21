@@ -135,7 +135,7 @@ testCreateBuild = TestCase $ do
 
   runSession
     ( do
-        response <- srequest $ makeCreateRequest (CommitHash "version-123") (Build "build-42")
+        response <- srequest $ makeCreateRequest (Version "version-123") (Build "build-42")
         assertStatus 200 response
     )
     app
@@ -152,7 +152,7 @@ testCreateBuildConflict = TestCase $ do
   app <- scottyApp $ makeApplication service
   runSession
     ( do
-        response <- srequest $ makeCreateRequest (CommitHash "version-123") (Build "build-42")
+        response <- srequest $ makeCreateRequest (Version "version-123") (Build "build-42")
         assertStatus 409 response
     )
     app
@@ -213,7 +213,7 @@ defaultService =
     }
 
 makeCreateRequest :: Version -> Build -> SRequest
-makeCreateRequest (CommitHash vid) (Build bid) =
+makeCreateRequest (Version vid) (Build bid) =
   SRequest
     defaultRequest
       { requestMethod = "POST",

@@ -13,13 +13,14 @@ import Data.Aeson (ToJSON (..), object, (.=))
 import Data.String (IsString(..))
 import Data.Text (Text)
 
-newtype Version = CommitHash Text
-  deriving (Show, Eq)
+newtype Version = Version { 
+  getCommitHash :: Text 
+} deriving (Show, Eq)
 
 -- Make it easy to use string literals
 instance IsString Version where
     fromString :: String -> Version
-    fromString = CommitHash . fromString
+    fromString = Version . fromString
 
 newtype Build = Build {
   getGlobalId :: Text

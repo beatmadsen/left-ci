@@ -56,14 +56,14 @@ testGetBuildSummaryTwoRows = TestCase $ do
 testCreateBuildAlreadyExists :: Test
 testCreateBuildAlreadyExists = TestCase $ do
   let service = makePersistentService defaultStore {createBuildUnlessExists = (const . const) $ pure $ Left ()}
-  actual <- createBuild service (CommitHash "123") (Build "456")
+  actual <- createBuild service (Version "123") (Build "456")
   let expected = Conflict
   actual @?= expected
 
 testCreateBuildSuccess :: Test
 testCreateBuildSuccess = TestCase $ do
   let service = makePersistentService defaultStore {createBuildUnlessExists = (const . const) $ pure $ Right ()}
-  actual <- createBuild service (CommitHash "123") (Build "456")
+  actual <- createBuild service (Version "123") (Build "456")
   let expected = SuccessfullyCreated
   actual @?= expected
 

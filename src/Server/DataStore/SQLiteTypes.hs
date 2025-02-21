@@ -38,7 +38,7 @@ instance FromField Build where
   fromField = fmap Build . fromField
 
 instance FromField Version where
-  fromField = fmap CommitHash . fromField
+  fromField = fmap Version . fromField
 
 instance FromField BuildState where
   fromField = fmap fromString . fromField

@@ -114,14 +114,14 @@ createVersionAndBuildAndExecutions connection versionId buildId = do
 
 insertOrIgnoreVersion :: Connection -> Version -> UTCTime -> IO ()
 insertOrIgnoreVersion connection versionId now = do
-  let CommitHash commitHash = versionId
+  let Version commitHash = versionId
   execute
     connection
     "INSERT OR IGNORE INTO versions (commit_hash, created_at) VALUES (?, ?)"
     (commitHash, now)
 
 insertBuild :: Connection -> Version -> Build -> UTCTime -> IO ()
-insertBuild connection (CommitHash commitHash) buildId now = do
+insertBuild connection (Version commitHash) buildId now = do
   let Build globalId = buildId
   execute
     connection

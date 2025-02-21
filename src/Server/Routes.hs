@@ -31,7 +31,7 @@ import Web.Scotty.Internal.Types (ActionError, ActionT)
 pathVersionId :: ActionM Version
 pathVersionId = do
   vid <- pathParam "v"
-  return $ CommitHash vid
+  return $ Version vid
 
 pathBuildId :: ActionM Build
 pathBuildId = do

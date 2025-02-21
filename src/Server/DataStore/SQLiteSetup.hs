@@ -53,7 +53,8 @@ createProjectsTable conn = do
   execute_ conn [sql|
     CREATE TABLE IF NOT EXISTS projects (
         id INTEGER PRIMARY KEY,
-        name TEXT NOT NULL UNIQUE
+        name TEXT NOT NULL UNIQUE,
+        created_at DATETIME NOT NULL
     )
   |]
 

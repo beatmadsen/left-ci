@@ -31,7 +31,7 @@ testInserts =
       -- test
       ( \(dbDir, dbPath, client) -> do
           connection <- client
-          execute_ connection "INSERT INTO projects (name) VALUES ('test-project')"
+          execute_ connection "INSERT INTO projects (name, created_at) VALUES ('test-project', '2021-01-01')"
           execute_ connection "INSERT INTO versions (project_id, commit_hash, created_at) VALUES (1, 'abcd1234', '2021-01-01')"
           execute_ connection "INSERT INTO builds (version_id, global_id, created_at) VALUES (1, 'global1', '2021-01-01')"
           execute_ connection "INSERT INTO executions (build_id, suite_id, state, created_at, updated_at) VALUES (1, 100, 'Init', '2021-01-01', '2021-01-01')"

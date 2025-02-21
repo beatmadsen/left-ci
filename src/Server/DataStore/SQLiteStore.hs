@@ -105,28 +105,33 @@ doesBuildExist connection (Build buildId) = do
   return $ not $ null results
 
 createEntities :: Connection -> Project -> Version -> Build -> IO ()
-createEntities connection project versionId buildId = do
+createEntities connection project version buildId = do
   now <- getCurrentTime
-  insertOrIgnoreProject connection project
-  insertOrIgnoreVersion connection versionId now
-  insertBuild connection versionId buildId now
+  insertOrIgnoreProject connection project now
+  insertOrIgnoreVersion connection project version now
+  insertBuild connection version buildId now
   insertExecution Fast connection buildId now
   insertExecution Slow connection buildId now
 
-insertOrIgnoreProject :: Connection -> Project -> IO ()
-insertOrIgnoreProject connection project = do  
+insertOrIgnoreProject :: Connection -> Project -> UTCTime -> IO ()
+insertOrIgnoreProject connection project now = do  
   execute
     connection
-    "INSERT OR IGNORE INTO projects (name) VALUES (?)"
-    project
+    "INSERT OR IGNORE INTO projects (name, created_at) VALUES (?, ?)"
+    (project, now)
 
-insertOrIgnoreVersion :: Connection -> Version -> UTCTime -> IO ()
-insertOrIgnoreVersion connection versionId now = do
-  let Version commitHash = versionId
+insertOrIgnoreVersion :: Connection -> Project -> Version -> UTCTime -> IO ()
+insertOrIgnoreVersion connection project version now = do
+  let Version commitHash = version
   execute
     connection
-    "INSERT OR IGNORE INTO versions (commit_hash, created_at) VALUES (?, ?)"
-    (commitHash, now)
+    [sql|
+      INSERT OR IGNORE INTO versions (project_id, commit_hash, created_at)
+      SELECT p.id, ?, ?
+      FROM projects p
+      WHERE p.name = ?
+    |]
+    (commitHash, now, project)
 
 insertBuild :: Connection -> Version -> Build -> UTCTime -> IO ()
 insertBuild connection (Version commitHash) buildId now = do

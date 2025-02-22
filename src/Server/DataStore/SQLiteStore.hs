@@ -18,6 +18,7 @@ import Server.DataStore.Atomic (AtomicM (..), executeAtomic)
 import Server.DataStore.SQLiteSetup
 import Server.Domain (Build (..), BuildState (..), Version (..), Project (..))
 import Server.DataStore.SQLiteTypes
+import Data.List (groupBy, sortBy)
 
 newtype OngoingTransaction = OngoingTransaction
   { connection :: Connection
@@ -51,16 +52,46 @@ sqlFindBuildPair :: Build -> AtomicM OngoingTransaction (Maybe BuildPair)
 sqlFindBuildPair buildId = do
   OngoingTransaction connection <- ask
   executions <- liftIO $ findExecutions connection buildId
-  return $ mapExecutions executions
+  return $ mapExecutionsM executions
 
 sqlFindProject :: Project -> AtomicM OngoingTransaction (Maybe Project)
-sqlFindProject project = undefined
+sqlFindProject project = do
+  OngoingTransaction connection <- ask
+  liftIO $ do
+    results <- query connection "SELECT * FROM projects WHERE name = ?" (Only project)
+    return $ case results of
+      [] -> Nothing
+      (Only project) : _ -> Just project
 
 sqlFindBuildPairs :: Project -> AtomicM OngoingTransaction [BuildPair]
-sqlFindBuildPairs project = undefined
+sqlFindBuildPairs project = do
+  OngoingTransaction connection <- ask
+  executions <- liftIO $ findProjectExecutions connection project
+  return $ mapExecutions executions
 
-mapExecutions :: [Execution] -> Maybe BuildPair
+findProjectExecutions :: Connection -> Project -> IO [Execution]
+findProjectExecutions connection project = do
+  query connection [sql|
+    SELECT s.name, b.global_id, v.commit_hash, e.state 
+    FROM executions e
+    JOIN builds b ON e.build_id = b.id
+    JOIN versions v ON b.version_id = v.id
+    JOIN suites s ON e.suite_id = s.id
+    JOIN projects p ON v.project_id = p.id
+    WHERE p.name = ?
+  |] (Only project)
+
+
+mapExecutions :: [Execution] -> [BuildPair]
 mapExecutions executions =
+  -- group executions by buildGlobalId
+  -- for each buildGlobalId, find the slow and fast suite executions
+  -- map the executions to BuildRecords
+  -- return the BuildPairs
+  undefined
+
+mapExecutionsM :: [Execution] -> Maybe BuildPair
+mapExecutionsM executions =
   let allFast = [e | e <- executions, suiteName e == Fast]
       allSlow = [e | e <- executions, suiteName e == Slow]
    in case (allFast, allSlow) of
@@ -69,6 +100,7 @@ mapExecutions executions =
         (_, []) -> error "No slow suite execution found"
         ([fast], [slow]) -> Just (BuildPair (mapExecution slow) (mapExecution fast))
         _ -> error "Multiple executions found for a single suite"
+
 
 mapExecution :: Execution -> BuildRecord
 mapExecution ex =

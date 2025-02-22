@@ -13,7 +13,7 @@ import Database.SQLite.Simple (close, execute_)
 import RandomHelper (getUniqueDirName)
 import Control.Monad (when)
 import Server.DataStore
-import Server.Domain (Project(..), Version(..), Build(..), BuildState(..))
+import Server.Domain (Project(..), Version(..), Build(..), BuildState(..), BuildSummary(..))
 import Server.DataStore (BuildPair(..), BuildRecord(..))
 
 import Server.DataStore.Atomic (AtomicM(..))
@@ -26,7 +26,8 @@ tests =
   TestList
     [ TestLabel "Given a created build, when querying, then we can find complete build records for fast and slow suites" testBuildCreation,
       TestLabel "Given a created build, after finding and updating a fast execution of that build, then we can see it updated" testUpdateFastExecution,
-      TestLabel "Given a created build, after finding and updating a slow execution of that build, then we can see it updated" testUpdateSlowExecution
+      TestLabel "Given a created build, after finding and updating a slow execution of that build, then we can see it updated" testUpdateSlowExecution,
+      TestLabel "Given a created build, when listing builds for a project, then we can see the build" testListProjectBuilds
     ]
 
 testBuildCreation :: Test
@@ -87,6 +88,31 @@ testUpdateSlowExecution = TestCase $ bracket
     case foundAgainE of
       Left _ -> assertFailure "Should find again"
       Right state -> assertEqual "Should be running" Running state
+  )
+
+testListProjectBuilds :: Test
+testListProjectBuilds = TestCase $ bracket
+  -- setup
+  (storeWithBuild makeSQLiteBuildStore)
+  -- teardown
+  removeDbDir
+  -- test
+  (\(dbDir, buildStore) -> do
+    let project = Project "project1"
+    let version = Version "version1"
+    let (build1, build2) = (Build "build1", Build "build2")
+    pairs <- atomically buildStore $ do
+      createBuildUnlessExists buildStore project version build1
+      createBuildUnlessExists buildStore project version build2
+      findBuildPairs buildStore project
+    let expected = [BuildPair {
+      slowSuite = BuildRecord build1 version Init,
+      fastSuite = BuildRecord build1 version Init
+    }, BuildPair {
+      slowSuite = BuildRecord build2 version Init,
+      fastSuite = BuildRecord build2 version Init
+    }]
+    assertEqual "Should find two builds" expected pairs
   )
 
 

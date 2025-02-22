@@ -20,9 +20,8 @@ import Server.Domain (Build (..), BuildState (..), Version (..), Project (..))
 import Server.DataStore.SQLiteTypes
 import qualified Data.Map as Map
 
-newtype OngoingTransaction = OngoingTransaction
-  { connection :: Connection
-  }
+import Server.DataStore.SQLiteStore.BuildPair
+import Server.DataStore.SQLiteStore.Types
 
 makeSQLiteBuildStore :: FilePath -> IO (BuildStore OngoingTransaction)
 makeSQLiteBuildStore subDir = do
@@ -48,12 +47,6 @@ sqlAtomically client atomicAction = do
   commitOngoingTransaction ot
   return result
 
-sqlFindBuildPair :: Build -> AtomicM OngoingTransaction (Maybe BuildPair)
-sqlFindBuildPair buildId = do
-  OngoingTransaction connection <- ask
-  executions <- liftIO $ findExecutions connection buildId
-  return $ mapExecutionsM executions
-
 sqlFindProject :: Project -> AtomicM OngoingTransaction (Maybe Project)
 sqlFindProject project = do
   OngoingTransaction connection <- ask
@@ -62,71 +55,6 @@ sqlFindProject project = do
     return $ case results of
       [] -> Nothing
       (Only project) : _ -> Just project
-
-sqlFindBuildPairs :: Project -> AtomicM OngoingTransaction [BuildPair]
-sqlFindBuildPairs project = do
-  OngoingTransaction connection <- ask
-  executions <- liftIO $ findProjectExecutions connection project
-  return $ mapExecutions executions
-
-findProjectExecutions :: Connection -> Project -> IO [Execution]
-findProjectExecutions connection project = do
-  query connection [sql|
-    SELECT s.name, b.global_id, v.commit_hash, e.state 
-    FROM executions e
-    JOIN builds b ON e.build_id = b.id
-    JOIN versions v ON b.version_id = v.id
-    JOIN suites s ON e.suite_id = s.id
-    JOIN projects p ON v.project_id = p.id
-    WHERE p.name = ?
-  |] (Only project)
-
-mapExecutions :: [Execution] -> [BuildPair]
-mapExecutions executions =
-    let grouped = Map.fromListWith (++) [(buildGlobalId e, [e]) | e <- executions]
-    in [ makeBuildPair slow' fast'
-       | execGroup <- Map.elems grouped
-       , let slow = [e | e <- execGroup, suiteName e == Slow]
-       , let fast = [e | e <- execGroup, suiteName e == Fast]
-       , not (null slow)
-       , not (null fast)
-       , let slow' = head slow
-       , let fast' = head fast
-       ]
-  where
-    makeBuildPair slow fast = BuildPair (mapExecution slow) (mapExecution fast)
-
-mapExecutionsM :: [Execution] -> Maybe BuildPair
-mapExecutionsM executions =
-  let allFast = [e | e <- executions, suiteName e == Fast]
-      allSlow = [e | e <- executions, suiteName e == Slow]
-   in case (allFast, allSlow) of
-        ([], []) -> Nothing
-        ([], _) -> error "No fast suite execution found"
-        (_, []) -> error "No slow suite execution found"
-        ([fast], [slow]) -> Just (BuildPair (mapExecution slow) (mapExecution fast))
-        _ -> error "Multiple executions found for a single suite"
-
-mapExecution :: Execution -> BuildRecord
-mapExecution ex =
-  BuildRecord
-    (buildGlobalId ex)
-    (versionCommitHash ex)
-    (executionState ex)
-
-findExecutions :: Connection -> Build -> IO [Execution]
-findExecutions connection (Build buildId) =
-  query
-    connection
-    [sql|
-      SELECT s.name, b.global_id, v.commit_hash, e.state 
-      FROM executions e 
-      JOIN builds b ON e.build_id = b.id 
-      JOIN versions v ON b.version_id = v.id
-      JOIN suites s ON e.suite_id = s.id
-      WHERE b.global_id = ?
-      |]
-    (Only buildId)
 
 sqlCreateBuildUnlessExists :: Project -> Version -> Build -> AtomicM OngoingTransaction (Either () ())
 sqlCreateBuildUnlessExists project version build = do

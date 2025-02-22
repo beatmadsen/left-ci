@@ -44,7 +44,7 @@ tests =
 
 testGetSummary :: Test
 testGetSummary = TestCase $ do
-  let service = defaultService {getBuildSummary = \_ -> pure $ Just $ BuildSummary Init Init}
+  let service = defaultService {getBuildSummary = \_ -> pure $ Just defaultBuildSummary}
 
   app <- scottyApp $ makeApplication service
 
@@ -76,7 +76,7 @@ testUsesPathBuildId = TestCase $ do
         defaultService
           { getBuildSummary = \id -> do
               IORef.writeIORef passedId id
-              pure $ Just $ BuildSummary Init Init
+              pure $ Just defaultBuildSummary
           }
 
   app <- scottyApp $ makeApplication service
@@ -236,7 +236,15 @@ testListProjectBuildsEmpty = TestCase $ do
 
 testListProjectBuilds :: Test
 testListProjectBuilds = TestCase $ do
-  let service = defaultService {listProjectBuilds = const $ pure $ Just $ Map.fromList [("123", BuildSummary Init Init), ("estum1", BuildSummary Running Running)]}
+  let service = defaultService {listProjectBuilds = const $ pure $ Just $ Map.fromList [("123", BuildSummary 
+    { slowSuite = SuiteSummary {state = Init, createdAt = undefined, updatedAt = undefined}, 
+      fastSuite = SuiteSummary {state = Init, createdAt = undefined, updatedAt = undefined}
+    }
+  ), ("estum1", BuildSummary 
+    { slowSuite = SuiteSummary {state = Running, createdAt = undefined, updatedAt = undefined}, 
+      fastSuite = SuiteSummary {state = Running, createdAt = undefined, updatedAt = undefined}
+    }
+  )]}
   app <- scottyApp $ makeApplication service
   runSession
     ( do
@@ -276,6 +284,11 @@ defaultService =
       failFastSuite = undefined,
       failSlowSuite = undefined
     }
+
+
+defaultBuildSummary :: BuildSummary
+defaultBuildSummary = BuildSummary {slowSuite = SuiteSummary {state = Init, createdAt = undefined, updatedAt = undefined}, fastSuite = SuiteSummary {state = Init, createdAt = undefined, updatedAt = undefined}}
+
 
 makeListRequest :: Project -> SRequest
 makeListRequest (Project name) =

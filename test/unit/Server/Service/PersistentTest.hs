@@ -16,7 +16,7 @@ import Server.Service
 import Server.Service.Persistent (makePersistentService)
 import Test.HUnit (Test (TestCase, TestLabel, TestList), assertBool, (@?=))
 import qualified Data.Map as Map
-
+import Data.Time.Clock (UTCTime)
 
 tests :: Test
 tests =
@@ -220,7 +220,14 @@ defaultBuildPair :: DS.BuildPair
 defaultBuildPair = makeBuildPair (D.Build "123")
 
 makeBuildPair :: D.Build -> DS.BuildPair
-makeBuildPair build = DS.BuildPair {DS.slowSuite = DS.BuildRecord {DS.buildId = build, DS.versionId = "04a66b1n", DS.state = D.Init}, DS.fastSuite = DS.BuildRecord {DS.buildId = build, DS.versionId = "04a66b1n", DS.state = D.Running}}
+makeBuildPair build = 
+  let version = D.Version "04a66b1n"
+      theDate = read "2024-01-01 00:00:00 UTC" :: UTCTime
+  in DS.BuildPair 
+    { DS.slowSuite = DS.BuildRecord build version D.Init theDate theDate
+    , DS.fastSuite = DS.BuildRecord build version D.Running theDate theDate
+    }
+
 
 defaultAtomically :: AtomicM ctx a -> IO a
 defaultAtomically action =

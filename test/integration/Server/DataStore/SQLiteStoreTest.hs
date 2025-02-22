@@ -43,13 +43,18 @@ testBuildCreation = TestCase $ bracket
     let build = D.Build "build1"
     let version = D.Version "version1"
     maybeBuildPair <- DS.atomically buildStore $ DS.findBuildPair buildStore build
-
-    let expected = Just $ DS.BuildPair (defaultBuildRecord build version) (defaultBuildRecord build version)
     
-    -- TODO: created with the current data, don't compare the dates
-    assertEqual 
-      "Build pair should exist" 
-      expected maybeBuildPair
+    case maybeBuildPair of
+      Nothing -> assertFailure "Expected build pair but got Nothing"
+      Just (DS.BuildPair actual1 actual2) -> do
+        assertEqual "First build should match" build (DS.buildId actual1)
+        assertEqual "First version should match" version (DS.versionId actual1)
+        assertEqual "First state should match" D.Init (DS.state actual1)
+        
+        assertEqual "Second build should match" build (DS.buildId actual2)
+        assertEqual "Second version should match" version (DS.versionId actual2)
+        assertEqual "Second state should match" D.Init (DS.state actual2)
+        
   )  
 
 

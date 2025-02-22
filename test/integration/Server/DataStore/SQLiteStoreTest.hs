@@ -27,7 +27,8 @@ tests =
     [ TestLabel "Given a created build, when querying, then we can find complete build records for fast and slow suites" testBuildCreation,
       TestLabel "Given a created build, after finding and updating a fast execution of that build, then we can see it updated" testUpdateFastExecution,
       TestLabel "Given a created build, after finding and updating a slow execution of that build, then we can see it updated" testUpdateSlowExecution,
-      TestLabel "Given a created build, when listing builds for a project, then we can see the build" testListProjectBuilds
+      TestLabel "Given a created build, when listing builds for a project, then we can see the build" testListProjectBuilds,
+      TestLabel "Given a created build, when finding its project, then we can see the project" testFindProject
     ]
 
 testBuildCreation :: Test
@@ -115,6 +116,21 @@ testListProjectBuilds = TestCase $ bracket
     assertEqual "Should find two builds" expected pairs
   )
 
+testFindProject :: Test
+testFindProject = TestCase $ bracket
+  -- setup
+  (storeWithBuild makeSQLiteBuildStore)
+  -- teardown
+  removeDbDir
+  -- test
+  (\(dbDir, buildStore) -> do
+    let project = Project "project1"
+    let expected = Just project
+
+    foundProject <- atomically buildStore $ findProject buildStore project
+
+    assertEqual "Should find project" expected foundProject
+  )
 
 ioFindFastState :: BuildStore tx -> Build -> IO (Either () BuildState)
 ioFindFastState buildStore buildId = do

@@ -50,7 +50,7 @@ sqlFindProject :: Project -> AtomicM OngoingTransaction (Maybe Project)
 sqlFindProject project = do
   OngoingTransaction connection <- ask
   liftIO $ do
-    results <- query connection "SELECT * FROM projects WHERE name = ?" (Only project)
+    results <- query connection "SELECT name FROM projects WHERE name = ?" (Only project)
     return $ case results of
       [] -> Nothing
       (Only project) : _ -> Just project

@@ -168,7 +168,7 @@ testListProjectBuilds = TestCase $ do
     DS.findBuildPairs = const $ pure [defaultBuildPair, otherPair]
   }
   actual <- listProjectBuilds service (D.Project "abc")
-  let expected = Just $ makeBuildMap
+  let expected = Just makeBuildMap
   actual @?= expected
   
 makeBuildMap :: BuildMap

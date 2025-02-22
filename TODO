@@ -14,7 +14,7 @@
   - Demo packaging of template inside binary
   - Create .left-ci directory
   - Create .left-ci/ci.sh that assigns build id and runs the scripts under .left-ci/fast and .left-ci/slow
-  - Create git commit hook that runs .left-ci/ci.sh
+  - Create git commit hook that runs .left-ci/ci.sh (after commit and before push)
   - Fast flow
     - Create .left-ci/fast/Dockerfile
     - Create .left-ci/fast/ci.sh that calls the other scripts and blocks until the tests are done

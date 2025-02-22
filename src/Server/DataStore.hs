@@ -9,11 +9,13 @@ where
 
 import Server.DataStore.Atomic
 import Server.Domain
-
+import Data.Time.Clock (UTCTime)
 data BuildRecord = BuildRecord
   { buildId :: Build,
     versionId :: Version,
-    state :: BuildState
+    state :: BuildState,
+    createdAt :: UTCTime,
+    updatedAt :: UTCTime
   }
   deriving (Show, Eq)
 

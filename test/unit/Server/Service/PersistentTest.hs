@@ -9,9 +9,9 @@ import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Reader (runReaderT)
 import Control.Monad.Reader.Class (MonadReader)
 import Data.IORef
-import Server.DataStore (BuildPair (..), BuildRecord (..), BuildStore (..))
+import qualified Server.DataStore as DS
 import Server.DataStore.Atomic (AtomicM (..))
-import Server.Domain (Build (..), BuildState (..), BuildSummary (..), Version (..), Project (..))
+import qualified Server.Domain as D
 import Server.Service (BuildService (..), CreationOutcome (..), StateChangeOutcome (..))
 import Server.Service.Persistent (makePersistentService)
 import Test.HUnit (Test (TestCase, TestLabel, TestList), assertBool, (@?=))
@@ -39,7 +39,7 @@ tests =
 testGetBuildSummaryNonExistent :: Test
 testGetBuildSummaryNonExistent = TestCase $ do
   let service = makePersistentService defaultStore {findBuildPair = const $ pure Nothing}
-  actual <- getBuildSummary service (Build "123")
+  actual <- getBuildSummary service (D.Build "123")
   let expected = Nothing
   actual @?= expected
 
@@ -50,67 +50,67 @@ testGetBuildSummaryTwoRows = TestCase $ do
           defaultStore
             { findBuildPair = const $ pure $ Just defaultBuildPair
             }
-  actual <- getBuildSummary service (Build "123")
-  let expected = Just $ BuildSummary {slowState = Init, fastState = Running}
+  actual <- getBuildSummary service (D.Build "123")
+  let expected = Just $ D.BuildSummary {D.slowSuite = D.SuiteSummary {D.state = D.Init, D.createdAt = undefined, D.updatedAt = undefined}, D.fastSuite = D.SuiteSummary {D.state = D.Running, D.createdAt = undefined, D.updatedAt = undefined}}
   actual @?= expected
 
 testCreateBuildAlreadyExists :: Test
 testCreateBuildAlreadyExists = TestCase $ do
   let service = makePersistentService defaultStore {createBuildUnlessExists = (const . const . const) $ pure $ Left ()}
-  actual <- createBuild service (Project "abc") (Version "123") (Build "456")
+  actual <- createBuild service (D.Project "abc") (D.Version "123") (D.Build "456")
   let expected = Conflict
   actual @?= expected
 
 testCreateBuildSuccess :: Test
 testCreateBuildSuccess = TestCase $ do
   let service = makePersistentService defaultStore {createBuildUnlessExists = (const . const . const) $ pure $ Right ()}
-  actual <- createBuild service (Project "abc") (Version "123") (Build "456")
+  actual <- createBuild service (D.Project "abc") (D.Version "123") (D.Build "456")
   let expected = SuccessfullyCreated
   actual @?= expected
 
 testAdvanceFastResultNonExistent :: Test
 testAdvanceFastResultNonExistent = TestCase $ do
   let service = makePersistentService defaultStore {findFastState = const $ pure Nothing}
-  actual <- advanceFastSuite service (Build "123")
+  actual <- advanceFastSuite service (D.Build "123")
   let expected = NotFound
   actual @?= expected
 
 testAdvanceFastResultSuccess :: Test
 testAdvanceFastResultSuccess = TestCase $ do
   let service = makeServiceWithFastStubs Running
-  actual <- advanceFastSuite service (Build "123")
+  actual <- advanceFastSuite service (D.Build "123")
   let expected = SuccessfullyChangedState
   actual @?= expected
 
 testAdvanceFastResultAdvancesAndUpdates :: Test
 testAdvanceFastResultAdvancesAndUpdates = TestCase $ do
-  writtenState <- newIORef Init
+  writtenState <- newIORef D.Init
   let service = makeServiceWithFastMocks writtenState
-  advanceFastSuite service (Build "123")
+  advanceFastSuite service (D.Build "123")
   actual <- readIORef writtenState
-  let expected = Running
+  let expected = D.Running
   actual @?= expected
 
 testAdvanceSlowResultSuccess :: Test
 testAdvanceSlowResultSuccess = TestCase $ do
-  let service = makeServiceWithSlowStubs Init
-  actual <- advanceSlowSuite service (Build "123")
+  let service = makeServiceWithSlowStubs D.Init
+  actual <- advanceSlowSuite service (D.Build "123")
   let expected = SuccessfullyChangedState
   actual @?= expected
 
 testAdvanceSlowResultAdvancesAndUpdates :: Test
 testAdvanceSlowResultAdvancesAndUpdates = TestCase $ do
-  writtenState <- newIORef Init
+  writtenState <- newIORef D.Init
   let service = makeServiceWithSlowMocks writtenState
-  advanceSlowSuite service (Build "123")
+  advanceSlowSuite service (D.Build "123")
   actual <- readIORef writtenState
-  let expected = Running
+  let expected = D.Running
   actual @?= expected
 
 testFailFastResultSuccess :: Test
 testFailFastResultSuccess = TestCase $ do
   let service = makeServiceWithFastStubs Running
-  actual <- failFastSuite service (Build "123")
+  actual <- failFastSuite service (D.Build "123")
   let expected = SuccessfullyChangedState
   actual @?= expected
 
@@ -118,15 +118,15 @@ testFailFastResultAdvancesAndUpdates :: Test
 testFailFastResultAdvancesAndUpdates = TestCase $ do
   writtenState <- newIORef Running
   let service = makeServiceWithFastMocks writtenState
-  failFastSuite service (Build "123")
+  failFastSuite service (D.Build "123")
   actual <- readIORef writtenState
-  let expected = Failed
+  let expected = D.Failed
   actual @?= expected
 
 testFailSlowResultSuccess :: Test
 testFailSlowResultSuccess = TestCase $ do
   let service = makeServiceWithSlowStubs Running
-  actual <- failSlowSuite service (Build "123")
+  actual <- failSlowSuite service (D.Build "123")
   let expected = SuccessfullyChangedState
   actual @?= expected
 
@@ -134,23 +134,23 @@ testFailSlowResultAdvancesAndUpdates :: Test
 testFailSlowResultAdvancesAndUpdates = TestCase $ do
   writtenState <- newIORef Running
   let service = makeServiceWithSlowMocks writtenState
-  failSlowSuite service (Build "123")
+  failSlowSuite service (D.Build "123")
   actual <- readIORef writtenState
-  let expected = Failed
+  let expected = D.Failed
   actual @?= expected
 
 testListProjectBuildsFails :: Test
 testListProjectBuildsFails = TestCase $ do
   let service = makePersistentService defaultStore {findProject = const $ pure Nothing}
-  actual <- listProjectBuilds service (Project "abc")
+  actual <- listProjectBuilds service (D.Project "abc")
   let expected = Nothing
   actual @?= expected
 
 testListProjectBuilds :: Test
 testListProjectBuilds = TestCase $ do
-  let otherPair = makeBuildPair (Build "estum1")
+  let otherPair = makeBuildPair (D.Build "estum1")
   let service = makePersistentService defaultStore {
-    findProject = const $ pure $ Just (Project "abc"),     
+    findProject = const $ pure $ Just (D.Project "abc"),     
     findBuildPairs = const $ pure [defaultBuildPair, otherPair]
   }
   actual <- listProjectBuilds service (Project "abc")

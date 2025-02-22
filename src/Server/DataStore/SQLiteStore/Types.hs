@@ -11,7 +11,7 @@ import Database.SQLite.Simple.FromRow (FromRow, field, fromRow)
 import Database.SQLite.Simple.ToRow (ToRow(..), toRow)
 import Data.String (fromString)
 import Server.Domain (Build (..), BuildState (..), Version (..), Project (..))
-
+import Data.Time.Clock (UTCTime)
 
 newtype OngoingTransaction = OngoingTransaction
   { connection :: Connection
@@ -39,7 +39,9 @@ data Execution = Execution
   { suiteName :: SuiteName,
     buildGlobalId :: Build,
     versionCommitHash :: Version,
-    executionState :: BuildState
+    executionState :: BuildState,
+    executionCreatedAt :: UTCTime,
+    executionUpdatedAt :: UTCTime
   }
 instance FromField Build where
   fromField = fmap Build . fromField
@@ -66,3 +68,5 @@ instance FromRow Execution where
       <*> field -- build_global_id
       <*> field -- version_commit_hash
       <*> field -- state
+      <*> field -- created_at
+      <*> field -- updated_at

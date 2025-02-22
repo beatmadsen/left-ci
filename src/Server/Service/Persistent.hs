@@ -3,19 +3,13 @@ module Server.Service.Persistent
   )
 where
 
-import Server.DataStore (BuildPair (..), BuildRecord (..), BuildStore (..))
 import Server.DataStore.Atomic (AtomicM)
-import Server.Domain
-  ( Build (..),
-    BuildState (..),
-    BuildSummary (..),
-    Version (..),
-    Project (..)
-  )
+import qualified Server.Domain as D
+import qualified Server.DataStore as DS
 import Server.Service
 import qualified Data.Map as Map
 
-makePersistentService :: BuildStore ctx -> BuildService
+makePersistentService :: DS.BuildStore ctx -> BuildService
 makePersistentService buildStore =
   BuildService
     { getBuildSummary = pGetBuildSummary buildStore,
@@ -27,78 +21,90 @@ makePersistentService buildStore =
       failSlowSuite = pFailSlowSuite buildStore
     }
 
-pGetBuildSummary :: BuildStore ctx -> Build -> IO (Maybe BuildSummary)
+pGetBuildSummary :: DS.BuildStore ctx -> D.Build -> IO (Maybe D.BuildSummary)
 pGetBuildSummary buildStore buildId = do
-  maybeBuildPair <- atomically buildStore $ findBuildPair buildStore buildId
+  maybeBuildPair <- DS.atomically buildStore $ DS.findBuildPair buildStore buildId
   pure $ fmap extractSummary maybeBuildPair
 
-pListProjectBuilds :: BuildStore ctx -> Project -> IO (Maybe BuildMap)
+pListProjectBuilds :: DS.BuildStore ctx -> D.Project -> IO (Maybe BuildMap)
 pListProjectBuilds buildStore project = do
-  atomically buildStore $ do
-    maybeProject <- findProject buildStore project
-    case maybeProject of
-      Nothing -> pure Nothing
-      Just _ -> do
-        pairs <- findBuildPairs buildStore project
-        pure $ Just $ convert $ groupByBuild pairs
-groupByBuild :: [BuildPair] -> Map.Map Build BuildPair
-groupByBuild pairs = 
+  maybeProject <- DS.atomically buildStore $ DS.findProject buildStore project
+  case maybeProject of
+    Nothing -> pure Nothing
+    Just _ -> do
+      pairs <- DS.atomically buildStore $ DS.findBuildPairs buildStore project
+      pure $ Just $ convert $ groupByBuild pairs
+
+groupByBuild :: [DS.BuildPair] -> Map.Map D.Build DS.BuildPair
+groupByBuild pairs =
   let annotated = [(buildIdFromPair pair, pair) | pair <- pairs]
   in Map.fromListWith const annotated
 
-buildIdFromPair :: BuildPair -> Build
-buildIdFromPair pair = buildId (fastSuite pair)
+buildIdFromPair :: DS.BuildPair -> D.Build
+buildIdFromPair pair = DS.buildId (DS.fastSuite pair)
 
-convert :: Map.Map Build BuildPair -> BuildMap
+convert :: Map.Map D.Build DS.BuildPair -> BuildMap
 convert = Map.map extractSummary
 
-extractSummary :: BuildPair -> BuildSummary
-extractSummary bp = BuildSummary {slowState = state (slowSuite bp), fastState = state (fastSuite bp)}
+extractSummary :: DS.BuildPair -> D.BuildSummary
+extractSummary bp = 
+  D.BuildSummary {
+    D.slowSuite = D.SuiteSummary {
+      D.state = DS.state (DS.slowSuite bp),
+      D.createdAt = DS.createdAt (DS.slowSuite bp),
+      D.updatedAt = DS.updatedAt (DS.slowSuite bp)
+    },
+    D.fastSuite = D.SuiteSummary {
+      D.state = DS.state (DS.fastSuite bp),
+      D.createdAt = DS.createdAt (DS.fastSuite bp),
+      D.updatedAt = DS.updatedAt (DS.fastSuite bp)
+    }
+  }
 
-pCreateBuild :: BuildStore ctx -> Project -> Version -> Build -> IO CreationOutcome
+pCreateBuild :: DS.BuildStore ctx -> D.Project -> D.Version -> D.Build -> IO CreationOutcome
 pCreateBuild buildStore project version build = do
-  result <- atomically buildStore $ createBuildUnlessExists buildStore project version build
+  result <- DS.atomically buildStore $ DS.createBuildUnlessExists buildStore project version build
   pure $ case result of
     Left () -> Conflict
     Right () -> SuccessfullyCreated
 
-pAdvanceFastSuite :: BuildStore ctx -> Build -> IO StateChangeOutcome
-pAdvanceFastSuite buildStore buildId = atomically buildStore $ do
-  maybeState <- findFastState buildStore buildId
+pAdvanceFastSuite :: DS.BuildStore ctx -> D.Build -> IO StateChangeOutcome
+pAdvanceFastSuite buildStore buildId = DS.atomically buildStore $ do
+  maybeState <- DS.findFastState buildStore buildId
   case maybeState of
     Nothing -> pure NotFound
-    Just state -> advanceAndUpdate (updateFastState buildStore buildId) state
+    Just state -> advanceAndUpdate (DS.updateFastState buildStore buildId) state
 
-pAdvanceSlowSuite :: BuildStore ctx -> Build -> IO StateChangeOutcome
-pAdvanceSlowSuite buildStore buildId = atomically buildStore $ do
-  maybeState <- findSlowState buildStore buildId
+pAdvanceSlowSuite :: DS.BuildStore ctx -> D.Build -> IO StateChangeOutcome
+pAdvanceSlowSuite buildStore buildId = DS.atomically buildStore $ do
+  maybeState <- DS.findSlowState buildStore buildId
   case maybeState of
     Nothing -> pure NotFound
-    Just state -> advanceAndUpdate (updateSlowState buildStore buildId) state
+    Just state -> advanceAndUpdate (DS.updateSlowState buildStore buildId) state
 
-pFailFastSuite :: BuildStore ctx -> Build -> IO StateChangeOutcome
-pFailFastSuite buildStore buildId = atomically buildStore $ do
-  maybeState <- findFastState buildStore buildId
+pFailFastSuite :: DS.BuildStore ctx -> D.Build -> IO StateChangeOutcome
+pFailFastSuite buildStore buildId = DS.atomically buildStore $ do
+  maybeState <- DS.findFastState buildStore buildId
   case maybeState of
     Nothing -> pure NotFound
-    Just Failed -> pure SuccessfullyChangedState
+    Just D.Failed -> pure SuccessfullyChangedState
     Just _ -> do
-      updateFastState buildStore buildId Failed
+      DS.updateFastState buildStore buildId D.Failed
       pure SuccessfullyChangedState
 
-pFailSlowSuite :: BuildStore ctx -> Build -> IO StateChangeOutcome
-pFailSlowSuite buildStore buildId = atomically buildStore $ do
-  maybeState <- findSlowState buildStore buildId
+pFailSlowSuite :: DS.BuildStore ctx -> D.Build -> IO StateChangeOutcome
+pFailSlowSuite buildStore buildId = DS.atomically buildStore $ do
+  maybeState <- DS.findSlowState buildStore buildId
   case maybeState of
     Nothing -> pure NotFound
-    Just Failed -> pure SuccessfullyChangedState
+    Just D.Failed -> pure SuccessfullyChangedState
     Just _ -> do
-      updateSlowState buildStore buildId Failed
+      DS.updateSlowState buildStore buildId D.Failed
       pure SuccessfullyChangedState
 
-type StateUpdater ctx = BuildState -> AtomicM ctx ()
+type StateUpdater ctx = D.BuildState -> AtomicM ctx ()
 
-advanceAndUpdate :: StateUpdater ctx -> BuildState -> AtomicM ctx StateChangeOutcome
+advanceAndUpdate :: StateUpdater ctx -> D.BuildState -> AtomicM ctx StateChangeOutcome
 advanceAndUpdate update state = do
   (update . advance) state
   pure SuccessfullyChangedState

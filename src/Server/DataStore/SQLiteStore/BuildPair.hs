@@ -78,6 +78,8 @@ mapExecution ex =
     (buildGlobalId ex)
     (versionCommitHash ex)
     (executionState ex)
+    (executionCreatedAt ex)
+    (executionUpdatedAt ex)
 
 findExecutions :: Connection -> Build -> IO [Execution]
 findExecutions connection (Build buildId) =

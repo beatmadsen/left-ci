@@ -5,16 +5,11 @@ module Server.DataStore.SQLiteStore.Types (
 ) where
 
 import Database.SQLite.Simple (Connection)
-
-
-
 import Database.SQLite.Simple.FromField (FromField, fromField, returnError, ResultError (ConversionFailed))
 import Database.SQLite.Simple.ToField (ToField, toField)
 import Database.SQLite.Simple.FromRow (FromRow, field, fromRow)
 import Database.SQLite.Simple.ToRow (ToRow(..), toRow)
-
 import Data.String (fromString)
-
 import Server.Domain (Build (..), BuildState (..), Version (..), Project (..))
 
 

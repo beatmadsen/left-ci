@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Server.Domain
   ( BuildState (..),
@@ -10,9 +11,10 @@ module Server.Domain
   )
 where
 
-import Data.Aeson (ToJSON (..), object, (.=))
+import Data.Aeson (ToJSON (..), object, (.=), ToJSONKey (..), ToJSONKeyFunction(..))
 import Data.String (IsString(..))
 import Data.Text (Text)
+import Data.Aeson.Key (fromText)
 
 newtype Project = Project {
   getName :: Text
@@ -33,7 +35,7 @@ instance IsString Version where
 
 newtype Build = Build {
   getGlobalId :: Text
-} deriving (Show, Eq, Ord)
+} deriving (Show, Eq, Ord, ToJSONKey)
 
 instance IsString Build where
     fromString :: String -> Build

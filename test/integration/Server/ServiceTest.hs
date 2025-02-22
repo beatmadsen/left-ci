@@ -18,6 +18,7 @@ import Server.Routes
 import Server.Service
 import Test.HUnit
 import Web.Scotty (scottyApp)
+import qualified Data.Map as Map
 
 tests :: Test
 tests =
@@ -223,25 +224,25 @@ testListProjectBuildsNotFound = TestCase $ do
 
 testListProjectBuildsEmpty :: Test
 testListProjectBuildsEmpty = TestCase $ do
-  let service = defaultService {listProjectBuilds = const $ pure (Just [])}
+  let service = defaultService {listProjectBuilds = const $ pure (Just Map.empty)}
   app <- scottyApp $ makeApplication service
   runSession
     ( do
         response <- srequest $ makeListRequest (Project "project-123")
         assertStatus 200 response
-        assertBody "[]" response
+        assertBody "{}" response
     )
     app
 
 testListProjectBuilds :: Test
 testListProjectBuilds = TestCase $ do
-  let service = defaultService {listProjectBuilds = const $ pure (Just [BuildSummary Init Init, BuildSummary Running Running])}
+  let service = defaultService {listProjectBuilds = const $ pure $ Just $ Map.fromList [("123", BuildSummary Init Init), ("estum1", BuildSummary Running Running)]}
   app <- scottyApp $ makeApplication service
   runSession
     ( do
         response <- srequest $ makeListRequest (Project "project-123")
         assertStatus 200 response
-        assertBody "[{\"fast\":\"init\",\"slow\":\"init\"},{\"fast\":\"running\",\"slow\":\"running\"}]" response
+        assertBody "{\"123\":{\"fast\":\"init\",\"slow\":\"init\"},\"estum1\":{\"fast\":\"running\",\"slow\":\"running\"}}" response
     )
     app
 
@@ -250,7 +251,7 @@ testUsesPathProjectName = TestCase $ do
   passedProject <- IORef.newIORef ""
   let service = defaultService {listProjectBuilds = \project -> do
       IORef.writeIORef passedProject project
-      pure (Just [BuildSummary Init Init, BuildSummary Running Running])} 
+      pure (Just Map.empty)} 
 
   app <- scottyApp $ makeApplication service
 

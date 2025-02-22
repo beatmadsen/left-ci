@@ -13,6 +13,7 @@ import Server.Domain
     Project (..)
   )
 import Server.Service
+import qualified Data.Map as Map
 
 makePersistentService :: BuildStore ctx -> BuildService
 makePersistentService buildStore =
@@ -31,15 +32,25 @@ pGetBuildSummary buildStore buildId = do
   maybeBuildPair <- atomically buildStore $ findBuildPair buildStore buildId
   pure $ fmap extractSummary maybeBuildPair
 
-pListProjectBuilds :: BuildStore ctx -> Project -> IO (Maybe [BuildSummary])
+pListProjectBuilds :: BuildStore ctx -> Project -> IO (Maybe BuildMap)
 pListProjectBuilds buildStore project = do
   atomically buildStore $ do
     maybeProject <- findProject buildStore project
     case maybeProject of
       Nothing -> pure Nothing
       Just _ -> do
-        maybeBuildPairs <- findBuildPairs buildStore project
-        pure $ Just $ map extractSummary maybeBuildPairs
+        pairs <- findBuildPairs buildStore project
+        pure $ Just $ convert $ groupByBuild pairs
+groupByBuild :: [BuildPair] -> Map.Map Build BuildPair
+groupByBuild pairs = 
+  let annotated = [(buildIdFromPair pair, pair) | pair <- pairs]
+  in Map.fromListWith const annotated
+
+buildIdFromPair :: BuildPair -> Build
+buildIdFromPair pair = buildId (fastSuite pair)
+
+convert :: Map.Map Build BuildPair -> BuildMap
+convert = Map.map extractSummary
 
 extractSummary :: BuildPair -> BuildSummary
 extractSummary bp = BuildSummary {slowState = state (slowSuite bp), fastState = state (fastSuite bp)}

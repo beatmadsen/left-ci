@@ -15,7 +15,7 @@ import Server.Domain (Build (..), BuildState (..), BuildSummary (..), Version (.
 import Server.Service (BuildService (..), CreationOutcome (..), StateChangeOutcome (..))
 import Server.Service.Persistent (makePersistentService)
 import Test.HUnit (Test (TestCase, TestLabel, TestList), assertBool, (@?=))
-
+import qualified Data.Map as Map
 tests :: Test
 tests =
   TestList
@@ -148,12 +148,13 @@ testListProjectBuildsFails = TestCase $ do
 
 testListProjectBuilds :: Test
 testListProjectBuilds = TestCase $ do
+  let otherPair = makeBuildPair (Build "estum1")
   let service = makePersistentService defaultStore {
-    findProject = const $ pure $ Just (Project "abc"), 
-    findBuildPairs = const $ pure [defaultBuildPair, defaultBuildPair]
+    findProject = const $ pure $ Just (Project "abc"),     
+    findBuildPairs = const $ pure [defaultBuildPair, otherPair]
   }
   actual <- listProjectBuilds service (Project "abc")
-  let expected = Just [BuildSummary Running Init, BuildSummary Running Init]
+  let expected = Just $ Map.fromList [("123", BuildSummary Running Init), ("estum1", BuildSummary Running Init)]
   actual @?= expected
 
 makeServiceWithFastStubs :: BuildState -> BuildService
@@ -201,7 +202,10 @@ makeServiceWithSlowMocks ref =
       }
 
 defaultBuildPair :: BuildPair
-defaultBuildPair = BuildPair {slowSuite = BuildRecord {buildId = "123", versionId = "04a66b1n", state = Init}, fastSuite = BuildRecord {buildId = "123", versionId = "04a66b1n", state = Running}}
+defaultBuildPair = makeBuildPair (Build "123")
+
+makeBuildPair :: Build -> BuildPair
+makeBuildPair build = BuildPair {slowSuite = BuildRecord {buildId = build, versionId = "04a66b1n", state = Init}, fastSuite = BuildRecord {buildId = build, versionId = "04a66b1n", state = Running}}
 
 defaultAtomically :: AtomicM ctx a -> IO a
 defaultAtomically action =

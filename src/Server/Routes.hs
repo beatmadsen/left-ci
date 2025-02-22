@@ -12,7 +12,7 @@ import Data.Either (Either (..))
 import Data.Text (Text)
 import Network.HTTP.Types.Status (status404, status409, status500)
 import Server.Domain (Build (..), BuildState (..), BuildSummary (..), Version (..), Project (..))
-import Server.Service (BuildService (..), CreationOutcome (..), StateChangeOutcome (..))
+import Server.Service
 import Web.Scotty
   ( ActionM,
     Parsable,
@@ -98,7 +98,7 @@ respondToBuildSummary summary = case summary of
   Nothing -> status status404
   Just summary -> json summary
 
-respondToBuildSummaries :: Maybe [BuildSummary] -> ActionM ()
-respondToBuildSummaries summaries = case summaries of
+respondToBuildSummaries :: Maybe BuildMap -> ActionM ()
+respondToBuildSummaries ms = case ms of
   Nothing -> status status404
   Just summaries -> json summaries

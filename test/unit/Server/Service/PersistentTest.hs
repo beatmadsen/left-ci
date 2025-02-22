@@ -22,6 +22,8 @@ tests =
   TestList
     [ TestLabel "given a store and a non-existent build id, getBuildSummary returns Nothing" testGetBuildSummaryNonExistent,
       TestLabel "given a store that returns two rows for a build id, getBuildSummary returns a summary" testGetBuildSummaryTwoRows,
+      TestLabel "given a store that fails to find a project, listProjectBuilds returns Nothing" testListProjectBuildsFails,
+      TestLabel "given a store that returns a project, listProjectBuilds returns the list of builds" testListProjectBuilds,
       TestLabel "given a store that reports build id already exists, createBuild reports conflict" testCreateBuildAlreadyExists,
       TestLabel "given a store that reports build id does not exist, createBuild reports success" testCreateBuildSuccess,
       TestLabel "given a store and a non-existent build id, advanceFastSuite reports NotFound" testAdvanceFastResultNonExistent,
@@ -136,6 +138,23 @@ testFailSlowResultAdvancesAndUpdates = TestCase $ do
   failSlowSuite service (Build "123")
   actual <- readIORef writtenState
   let expected = Failed
+  actual @?= expected
+
+testListProjectBuildsFails :: Test
+testListProjectBuildsFails = TestCase $ do
+  let service = makePersistentService defaultStore {findProject = const $ pure Nothing}
+  actual <- listProjectBuilds service (Project "abc")
+  let expected = Nothing
+  actual @?= expected
+
+testListProjectBuilds :: Test
+testListProjectBuilds = TestCase $ do
+  let service = makePersistentService defaultStore {
+    findProject = const $ pure $ Just (Project "abc"), 
+    findBuildPairs = const $ pure $ [defaultBuildPair, defaultBuildPair]
+  }
+  actual <- listProjectBuilds service (Project "abc")
+  let expected = Just [BuildSummary Running Init, BuildSummary Running Init]
   actual @?= expected
 
 makeServiceWithFastStubs :: BuildState -> BuildService

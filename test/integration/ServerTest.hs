@@ -6,14 +6,13 @@ module ServerTest
 where
 
 import Test.HUnit
-import Control.Exception (bracket)
+import Control.Exception (bracket, catch)
 import System.Directory (removeDirectoryRecursive, doesFileExist)
 import RandomHelper (getUniqueDirName, getEphemeralPort)
 import Server (makeWaiApp)
 import Network.Wai.Handler.Warp (run)
 import Control.Concurrent (forkIO, threadDelay, killThread)
 import Network.HTTP.Client (newManager, defaultManagerSettings, parseRequest, httpNoBody, HttpException(..), Response, httpLbs, responseBody, responseStatus, Request(..))
-import Control.Exception (catch)
 import Control.Monad (when)
 import Network.HTTP.Types (statusCode, methodPost, Method)
 

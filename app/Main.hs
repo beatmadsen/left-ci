@@ -16,7 +16,7 @@ main = do
   v <- validate $ parseApplicationConfig args
   case v of
     Server port -> runServer port
-    _ -> putStrLn $ show v
+    _ -> print v
 
 closeSocketOnSIGINT :: IO () -> IO ()
 closeSocketOnSIGINT closeSocket = void $ installHandler sigINT (Catch $ do
@@ -31,8 +31,7 @@ runServer port = do
   putStrLn $ "Running server on port " ++ show port
   
   let settings = setPort port $ 
-                 setInstallShutdownHandler closeSocketOnSIGINT $
-                 defaultSettings
+                 setInstallShutdownHandler closeSocketOnSIGINT defaultSettings
                  
   finally 
     (runSettings settings app)

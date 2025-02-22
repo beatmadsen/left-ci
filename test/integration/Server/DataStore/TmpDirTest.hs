@@ -45,8 +45,7 @@ testIdempotency =
     getDirTwice = do
       sameSubDir <- getUniqueDirName
       tmpDir sameSubDir
-      path2 <- tmpDir sameSubDir
-      return path2
+      tmpDir sameSubDir
 
 testFileCreation :: Test
 testFileCreation = TestCase $ bracket

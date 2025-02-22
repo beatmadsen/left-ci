@@ -1,4 +1,3 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Server.Service.PersistentTest
@@ -151,7 +150,7 @@ testListProjectBuilds :: Test
 testListProjectBuilds = TestCase $ do
   let service = makePersistentService defaultStore {
     findProject = const $ pure $ Just (Project "abc"), 
-    findBuildPairs = const $ pure $ [defaultBuildPair, defaultBuildPair]
+    findBuildPairs = const $ pure [defaultBuildPair, defaultBuildPair]
   }
   actual <- listProjectBuilds service (Project "abc")
   let expected = Just [BuildSummary Running Init, BuildSummary Running Init]
@@ -183,7 +182,7 @@ makeMockedFind :: IORef BuildState -> (Build -> AtomicM ctx (Maybe BuildState))
 makeMockedFind ref = const $ fmap Just $ liftIO $ readIORef ref
 
 makeMockedUpdate :: IORef BuildState -> (Build -> BuildState -> AtomicM ctx ())
-makeMockedUpdate ref = \_ newState -> liftIO $ writeIORef ref newState
+makeMockedUpdate ref _ newState = liftIO $ writeIORef ref newState
 
 makeServiceWithFastMocks :: IORef BuildState -> BuildService
 makeServiceWithFastMocks ref =

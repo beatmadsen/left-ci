@@ -23,4 +23,4 @@ newtype AtomicM ctx a = AtomicM
     ) 
 
 executeAtomic :: AtomicM ctx a -> ctx -> IO a
-executeAtomic atomicAction context = runReaderT (runAtomicM atomicAction) context
+executeAtomic atomicAction = runReaderT (runAtomicM atomicAction)

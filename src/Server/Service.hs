@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 module Server.Service
   ( BuildService (..),
     CreationOutcome (..),

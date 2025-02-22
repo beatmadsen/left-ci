@@ -1,7 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 
-
 module Server.DataStore.SQLiteStore.BuildPair (
   sqlFindBuildPair,
   sqlFindBuildPairs
@@ -17,8 +16,7 @@ import Database.SQLite.Simple.FromRow (FromRow, field)
 import Database.SQLite.Simple.QQ (sql)
 import Server.DataStore (BuildPair (..), BuildRecord (..), BuildStore (..))
 import Server.DataStore.Atomic (AtomicM (..), executeAtomic)
-import Server.DataStore.SQLiteSetup
-import Server.Domain (Build (..), BuildState (..), Version (..), Project (..))
+import Server.Domain (Build (..), Project (..))
 import qualified Data.Map as Map
 import Server.DataStore.SQLiteStore.Types
 

@@ -98,7 +98,7 @@ testUpdateBuild :: Text -> Text -> Test
 testUpdateBuild cadence action = TestCase $ do
   passedBuildId <- IORef.newIORef ""
 
-  let x = \buildId -> do
+  let x buildId = do
         IORef.writeIORef passedBuildId buildId
         pure SuccessfullyChangedState
 

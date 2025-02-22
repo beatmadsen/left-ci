@@ -14,7 +14,7 @@ import RandomHelper (getUniqueDirName)
 import Control.Monad (when)
 import Server.DataStore
 import Server.Domain (Project(..), Version(..), Build(..), BuildState(..), BuildSummary(..))
-import Server.DataStore (BuildPair(..), BuildRecord(..))
+
 
 import Server.DataStore.Atomic (AtomicM(..))
 
@@ -40,7 +40,7 @@ testBuildCreation = TestCase $ bracket
   (\(dbDir, buildStore) -> do
     maybeBuildPair <- atomically buildStore $ findBuildPair buildStore (Build "build1")
 
-    let expected = (Just (BuildPair (BuildRecord (Build "build1") (Version "version1") Init) (BuildRecord (Build "build1") (Version "version1") Init)))
+    let expected = Just (BuildPair (BuildRecord (Build "build1") (Version "version1") Init) (BuildRecord (Build "build1") (Version "version1") Init))
     
     assertEqual 
       "Build pair should exist" 

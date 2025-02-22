@@ -27,7 +27,6 @@ library
       Config.ServerValidator
       Server.DataStore.SQLiteStore.BuildPair
       Server.DataStore.SQLiteStore.Types
-      Server.DataStore.SQLiteTypes
       Paths_left_ci
   hs-source-dirs:
       src

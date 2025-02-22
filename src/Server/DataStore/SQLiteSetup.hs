@@ -14,7 +14,7 @@ import Database.SQLite.Simple.ToRow
 import Server.DataStore.TmpDir
 import System.Directory (doesFileExist, removeDirectoryRecursive)
 import System.FilePath ((</>))
-import Server.DataStore.SQLiteTypes (SuiteName (..))
+import Server.DataStore.SQLiteStore.Types (SuiteName (..))
 
 -- A SQLiteClient is a function that can create fresh connections when needed
 type SQLiteClient = IO Connection

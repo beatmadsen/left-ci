@@ -19,7 +19,6 @@ import Server.DataStore (BuildPair (..), BuildRecord (..), BuildStore (..))
 import Server.DataStore.Atomic (AtomicM (..), executeAtomic)
 import Server.DataStore.SQLiteSetup
 import Server.Domain (Build (..), BuildState (..), Version (..), Project (..))
-import Server.DataStore.SQLiteTypes
 import qualified Data.Map as Map
 import Server.DataStore.SQLiteStore.Types
 

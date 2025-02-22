@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 
 module Server.ServiceTest
   ( tests,
@@ -20,6 +21,7 @@ import Test.HUnit
 import Web.Scotty (scottyApp)
 import qualified Data.Map as Map
 import Data.Time.Clock (UTCTime)
+import Text.RawString.QQ (r)
 
 tests :: Test
 tests =
@@ -53,7 +55,19 @@ testGetSummary = TestCase $ do
     ( do
         response <- request $ defaultRequest {pathInfo = ["builds", "123"]}
         assertStatus 200 response
-        assertBody "{\"fast\":\"init\",\"slow\":\"init\"}" response
+        let expectedJson = [r|{
+          "fast_suite": {
+            "created_at": "2024-05-01T00:00:00Z",
+            "state": "init",
+            "updated_at": "2024-05-01T00:00:00Z"
+          },
+          "slow_suite": { 
+            "created_at": "2024-05-01T00:00:00Z",
+            "state": "init",
+            "updated_at": "2024-05-01T00:00:00Z"
+          }
+        }|]
+        assertBody (LBS.pack $ filter (/= ' ') $ filter (/= '\n') expectedJson) response
     )
     app
 
@@ -253,7 +267,33 @@ testListProjectBuilds = TestCase $ do
     ( do
         response <- srequest $ makeListRequest (Project "project-123")
         assertStatus 200 response
-        assertBody "{\"123\":{\"fast\":\"init\",\"slow\":\"init\"},\"estum1\":{\"fast\":\"running\",\"slow\":\"running\"}}" response
+        let expectedJson = [r|{
+          "123": {
+            "fast_suite": {
+              "created_at": "2024-01-01T00:00:00Z",
+              "state": "init",
+              "updated_at": "2024-01-01T00:00:00Z"
+            },
+            "slow_suite": {
+              "created_at": "2024-01-01T00:00:00Z",
+              "state": "init",
+              "updated_at": "2024-01-01T00:00:00Z"
+            }
+          },
+          "estum1": {
+            "fast_suite": {
+              "created_at": "2024-01-02T00:00:00Z",
+              "state": "running",
+              "updated_at": "2024-01-02T00:00:00Z"
+            },
+            "slow_suite": {
+              "created_at": "2024-01-02T00:00:00Z",
+              "state": "running",
+              "updated_at": "2024-01-02T00:00:00Z"
+            }
+          }
+        }|]
+        assertBody (LBS.pack $ filter (/= ' ') $ filter (/= '\n') expectedJson) response
     )
     app
 
@@ -290,7 +330,9 @@ defaultService =
 
 
 defaultBuildSummary :: BuildSummary
-defaultBuildSummary = BuildSummary {slowSuite = SuiteSummary {state = Init, createdAt = undefined, updatedAt = undefined}, fastSuite = SuiteSummary {state = Init, createdAt = undefined, updatedAt = undefined}}
+defaultBuildSummary = 
+  let theDate = read "2024-05-01 00:00:00 UTC" :: UTCTime
+  in BuildSummary {slowSuite = SuiteSummary {state = Init, createdAt = theDate, updatedAt = theDate}, fastSuite = SuiteSummary {state = Init, createdAt = theDate, updatedAt = theDate}}
 
 
 makeListRequest :: Project -> SRequest

@@ -96,6 +96,7 @@ test-suite integration
     , mtl
     , network
     , random
+    , raw-strings-qq
     , resource-pool
     , scotty
     , sqlite-simple

@@ -115,14 +115,20 @@ testListProjectBuilds = TestCase $ bracket
       DS.createBuildUnlessExists buildStore project version build1
       DS.createBuildUnlessExists buildStore project version build2
       DS.findBuildPairs buildStore project
-    let expected = [DS.BuildPair {
-      DS.slowSuite = defaultBuildRecord build1 version,
-      DS.fastSuite = defaultBuildRecord build1 version
-    }, DS.BuildPair {
-      DS.slowSuite = defaultBuildRecord build2 version,
-      DS.fastSuite = defaultBuildRecord build2 version
-    }]
-    assertEqual "Should find two builds" expected pairs
+    assertEqual "Should find two build pairs" 2 (length pairs)
+    
+    let compareBuildRecord expected actual = do
+          assertEqual "Build ID should match" (DS.buildId expected) (DS.buildId actual)
+          assertEqual "Version ID should match" (DS.versionId expected) (DS.versionId actual)
+          assertEqual "State should match" (DS.state expected) (DS.state actual)
+    
+    -- Compare first build pair
+    compareBuildRecord (defaultBuildRecord build1 version) (DS.slowSuite $ head pairs)
+    compareBuildRecord (defaultBuildRecord build1 version) (DS.fastSuite $ head pairs)
+    
+    -- Compare second build pair
+    compareBuildRecord (defaultBuildRecord build2 version) (DS.slowSuite $ pairs !! 1)
+    compareBuildRecord (defaultBuildRecord build2 version) (DS.fastSuite $ pairs !! 1)
   )
 
 

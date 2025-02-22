@@ -19,6 +19,7 @@ import Server.Service
 import Test.HUnit
 import Web.Scotty (scottyApp)
 import qualified Data.Map as Map
+import Data.Time.Clock (UTCTime)
 
 tests :: Test
 tests =
@@ -236,13 +237,15 @@ testListProjectBuildsEmpty = TestCase $ do
 
 testListProjectBuilds :: Test
 testListProjectBuilds = TestCase $ do
+  let theFirstDate = read "2024-01-01 00:00:00 UTC" :: UTCTime
+  let theSecondDate = read "2024-01-02 00:00:00 UTC" :: UTCTime
   let service = defaultService {listProjectBuilds = const $ pure $ Just $ Map.fromList [("123", BuildSummary 
-    { slowSuite = SuiteSummary {state = Init, createdAt = undefined, updatedAt = undefined}, 
-      fastSuite = SuiteSummary {state = Init, createdAt = undefined, updatedAt = undefined}
+    { slowSuite = SuiteSummary {state = Init, createdAt = theFirstDate, updatedAt = theFirstDate}, 
+      fastSuite = SuiteSummary {state = Init, createdAt = theFirstDate, updatedAt = theFirstDate}
     }
   ), ("estum1", BuildSummary 
-    { slowSuite = SuiteSummary {state = Running, createdAt = undefined, updatedAt = undefined}, 
-      fastSuite = SuiteSummary {state = Running, createdAt = undefined, updatedAt = undefined}
+    { slowSuite = SuiteSummary {state = Running, createdAt = theSecondDate, updatedAt = theSecondDate}, 
+      fastSuite = SuiteSummary {state = Running, createdAt = theSecondDate, updatedAt = theSecondDate}
     }
   )]}
   app <- scottyApp $ makeApplication service

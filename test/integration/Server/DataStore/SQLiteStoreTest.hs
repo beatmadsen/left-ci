@@ -46,6 +46,7 @@ testBuildCreation = TestCase $ bracket
 
     let expected = Just $ DS.BuildPair (defaultBuildRecord build version) (defaultBuildRecord build version)
     
+    -- TODO: created with the current data, don't compare the dates
     assertEqual 
       "Build pair should exist" 
       expected maybeBuildPair
@@ -119,11 +120,6 @@ testListProjectBuilds = TestCase $ bracket
     assertEqual "Should find two builds" expected pairs
   )
 
-defaultBuildRecord :: D.Build -> D.Version -> DS.BuildRecord
-defaultBuildRecord build version = 
-  DS.BuildRecord build version D.Init theDate theDate
-  where
-    theDate = read "2024-01-01 00:00:00 UTC" :: UTCTime
 
 testFindProject :: Test
 testFindProject = TestCase $ bracket
@@ -182,3 +178,10 @@ storeWithBuild makeBuildStore = do
   DS.atomically buildStore $ do
     DS.createBuildUnlessExists buildStore (D.Project "project1") (D.Version "version1") (D.Build "build1")
   return (dbDir, buildStore)
+
+
+defaultBuildRecord :: D.Build -> D.Version -> DS.BuildRecord
+defaultBuildRecord build version = 
+  DS.BuildRecord build version D.Init theDate theDate
+  where
+    theDate = read "2024-01-01 00:00:00 UTC" :: UTCTime

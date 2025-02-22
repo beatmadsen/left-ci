@@ -53,7 +53,19 @@ testGetBuildSummaryTwoRows = TestCase $ do
             { DS.findBuildPair = const $ pure $ Just defaultBuildPair
             }
   actual <- getBuildSummary service (D.Build "123")
-  let expected = Just $ D.BuildSummary {D.slowSuite = D.SuiteSummary {D.state = D.Init, D.createdAt = undefined, D.updatedAt = undefined}, D.fastSuite = D.SuiteSummary {D.state = D.Running, D.createdAt = undefined, D.updatedAt = undefined}}
+  let theDate = read "2024-01-01 00:00:00 UTC" :: UTCTime
+  let expected = Just $ D.BuildSummary
+                   { D.slowSuite = D.SuiteSummary 
+                       { D.state = D.Init
+                       , D.createdAt = theDate
+                       , D.updatedAt = theDate
+                       }
+                   , D.fastSuite = D.SuiteSummary 
+                       { D.state = D.Running
+                       , D.createdAt = theDate
+                       , D.updatedAt = theDate
+                       }
+                   }
   actual @?= expected
 
 testCreateBuildAlreadyExists :: Test
@@ -160,17 +172,20 @@ testListProjectBuilds = TestCase $ do
   actual @?= expected
   
 makeBuildMap :: BuildMap
-makeBuildMap = Map.fromList 
-  [ ("123", D.BuildSummary 
-    { D.slowSuite = D.SuiteSummary {D.state = D.Running, D.createdAt = undefined, D.updatedAt = undefined}, 
-      D.fastSuite = D.SuiteSummary {D.state = D.Init, D.createdAt = undefined, D.updatedAt = undefined}
-    }
-  ), 
-  ("estum1", D.BuildSummary 
-    { D.slowSuite = D.SuiteSummary {D.state = D.Running, D.createdAt = undefined, D.updatedAt = undefined}, 
-      D.fastSuite = D.SuiteSummary {D.state = D.Init, D.createdAt = undefined, D.updatedAt = undefined}
-    }
-  )]  
+makeBuildMap = 
+  let theDate = read "2024-01-01 00:00:00 UTC" :: UTCTime
+      summaries = 
+        [ ("123", D.BuildSummary 
+            { D.slowSuite = D.SuiteSummary {D.state = D.Init, D.createdAt = theDate, D.updatedAt = theDate}, 
+              D.fastSuite = D.SuiteSummary {D.state = D.Running, D.createdAt = theDate, D.updatedAt = theDate}
+            }
+          ), 
+          ("estum1", D.BuildSummary 
+            { D.slowSuite = D.SuiteSummary {D.state = D.Init, D.createdAt = theDate, D.updatedAt = theDate}, 
+              D.fastSuite = D.SuiteSummary {D.state = D.Running, D.createdAt = theDate, D.updatedAt = theDate}
+            }
+          )]  
+  in Map.fromList summaries
 
 makeServiceWithFastStubs :: D.BuildState -> BuildService
 makeServiceWithFastStubs inital =

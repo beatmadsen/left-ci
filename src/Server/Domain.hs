@@ -65,8 +65,8 @@ data BuildSummary = BuildSummary
 
 instance ToJSON BuildSummary where
   toJSON (BuildSummary fastSuite slowSuite) = object [
-    "fastSuite" .= fastSuite,
-    "slowSuite" .= slowSuite
+    "fast_suite" .= fastSuite,
+    "slow_suite" .= slowSuite
     ]
 
 
@@ -81,8 +81,8 @@ data SuiteSummary = SuiteSummary
 instance ToJSON SuiteSummary where
   toJSON (SuiteSummary state createdAt updatedAt) = object [
     "state" .= state,
-    "createdAt" .= createdAt,
-    "updatedAt" .= updatedAt
+    "created_at" .= createdAt,
+    "updated_at" .= updatedAt
     ]
 
 instance ToJSON BuildState where

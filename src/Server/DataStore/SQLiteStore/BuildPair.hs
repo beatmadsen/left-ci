@@ -36,7 +36,7 @@ sqlFindBuildPairs project = do
 findProjectExecutions :: Connection -> Project -> IO [Execution]
 findProjectExecutions connection project = do
   query connection [sql|
-    SELECT s.name, b.global_id, v.commit_hash, e.state 
+    SELECT s.name, b.global_id, v.commit_hash, e.state, e.created_at, e.updated_at
     FROM executions e
     JOIN builds b ON e.build_id = b.id
     JOIN versions v ON b.version_id = v.id
@@ -86,7 +86,7 @@ findExecutions connection (Build buildId) =
   query
     connection
     [sql|
-      SELECT s.name, b.global_id, v.commit_hash, e.state 
+      SELECT s.name, b.global_id, v.commit_hash, e.state, e.created_at, e.updated_at
       FROM executions e 
       JOIN builds b ON e.build_id = b.id 
       JOIN versions v ON b.version_id = v.id

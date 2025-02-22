@@ -12,10 +12,12 @@ import Data.IORef
 import qualified Server.DataStore as DS
 import Server.DataStore.Atomic (AtomicM (..))
 import qualified Server.Domain as D
-import Server.Service (BuildService (..), CreationOutcome (..), StateChangeOutcome (..))
+import Server.Service
 import Server.Service.Persistent (makePersistentService)
 import Test.HUnit (Test (TestCase, TestLabel, TestList), assertBool, (@?=))
 import qualified Data.Map as Map
+
+
 tests :: Test
 tests =
   TestList
@@ -38,7 +40,7 @@ tests =
 
 testGetBuildSummaryNonExistent :: Test
 testGetBuildSummaryNonExistent = TestCase $ do
-  let service = makePersistentService defaultStore {findBuildPair = const $ pure Nothing}
+  let service = makePersistentService defaultStore {DS.findBuildPair = const $ pure Nothing}
   actual <- getBuildSummary service (D.Build "123")
   let expected = Nothing
   actual @?= expected
@@ -48,7 +50,7 @@ testGetBuildSummaryTwoRows = TestCase $ do
   let service =
         makePersistentService
           defaultStore
-            { findBuildPair = const $ pure $ Just defaultBuildPair
+            { DS.findBuildPair = const $ pure $ Just defaultBuildPair
             }
   actual <- getBuildSummary service (D.Build "123")
   let expected = Just $ D.BuildSummary {D.slowSuite = D.SuiteSummary {D.state = D.Init, D.createdAt = undefined, D.updatedAt = undefined}, D.fastSuite = D.SuiteSummary {D.state = D.Running, D.createdAt = undefined, D.updatedAt = undefined}}
@@ -56,28 +58,28 @@ testGetBuildSummaryTwoRows = TestCase $ do
 
 testCreateBuildAlreadyExists :: Test
 testCreateBuildAlreadyExists = TestCase $ do
-  let service = makePersistentService defaultStore {createBuildUnlessExists = (const . const . const) $ pure $ Left ()}
+  let service = makePersistentService defaultStore {DS.createBuildUnlessExists = (const . const . const) $ pure $ Left ()}
   actual <- createBuild service (D.Project "abc") (D.Version "123") (D.Build "456")
   let expected = Conflict
   actual @?= expected
 
 testCreateBuildSuccess :: Test
 testCreateBuildSuccess = TestCase $ do
-  let service = makePersistentService defaultStore {createBuildUnlessExists = (const . const . const) $ pure $ Right ()}
+  let service = makePersistentService defaultStore {DS.createBuildUnlessExists = (const . const . const) $ pure $ Right ()}
   actual <- createBuild service (D.Project "abc") (D.Version "123") (D.Build "456")
   let expected = SuccessfullyCreated
   actual @?= expected
 
 testAdvanceFastResultNonExistent :: Test
 testAdvanceFastResultNonExistent = TestCase $ do
-  let service = makePersistentService defaultStore {findFastState = const $ pure Nothing}
+  let service = makePersistentService defaultStore {DS.findFastState = const $ pure Nothing}
   actual <- advanceFastSuite service (D.Build "123")
   let expected = NotFound
   actual @?= expected
 
 testAdvanceFastResultSuccess :: Test
 testAdvanceFastResultSuccess = TestCase $ do
-  let service = makeServiceWithFastStubs Running
+  let service = makeServiceWithFastStubs D.Running
   actual <- advanceFastSuite service (D.Build "123")
   let expected = SuccessfullyChangedState
   actual @?= expected
@@ -109,14 +111,14 @@ testAdvanceSlowResultAdvancesAndUpdates = TestCase $ do
 
 testFailFastResultSuccess :: Test
 testFailFastResultSuccess = TestCase $ do
-  let service = makeServiceWithFastStubs Running
+  let service = makeServiceWithFastStubs D.Running
   actual <- failFastSuite service (D.Build "123")
   let expected = SuccessfullyChangedState
   actual @?= expected
 
 testFailFastResultAdvancesAndUpdates :: Test
 testFailFastResultAdvancesAndUpdates = TestCase $ do
-  writtenState <- newIORef Running
+  writtenState <- newIORef D.Running
   let service = makeServiceWithFastMocks writtenState
   failFastSuite service (D.Build "123")
   actual <- readIORef writtenState
@@ -125,14 +127,14 @@ testFailFastResultAdvancesAndUpdates = TestCase $ do
 
 testFailSlowResultSuccess :: Test
 testFailSlowResultSuccess = TestCase $ do
-  let service = makeServiceWithSlowStubs Running
+  let service = makeServiceWithSlowStubs D.Running
   actual <- failSlowSuite service (D.Build "123")
   let expected = SuccessfullyChangedState
   actual @?= expected
 
 testFailSlowResultAdvancesAndUpdates :: Test
 testFailSlowResultAdvancesAndUpdates = TestCase $ do
-  writtenState <- newIORef Running
+  writtenState <- newIORef D.Running
   let service = makeServiceWithSlowMocks writtenState
   failSlowSuite service (D.Build "123")
   actual <- readIORef writtenState
@@ -141,7 +143,7 @@ testFailSlowResultAdvancesAndUpdates = TestCase $ do
 
 testListProjectBuildsFails :: Test
 testListProjectBuildsFails = TestCase $ do
-  let service = makePersistentService defaultStore {findProject = const $ pure Nothing}
+  let service = makePersistentService defaultStore {DS.findProject = const $ pure Nothing}
   actual <- listProjectBuilds service (D.Project "abc")
   let expected = Nothing
   actual @?= expected
@@ -150,77 +152,90 @@ testListProjectBuilds :: Test
 testListProjectBuilds = TestCase $ do
   let otherPair = makeBuildPair (D.Build "estum1")
   let service = makePersistentService defaultStore {
-    findProject = const $ pure $ Just (D.Project "abc"),     
-    findBuildPairs = const $ pure [defaultBuildPair, otherPair]
+    DS.findProject = const $ pure $ Just (D.Project "abc"),     
+    DS.findBuildPairs = const $ pure [defaultBuildPair, otherPair]
   }
-  actual <- listProjectBuilds service (Project "abc")
-  let expected = Just $ Map.fromList [("123", BuildSummary Running Init), ("estum1", BuildSummary Running Init)]
+  actual <- listProjectBuilds service (D.Project "abc")
+  let expected = Just $ makeBuildMap
   actual @?= expected
+  
+makeBuildMap :: BuildMap
+makeBuildMap = Map.fromList 
+  [ ("123", D.BuildSummary 
+    { D.slowSuite = D.SuiteSummary {D.state = D.Running, D.createdAt = undefined, D.updatedAt = undefined}, 
+      D.fastSuite = D.SuiteSummary {D.state = D.Init, D.createdAt = undefined, D.updatedAt = undefined}
+    }
+  ), 
+  ("estum1", D.BuildSummary 
+    { D.slowSuite = D.SuiteSummary {D.state = D.Running, D.createdAt = undefined, D.updatedAt = undefined}, 
+      D.fastSuite = D.SuiteSummary {D.state = D.Init, D.createdAt = undefined, D.updatedAt = undefined}
+    }
+  )]  
 
-makeServiceWithFastStubs :: BuildState -> BuildService
+makeServiceWithFastStubs :: D.BuildState -> BuildService
 makeServiceWithFastStubs inital =
   makePersistentService
     defaultStore
-      { findFastState = makeStubbedFind inital,
-        updateFastState = makeStubbedUpdate
+      { DS.findFastState = makeStubbedFind inital,
+        DS.updateFastState = makeStubbedUpdate
       }
 
-makeServiceWithSlowStubs :: BuildState -> BuildService
+makeServiceWithSlowStubs :: D.BuildState -> BuildService
 makeServiceWithSlowStubs inital =
   makePersistentService
     defaultStore
-      { findSlowState = makeStubbedFind inital,
-        updateSlowState = makeStubbedUpdate
+      { DS.findSlowState = makeStubbedFind inital,
+        DS.updateSlowState = makeStubbedUpdate
       }
 
-makeStubbedFind :: BuildState -> (Build -> AtomicM ctx (Maybe BuildState))
+makeStubbedFind :: D.BuildState -> (D.Build -> AtomicM ctx (Maybe D.BuildState))
 makeStubbedFind state = const $ pure $ Just state
 
-makeStubbedUpdate :: (Build -> BuildState -> AtomicM ctx ())
+makeStubbedUpdate :: (D.Build -> D.BuildState -> AtomicM ctx ())
 makeStubbedUpdate = (const . const) $ pure ()
 
-makeMockedFind :: IORef BuildState -> (Build -> AtomicM ctx (Maybe BuildState))
+makeMockedFind :: IORef D.BuildState -> (D.Build -> AtomicM ctx (Maybe D.BuildState))
 makeMockedFind ref = const $ fmap Just $ liftIO $ readIORef ref
 
-makeMockedUpdate :: IORef BuildState -> (Build -> BuildState -> AtomicM ctx ())
+makeMockedUpdate :: IORef D.BuildState -> (D.Build -> D.BuildState -> AtomicM ctx ())
 makeMockedUpdate ref _ newState = liftIO $ writeIORef ref newState
 
-makeServiceWithFastMocks :: IORef BuildState -> BuildService
+makeServiceWithFastMocks :: IORef D.BuildState -> BuildService
 makeServiceWithFastMocks ref =
   makePersistentService
     defaultStore
-      { findFastState = makeMockedFind ref,
-        updateFastState = makeMockedUpdate ref
+      { DS.findFastState = makeMockedFind ref,
+        DS.updateFastState = makeMockedUpdate ref
       }
 
-makeServiceWithSlowMocks :: IORef BuildState -> BuildService
+makeServiceWithSlowMocks :: IORef D.BuildState -> BuildService
 makeServiceWithSlowMocks ref =
   makePersistentService
     defaultStore
-      { findSlowState = makeMockedFind ref,
-        updateSlowState = makeMockedUpdate ref
+      { DS.findSlowState = makeMockedFind ref,
+        DS.updateSlowState = makeMockedUpdate ref
       }
 
-defaultBuildPair :: BuildPair
-defaultBuildPair = makeBuildPair (Build "123")
+defaultBuildPair :: DS.BuildPair
+defaultBuildPair = makeBuildPair (D.Build "123")
 
-makeBuildPair :: Build -> BuildPair
-makeBuildPair build = BuildPair {slowSuite = BuildRecord {buildId = build, versionId = "04a66b1n", state = Init}, fastSuite = BuildRecord {buildId = build, versionId = "04a66b1n", state = Running}}
+makeBuildPair :: D.Build -> DS.BuildPair
+makeBuildPair build = DS.BuildPair {DS.slowSuite = DS.BuildRecord {DS.buildId = build, DS.versionId = "04a66b1n", DS.state = D.Init}, DS.fastSuite = DS.BuildRecord {DS.buildId = build, DS.versionId = "04a66b1n", DS.state = D.Running}}
 
 defaultAtomically :: AtomicM ctx a -> IO a
 defaultAtomically action =
   runReaderT (runAtomicM action) undefined
 
-defaultStore :: BuildStore ctx
+defaultStore :: DS.BuildStore ctx
 defaultStore =
-  BuildStore
-    { atomically = defaultAtomically,
-      findBuildPair = undefined,
-      findProject = undefined,
-      findBuildPairs = undefined,
-      createBuildUnlessExists = undefined,
-      findFastState = undefined,
-      updateFastState = undefined,
-      findSlowState = undefined,
-      updateSlowState = undefined
+  DS.BuildStore
+    { DS.atomically = defaultAtomically,
+      DS.findBuildPair = undefined,
+      DS.findProject = undefined,
+      DS.findBuildPairs = undefined,
+      DS.createBuildUnlessExists = undefined,
+      DS.findFastState = undefined,
+      DS.updateFastState = undefined,
+      DS.findSlowState = undefined,
+      DS.updateSlowState = undefined
     }

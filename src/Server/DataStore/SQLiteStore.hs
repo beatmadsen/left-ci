@@ -18,7 +18,7 @@ import Server.DataStore.Atomic (AtomicM (..), executeAtomic)
 import Server.DataStore.SQLiteSetup
 import Server.Domain (Build (..), BuildState (..), Version (..), Project (..))
 import Server.DataStore.SQLiteTypes
-import Data.List (groupBy, sortBy)
+import qualified Data.Map as Map
 
 newtype OngoingTransaction = OngoingTransaction
   { connection :: Connection
@@ -81,14 +81,20 @@ findProjectExecutions connection project = do
     WHERE p.name = ?
   |] (Only project)
 
-
 mapExecutions :: [Execution] -> [BuildPair]
 mapExecutions executions =
-  -- group executions by buildGlobalId
-  -- for each buildGlobalId, find the slow and fast suite executions
-  -- map the executions to BuildRecords
-  -- return the BuildPairs
-  undefined
+    let grouped = Map.fromListWith (++) [(buildGlobalId e, [e]) | e <- executions]
+    in [ makeBuildPair slow' fast'
+       | execGroup <- Map.elems grouped
+       , let slow = [e | e <- execGroup, suiteName e == Slow]
+       , let fast = [e | e <- execGroup, suiteName e == Fast]
+       , not (null slow)
+       , not (null fast)
+       , let slow' = head slow
+       , let fast' = head fast
+       ]
+  where
+    makeBuildPair slow fast = BuildPair (mapExecution slow) (mapExecution fast)
 
 mapExecutionsM :: [Execution] -> Maybe BuildPair
 mapExecutionsM executions =
@@ -100,7 +106,6 @@ mapExecutionsM executions =
         (_, []) -> error "No slow suite execution found"
         ([fast], [slow]) -> Just (BuildPair (mapExecution slow) (mapExecution fast))
         _ -> error "Multiple executions found for a single suite"
-
 
 mapExecution :: Execution -> BuildRecord
 mapExecution ex =

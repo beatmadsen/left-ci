@@ -33,7 +33,7 @@ instance IsString Version where
 
 newtype Build = Build {
   getGlobalId :: Text
-} deriving (Show, Eq)
+} deriving (Show, Eq, Ord)
 
 instance IsString Build where
     fromString :: String -> Build

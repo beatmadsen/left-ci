@@ -24,8 +24,11 @@ import Web.Scotty
     pathParam,
     post,
     status,
+    file,
+    middleware,
   )
 import Web.Scotty.Internal.Types (ActionError, ActionT)
+import Network.Wai.Middleware.Static
 
 pathVersion :: ActionM Version
 pathVersion = do
@@ -44,6 +47,11 @@ pathProject = do
 
 makeApplication :: BuildService -> ScottyM ()
 makeApplication service = do
+  middleware $ staticPolicy (noDots >-> addBase "site/static" >-> addBase "site/js/lib")
+
+  get "/" $ do file "site/static/index.html"
+
+
   -- list all builds for a project
   get "/projects/:p/builds" $ do
     pid <- pathProject

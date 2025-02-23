@@ -1,0 +1,16 @@
+# Dependencies
+node_modules/
+
+# Testing
+coverage/
+__snapshots__/
+*.test.results.json
+
+# Build outputs
+dist/
+build/
+
+# Environment
+.env
+.env.local
+.env.*.local

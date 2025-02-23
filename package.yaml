@@ -30,6 +30,7 @@ library:
     - network
     - scotty
     - wai
+    - wai-middleware-static
     - http-types 
     - warp
     - aeson

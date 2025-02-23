@@ -1,0 +1,13 @@
+{
+  "name": "site",
+  "version": "1.0.0",
+  "description": "Testing setup for vanilla JS",
+  "type": "module",  
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0"
+  }
+}

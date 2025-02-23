@@ -7,6 +7,11 @@ cabal-version: 1.12
 name:           left-ci
 version:        0.1.0.0
 build-type:     Simple
+data-files:
+    site/static/index.html
+    site/js/lib/api.js
+    site/js/lib/dom.js
+    site/js/lib/main.js
 
 library
   exposed-modules:

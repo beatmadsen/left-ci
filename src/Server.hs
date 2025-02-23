@@ -9,11 +9,13 @@ import Server.DataStore.SQLiteStore (makeSQLiteBuildStore)
 import Server.Routes (makeApplication)
 import Web.Scotty (scottyApp)
 import Network.Wai (Application)
+import qualified Paths_left_ci as P
 
 makeWaiApp :: FilePath -> IO Application
 makeWaiApp dbSubDir = do
   service <- makeService makeSQLiteBuildStore dbSubDir
-  scottyApp $ makeApplication service
+  dataDir <- P.getDataDir
+  scottyApp $ makeApplication dataDir service
 
 makeService :: (FilePath -> IO (BuildStore ctx)) -> FilePath -> IO BuildService
 makeService makeBuildStore subDir = do

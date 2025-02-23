@@ -1,10 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
-
 module Server.Routes
   ( makeApplication,
   )
 where
 
+
+import System.FilePath ((</>))
 import Control.Monad.IO.Class (liftIO)
 import Data.Aeson (FromJSON (..), withObject, (.:))
 import Data.Aeson.Types (Parser)
@@ -30,6 +31,8 @@ import Web.Scotty
 import Web.Scotty.Internal.Types (ActionError, ActionT)
 import Network.Wai.Middleware.Static
 
+import qualified Web.Scotty.Trans as ST   
+
 pathVersion :: ActionM Version
 pathVersion = do
   vid <- pathParam "v"
@@ -45,11 +48,12 @@ pathProject = do
   pid <- pathParam "p"
   return $ Project pid
 
-makeApplication :: BuildService -> ScottyM ()
-makeApplication service = do
-  middleware $ staticPolicy (noDots >-> addBase "site/static" >-> addBase "site/js/lib")
 
-  get "/" $ do file "site/static/index.html"
+makeApplication :: FilePath -> BuildService -> ScottyM ()
+makeApplication dataDir service = do
+  middleware $ staticPolicy (noDots >-> addBase (dataDir </> "site/static") >-> addBase (dataDir </> "site/js/lib"))
+
+  get "/" $ do file (dataDir </> "site/static/index.html")
 
 
   -- list all builds for a project

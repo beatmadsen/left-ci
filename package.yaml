@@ -48,8 +48,6 @@ executables:
       - warp
       - unix
 
-
-
 tests:
   unit:
     dependencies:
@@ -80,3 +78,7 @@ tests:
       - raw-strings-qq
     main: Main.hs
     source-dirs: test/integration
+
+data-files:
+  - site/static/**/*
+  - site/js/lib/**/*

@@ -22,6 +22,7 @@ import Web.Scotty (scottyApp)
 import qualified Data.Map as Map
 import Data.Time.Clock (UTCTime)
 import Text.RawString.QQ (r)
+import qualified Paths_left_ci as P
 
 tests :: Test
 tests =
@@ -48,8 +49,8 @@ tests =
 testGetSummary :: Test
 testGetSummary = TestCase $ do
   let service = defaultService {getBuildSummary = \_ -> pure $ Just defaultBuildSummary}
-
-  app <- scottyApp $ makeApplication service
+  dataDir <- P.getDataDir
+  app <- scottyApp $ makeApplication dataDir service
 
   runSession
     ( do
@@ -74,7 +75,8 @@ testGetSummary = TestCase $ do
 testGetSummaryNotFound :: Test
 testGetSummaryNotFound = TestCase $ do
   let service = defaultService {getBuildSummary = \_ -> pure Nothing}
-  app <- scottyApp $ makeApplication service
+  dataDir <- P.getDataDir
+  app <- scottyApp $ makeApplication dataDir service
   runSession
     ( do
         response <- request $ defaultRequest {pathInfo = ["builds", "123"]}
@@ -94,7 +96,8 @@ testUsesPathBuildId = TestCase $ do
               pure $ Just defaultBuildSummary
           }
 
-  app <- scottyApp $ makeApplication service
+  dataDir <- P.getDataDir
+  app <- scottyApp $ makeApplication dataDir service
 
   runSession
     ( do
@@ -126,7 +129,8 @@ testUpdateBuild cadence action = TestCase $ do
             failSlowSuite = x
           }
 
-  app <- scottyApp $ makeApplication service
+  dataDir <- P.getDataDir
+  app <- scottyApp $ makeApplication dataDir service
 
   runSession
     ( do
@@ -153,7 +157,8 @@ testCreateBuild = TestCase $ do
               pure SuccessfullyCreated
           }
 
-  app <- scottyApp $ makeApplication service
+  dataDir <- P.getDataDir
+  app <- scottyApp $ makeApplication dataDir service
 
   runSession
     ( do
@@ -174,7 +179,8 @@ testCreateBuild = TestCase $ do
 testCreateBuildConflict :: Test
 testCreateBuildConflict = TestCase $ do
   let service = defaultService {createBuild = (const . const . const) $ pure Conflict}
-  app <- scottyApp $ makeApplication service
+  dataDir <- P.getDataDir
+  app <- scottyApp $ makeApplication dataDir service
   runSession
     ( do
         response <- srequest $ makeCreateRequest (Project "project-123") (Version "version-123") (Build "build-42")
@@ -185,7 +191,8 @@ testCreateBuildConflict = TestCase $ do
 testAdvanceFastResultNonExistent :: Test
 testAdvanceFastResultNonExistent = TestCase $ do
   let service = defaultService {advanceFastSuite = const $ pure NotFound}
-  app <- scottyApp $ makeApplication service
+  dataDir <- P.getDataDir
+  app <- scottyApp $ makeApplication dataDir service
   runSession
     ( do
         response <- srequest $ makeActionRequest (Build "build-42") "fast" "advance"
@@ -196,7 +203,8 @@ testAdvanceFastResultNonExistent = TestCase $ do
 testAdvanceSlowResultNonExistent :: Test
 testAdvanceSlowResultNonExistent = TestCase $ do
   let service = defaultService {advanceSlowSuite = const $ pure NotFound}
-  app <- scottyApp $ makeApplication service
+  dataDir <- P.getDataDir
+  app <- scottyApp $ makeApplication dataDir service
   runSession
     ( do
         response <- srequest $ makeActionRequest (Build "build-42") "slow" "advance"
@@ -207,7 +215,8 @@ testAdvanceSlowResultNonExistent = TestCase $ do
 testFailFastResultNonExistent :: Test
 testFailFastResultNonExistent = TestCase $ do
   let service = defaultService {failFastSuite = const $ pure NotFound}
-  app <- scottyApp $ makeApplication service
+  dataDir <- P.getDataDir
+  app <- scottyApp $ makeApplication dataDir service
   runSession
     ( do
         response <- srequest $ makeActionRequest (Build "build-42") "fast" "fail"
@@ -218,7 +227,8 @@ testFailFastResultNonExistent = TestCase $ do
 testFailSlowResultNonExistent :: Test
 testFailSlowResultNonExistent = TestCase $ do
   let service = defaultService {failSlowSuite = const $ pure NotFound}
-  app <- scottyApp $ makeApplication service
+  dataDir <- P.getDataDir
+  app <- scottyApp $ makeApplication dataDir service
   runSession
     ( do
         response <- srequest $ makeActionRequest (Build "build-42") "slow" "fail"
@@ -229,7 +239,8 @@ testFailSlowResultNonExistent = TestCase $ do
 testListProjectBuildsNotFound :: Test
 testListProjectBuildsNotFound = TestCase $ do
   let service = defaultService {listProjectBuilds = const $ pure Nothing}
-  app <- scottyApp $ makeApplication service
+  dataDir <- P.getDataDir
+  app <- scottyApp $ makeApplication dataDir service
   runSession
     ( do  
         response <- srequest $ makeListRequest (Project "project-123")
@@ -240,7 +251,8 @@ testListProjectBuildsNotFound = TestCase $ do
 testListProjectBuildsEmpty :: Test
 testListProjectBuildsEmpty = TestCase $ do
   let service = defaultService {listProjectBuilds = const $ pure (Just Map.empty)}
-  app <- scottyApp $ makeApplication service
+  dataDir <- P.getDataDir
+  app <- scottyApp $ makeApplication dataDir service
   runSession
     ( do
         response <- srequest $ makeListRequest (Project "project-123")
@@ -262,7 +274,8 @@ testListProjectBuilds = TestCase $ do
       fastSuite = SuiteSummary {state = Running, createdAt = theSecondDate, updatedAt = theSecondDate}
     }
   )]}
-  app <- scottyApp $ makeApplication service
+  dataDir <- P.getDataDir
+  app <- scottyApp $ makeApplication dataDir service
   runSession
     ( do
         response <- srequest $ makeListRequest (Project "project-123")
@@ -304,7 +317,8 @@ testUsesPathProjectName = TestCase $ do
       IORef.writeIORef passedProject project
       pure (Just Map.empty)} 
 
-  app <- scottyApp $ makeApplication service
+  dataDir <- P.getDataDir
+  app <- scottyApp $ makeApplication dataDir service
 
   runSession
     ( do

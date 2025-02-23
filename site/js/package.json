@@ -2,12 +2,13 @@
   "name": "site",
   "version": "1.0.0",
   "description": "Testing setup for vanilla JS",
-  "type": "module",  
+  "type": "module",
   "scripts": {
-    "test": "jest",
+    "test": "node --experimental-vm-modules ./node_modules/.bin/jest",
     "test:watch": "jest --watch"
   },
   "devDependencies": {
-    "jest": "^29.0.0"
+    "jest": "^29.0.0",
+    "jest-environment-jsdom": "^29.7.0"
   }
 }

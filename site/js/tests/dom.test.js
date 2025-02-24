@@ -42,7 +42,7 @@ test("updatePage replaces table content", () => {
   expect(table).not.toBeNull();
   
   // Check headers
-  const headers = table.querySelectorAll("th");
+  const headers = table.querySelectorAll("thead th");
   expect(headers.length).toBe(5); // Build, Suite, Created At, Updated At, State
   expect(headers[0].textContent).toBe("Build");
   expect(headers[1].textContent).toBe("Suite");

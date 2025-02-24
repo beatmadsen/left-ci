@@ -30,19 +30,27 @@ const archetypeData = {
   }
 }
 
-test("dummy test", () => {
-  expect(true).toBe(true);
+test("updatePage replaces table content", () => {
+  document.body.innerHTML = `<div id="table-container"></div>`;
+
+  updatePage(archetypeData);
+
+  const container = document.getElementById("table-container");
+  const table = container.querySelector("table");
+  
+  // Check table exists
+  expect(table).not.toBeNull();
+  
+  // Check headers
+  const headers = table.querySelectorAll("th");
+  expect(headers.length).toBe(5); // Build, Suite, Created At, Updated At, State
+  expect(headers[0].textContent).toBe("Build");
+  expect(headers[1].textContent).toBe("Suite");
+  expect(headers[2].textContent).toBe("Created At");
+  expect(headers[3].textContent).toBe("Updated At");
+  expect(headers[4].textContent).toBe("State");
+  
+  // Check data rows (2 builds × 2 suites = 4 rows)
+  const rows = table.querySelectorAll("tbody tr");
+  expect(rows.length).toBe(4);
 });
-
-
-// test("updatePage replaces table content", () => {
-//   document.body.innerHTML = `<div id="table-container"></div>`;
-
-//   updatePage(archetypeData);
-
-//   const container = document.getElementById("table-container");
-//   expect(container.querySelector("table")).not.toBeNull();
-//   expect(container.querySelectorAll("tr").length).toBe(2);
-//   expect(container.querySelectorAll("td").length).toBe(4);
-//   expect(container.querySelectorAll("th").length).toBe(2);
-// });

@@ -47,12 +47,20 @@ h1 {
 table {
   width: 100%;
   border-collapse: collapse;
-  opacity: 0;
-  margin: 0 auto; 
-  animation: 
-    fadeIn 1.2s ease-in forwards,
-    expandWidth 4s forwards ease-in;
-  transform-origin: center top;
+  margin: 0 auto;
+}
+
+thead {
+  border-radius: 8px 8px 0 0;
+  overflow: hidden;  /* This ensures the th corners stay within thead */
+}
+
+th:first-child {
+  border-top-left-radius: 8px;
+}
+
+th:last-child {
+  border-top-right-radius: 8px;
 }
 
 
@@ -63,12 +71,16 @@ th, td {
 }
 
 th {
-  background-color: #f8f9fa;
-  font-weight: 600;
+  background-color: #1a365d;  /* Same as our text color */
+  color: #edece4;  /* Creamy white */
+  font-size: 1.2rem;  /* Slightly larger text */
+  font-weight: 700;  /* Bolder text */
+  padding: 16px 12px;  /* Slightly more padding for better presence */
+  
 }
 
 tr:hover {
-  background-color: #f8f9fa;
+  background-color: #f3f7fc;  /* Keep the light blue hover */
 }
 
 /* Animations */
@@ -139,8 +151,20 @@ tr:hover {
   }
 }
 
-@keyframes fadeIn {
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
   to {
     opacity: 1;
+    transform: translateX(0);
   }
+}
+
+/* Add this to your existing CSS */
+.fade-slide-in {
+  animation: fadeSlideIn 0.5s ease-out forwards;
+  opacity: 0;
+  transform: translateX(-20px);
 }

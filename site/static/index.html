@@ -18,12 +18,11 @@
             const container = document.getElementById('table-container');
             const img = container.querySelector('img');
             
-            // Shrink the image away
             img.classList.add('fade-away');
             
-            // After fade completes, show table
             setTimeout(() => {
-                const table = `
+                // Create table with empty tbody first
+                container.innerHTML = `
                     <table>
                         <thead>
                             <tr>
@@ -35,17 +34,34 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td>Example Build</td>
-                                <td>Fast Suite</td>
-                                <td>2024-03-20</td>
-                                <td>2024-03-20</td>
-                                <td>Running</td>
-                            </tr>
                         </tbody>
                     </table>
                 `;
-                container.innerHTML = table;
+
+                // Sample data (replace with your actual data)
+                const rows = [
+                    ['Build-123', 'Fast Suite', '2024-03-20', '2024-03-20', 'Running'],
+                    ['Build-124', 'Slow Suite', '2024-03-20', '2024-03-20', 'Pending'],
+                    ['Build-125', 'Fast Suite', '2024-03-20', '2024-03-20', 'Complete']
+                ];
+
+                const tbody = container.querySelector('tbody');
+                
+                // Add rows with delay
+                rows.forEach((rowData, index) => {
+                    setTimeout(() => {
+                        const tr = document.createElement('tr');
+                        tr.classList.add('fade-slide-in');
+                        
+                        rowData.forEach(cellData => {
+                            const td = document.createElement('td');
+                            td.textContent = cellData;
+                            tr.appendChild(td);
+                        });
+                        
+                        tbody.appendChild(tr);
+                    }, index * 200); // 200ms delay between each row
+                });
             }, 1100);
         }, 5500);
     </script>

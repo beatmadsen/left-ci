@@ -1,11 +1,13 @@
 /* Base styles */
 body {
-  font-family: "Crimson Text", "Palatino Linotype", "Book Antiqua", Palatino, "Times New Roman", serif;
+  /* font-family: "Crimson Text", "Palatino Linotype", "Book Antiqua", Palatino, "Times New Roman", serif; */
+  font-family: "Optima", sans-serif;
+
   line-height: 1.6;
   margin: 0;
   padding: 20px;
-  background-color: #f5f5f5;
-  color: #1a365d;  /* Rich dark blue */
+  background-color: #F7F4EF;  /* Warmer, cream-tinted background instead of #f5f5f5 */
+  color: #2B2B2B;  /* Match the table text color */
 }
 
 h1 {
@@ -21,7 +23,7 @@ h1 {
   background: white;
   padding: 2rem;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(27, 73, 101, 0.08);  /* Aegean blue-tinted shadow */
 }
 
 /* Loading image styles */
@@ -48,39 +50,55 @@ table {
   width: 100%;
   border-collapse: collapse;
   margin: 0 auto;
+  color: #2B2B2B;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 thead {
   border-radius: 8px 8px 0 0;
-  overflow: hidden;  /* This ensures the th corners stay within thead */
-}
-
-th:first-child {
-  border-top-left-radius: 8px;
-}
-
-th:last-child {
-  border-top-right-radius: 8px;
-}
-
-
-th, td {
-  padding: 12px;
-  text-align: left;
-  border-bottom: 1px solid #ddd;
+  overflow: hidden;
 }
 
 th {
-  background-color: #1a365d;  /* Same as our text color */
-  color: #edece4;  /* Creamy white */
-  font-size: 1.2rem;  /* Slightly larger text */
-  font-weight: 700;  /* Bolder text */
-  padding: 16px 12px;  /* Slightly more padding for better presence */
-  
+  background-color: #0A5D7C;  /* Aegean blue instead of dark blue */
+  color: #F8F9FA;
+  font-size: 1.1rem;
+  font-weight: 600;
+  padding: 1.2rem 1rem;
+  letter-spacing: 0.5px;
+  text-align: left;
 }
 
-tr:hover {
-  background-color: #f3f7fc;  /* Keep the light blue hover */
+td {
+  padding: 1rem;
+  vertical-align: top;
+}
+
+/* Alternating rows with subtle cream tones */
+tr:nth-child(odd) {
+  background-color: #FDFBF7;
+}
+
+tr:nth-child(even) {
+  background-color: #FFFFFF;
+}
+
+/* Elegant hover effect */
+tr {
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+tbody tr:hover {
+  transform: scale(1.02);
+  background-color: #0A5D7C;
+  color: #F8F9FA;
+  font-weight: 500;
+  z-index: 10;
+  box-shadow: 
+    0 4px 20px rgba(27, 73, 101, 0.25),
+    0 0 15px rgba(27, 73, 101, 0.15);
 }
 
 /* Animations */
@@ -162,7 +180,7 @@ tr:hover {
   }
 }
 
-/* Add this to your existing CSS */
+/* Adjust the fade-slide-in animation to work with new colors */
 .fade-slide-in {
   animation: fadeSlideIn 0.5s ease-out forwards;
   opacity: 0;

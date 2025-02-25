@@ -9,7 +9,10 @@ version:        0.1.0.0
 build-type:     Simple
 data-files:
     site/static/index.html
+    site/static/main.css
+    site/static/roberta.jpg
     site/js/lib/api.js
+    site/js/lib/datatable.js
     site/js/lib/dom.js
     site/js/lib/main.js
 

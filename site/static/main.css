@@ -1,21 +1,22 @@
 /* Base styles */
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: "Crimson Text", "Palatino Linotype", "Book Antiqua", Palatino, "Times New Roman", serif;
   line-height: 1.6;
   margin: 0;
   padding: 20px;
   background-color: #f5f5f5;
-  color: #333;
+  color: #1a365d;  /* Rich dark blue */
 }
 
 h1 {
   text-align: center;
-  color: #2c3e50;
+  color: #1a365d;  /* Match the body text color */
   margin-bottom: 2rem;
 }
 
 #table-container {
   max-width: 1200px;
+  min-height: 300px;
   margin: 0 auto;
   background: white;
   padding: 2rem;
@@ -28,9 +29,18 @@ h1 {
   display: block;
   margin: 0 auto;
   max-width: 250px;
+  border-radius: 12px;
+  will-change: transform, filter, opacity;
+  transform: translateZ(0);
+  opacity: var(--img-opacity, 1);  /* Default opacity of 1 */
   animation: 
-    morphShape 5500ms infinite ease-in-out,
-    rotateHue 5500ms infinite linear;  /* Linear timing for smooth color transition */
+    morphShape 5500ms forwards ease-in-out,
+    rotateHue 5500ms forwards linear;
+  backface-visibility: hidden;
+}
+
+.fade-away {
+  animation: fadeAway 0.3s ease-out forwards !important;
 }
 
 /* Table styles */
@@ -38,8 +48,13 @@ table {
   width: 100%;
   border-collapse: collapse;
   opacity: 0;
-  animation: fadeIn 0.5s forwards;
+  margin: 0 auto; 
+  animation: 
+    fadeIn 1.2s ease-in forwards,
+    expandWidth 4s forwards ease-in;
+  transform-origin: center top;
 }
+
 
 th, td {
   padding: 12px;
@@ -108,10 +123,23 @@ tr:hover {
   }
 }
 
-@keyframes fadeIn {
+@keyframes expandWidth {
   from {
+    width: 20%;
+    transform: scaleY(0.95);
+  }
+  to {
+    width: 100%;
+    transform: scaleY(1);
+  }
+}
+@keyframes fadeAway {
+  to {
     opacity: 0;
   }
+}
+
+@keyframes fadeIn {
   to {
     opacity: 1;
   }

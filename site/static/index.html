@@ -3,6 +3,8 @@
 <head>
     <title>Left CI</title>
     <link rel="stylesheet" href="main.css">
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="favicon.png">
 </head>
 
 <body>
@@ -10,6 +12,43 @@
     <div id="table-container">
         <img src="roberta.jpg" alt="Roberta"/>
     </div>
+
+    <script>
+        setTimeout(() => {
+            const container = document.getElementById('table-container');
+            const img = container.querySelector('img');
+            
+            // Shrink the image away
+            img.classList.add('fade-away');
+            
+            // After fade completes, show table
+            setTimeout(() => {
+                const table = `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Build</th>
+                                <th>Suite</th>
+                                <th>Created At</th>
+                                <th>Updated At</th>
+                                <th>State</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Example Build</td>
+                                <td>Fast Suite</td>
+                                <td>2024-03-20</td>
+                                <td>2024-03-20</td>
+                                <td>Running</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                `;
+                container.innerHTML = table;
+            }, 1100);
+        }, 5500);
+    </script>
 </body>
 
 </html>

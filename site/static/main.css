@@ -6,7 +6,9 @@ body {
   line-height: 1.6;
   margin: 0;
   padding: 20px;
-  background-color: #F7F4EF;  /* Warmer, cream-tinted background instead of #f5f5f5 */
+  background: 
+    linear-gradient(rgba(233, 245, 249, 0.82), rgba(233, 245, 249, 0.82)),
+    url('background.jpg') center/cover fixed;
   color: #2B2B2B;  /* Match the table text color */
 }
 
@@ -62,7 +64,7 @@ thead {
 
 th {
   background-color: #0A5D7C;  /* Aegean blue instead of dark blue */
-  color: #F8F9FA;
+  color: #FFFFFF;  /* Pure white */
   font-size: 1.1rem;
   font-weight: 600;
   padding: 1.2rem 1rem;
@@ -92,8 +94,8 @@ tr {
 
 tbody tr:hover {
   transform: scale(1.02);
-  background-color: #0A5D7C;
-  color: #F8F9FA;
+  background-color: #2286AB;
+  color: #FFFFFF;  /* Pure white */
   font-weight: 500;
   z-index: 10;
   box-shadow: 

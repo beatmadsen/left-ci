@@ -8,6 +8,7 @@
 </head>
 
 <body>
+    <div id="small-image-container"></div>
     <h1>Left CI</h1>
     <div id="table-container">
         <img src="roberta.jpg" alt="Roberta"/>
@@ -17,11 +18,14 @@
         setTimeout(() => {
             const container = document.getElementById('table-container');
             const img = container.querySelector('img');
+            const smallContainer = document.getElementById('small-image-container');
             
             img.classList.add('fade-away');
             
             setTimeout(() => {
-                // Create table with empty tbody first
+                // Create small image and table simultaneously
+                smallContainer.innerHTML = `<img src="${img.src}" alt="${img.alt}" class="small-round-image fade-in"/>`;
+                
                 container.innerHTML = `
                     <table>
                         <thead>
@@ -38,7 +42,6 @@
                     </table>
                 `;
 
-                // Sample data (replace with your actual data)
                 const rows = [
                     ['Build-123', 'Fast Suite', '2024-03-20', '2024-03-20', 'Running'],
                     ['Build-124', 'Slow Suite', '2024-03-20', '2024-03-20', 'Pending'],
@@ -62,7 +65,7 @@
                         tbody.appendChild(tr);
                     }, index * 200); // 200ms delay between each row
                 });
-            }, 1100);
+            }, 300); // Reduced from 1100ms to 300ms for quicker transition
         }, 5500);
     </script>
 </body>

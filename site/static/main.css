@@ -14,8 +14,12 @@ body {
 
 h1 {
   text-align: center;
-  color: #1a365d;  /* Match the body text color */
-  margin-bottom: 2rem;
+  color: #1a365d;
+  font-size: 3.2rem;
+  margin-top: 0.5rem;
+  margin-bottom: 2.5rem;
+  font-weight: 600;
+  letter-spacing: -0.5px;
 }
 
 #table-container {
@@ -103,6 +107,35 @@ tbody tr:hover {
     0 0 15px rgba(27, 73, 101, 0.15);
 }
 
+
+/* Adjust the fade-slide-in animation to work with new colors */
+.fade-slide-in {
+  animation: fadeSlideIn 0.5s ease-out forwards;
+  opacity: 0;
+  transform: translateX(-20px);
+}
+
+/* Small round image styles */
+#small-image-container {
+  text-align: center;
+  margin-bottom: 0.5rem;
+  min-height: 80px;
+}
+
+.small-round-image {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: 0 2px 8px rgba(27, 73, 101, 0.15);
+  opacity: 0;
+}
+
+.small-round-image.fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+
 /* Animations */
 @keyframes morphShape {
   0% {
@@ -182,9 +215,13 @@ tbody tr:hover {
   }
 }
 
-/* Adjust the fade-slide-in animation to work with new colors */
-.fade-slide-in {
-  animation: fadeSlideIn 0.5s ease-out forwards;
-  opacity: 0;
-  transform: translateX(-20px);
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

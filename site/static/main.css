@@ -32,12 +32,16 @@ h1 {
   box-shadow: 0 4px 12px rgba(27, 73, 101, 0.08);  /* Aegean blue-tinted shadow */
 }
 
-/* Loading image styles */
 #table-container img {
   display: block;
   margin: 0 auto;
   max-width: 250px;
   border-radius: 12px;
+}
+
+/* Loading image styles */
+.loading-image {
+  
   will-change: transform, filter, opacity;
   transform: translateZ(0);
   opacity: var(--img-opacity, 1);  /* Default opacity of 1 */
@@ -45,6 +49,25 @@ h1 {
     morphShape 5500ms forwards ease-in-out,
     rotateHue 5500ms forwards linear;
   backface-visibility: hidden;
+}
+
+.failed-text {
+  position: relative;
+  text-align: center;
+  /* margin-top: 1rem; */
+  font-size: 2.5rem;
+  font-weight: 130;
+  color: #FF3B3B;
+  /* text-shadow: 
+    -1px -1px 0 #2B2B2B,
+    1px -1px 0 #2B2B2B,
+    -1px 1px 0 #2B2B2B,
+    1px 1px 0 #2B2B2B; */
+}
+
+.red-glow {
+  filter: saturate(200%) brightness(120%);
+  box-shadow: 0 0 20px rgba(255, 0, 0, 0.5);
 }
 
 .fade-away {

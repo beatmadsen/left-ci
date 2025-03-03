@@ -5,16 +5,18 @@
     <link rel="stylesheet" href="main.css">
     <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;600&display=swap" rel="stylesheet">
     <link rel="icon" type="image/png" href="favicon.png">
+    
 </head>
 
 <body>
     <div id="small-image-container"></div>
     <h1>Left CI</h1>
     <div id="table-container">
-        <img src="roberta.jpg" alt="Roberta"/>
+        <img src="roberta.jpg" alt="Roberta" class="loading-image"/>
     </div>
 
     <script>
+        /*
         setTimeout(() => {
             const container = document.getElementById('table-container');
             const img = container.querySelector('img');
@@ -67,6 +69,22 @@
                 });
             }, 300); // Reduced from 1100ms to 300ms for quicker transition
         }, 5500);
+        */
+    </script>
+
+    <script type="module">
+        // todo: the contents here should be main.js, the function called should be load()
+        import { load } from "./load.js";
+        // Wait for the DOM to be fully loaded
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Call main() after the script is loaded
+            console.log("Before main");
+            try { await load(); } catch (e) { console.error(e); }
+            console.log("After main");
+            
+        });
+
+        console.log("even listener added");
     </script>
 </body>
 

@@ -1,4 +1,4 @@
-import { toDataTable } from "./datatable";
+import { toDataTable } from "./datatable.js";
 
 export function updatePage(data) {
   const tableContainer = document.getElementById("table-container");

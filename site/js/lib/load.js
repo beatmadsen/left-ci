@@ -10,7 +10,7 @@ export async function load() {
     const builds = await p1;
     updatePage(builds);
   } catch (e) {
-    loadFailed();
+    loadFailed(e.message);
     throw e;
   }
 }
@@ -23,12 +23,16 @@ function getProjectId() {
   const urlParams = new URLSearchParams(window.location.search);
   const projectId = urlParams.get("projectId");
   if (!projectId) {
-    throw new Error("projectId is required");
+    throw new MissingProjectIdError();
   }
   return projectId;
 }
 
-function loadFailed() {
+class MissingProjectIdError extends Error {
+  constructor() { super("No project id provided"); }
+}
+
+function loadFailed(message) {
   // update table-container img to show a red glow
   const img = document.querySelector("#table-container img");
   console.log("img", img);
@@ -38,7 +42,7 @@ function loadFailed() {
   const tableContainer = document.querySelector("#table-container");
   // append text as child of tableContainer
   const text = document.createElement("div");
-  text.textContent = "Failed to load";
+  text.textContent = message;
   text.classList.add("failed-text");
   tableContainer.appendChild(text);
 }

@@ -16,7 +16,7 @@ data-files:
     site/js/lib/api.js
     site/js/lib/datatable.js
     site/js/lib/dom.js
-    site/js/lib/main.js
+    site/js/lib/load.js
 
 library
   exposed-modules:

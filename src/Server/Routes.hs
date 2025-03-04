@@ -51,7 +51,7 @@ pathProject = do
 
 makeApplication :: FilePath -> BuildService -> ScottyM ()
 makeApplication dataDir service = do
-  middleware $ staticPolicy (noDots >-> addBase (dataDir </> "site/static") >-> addBase (dataDir </> "site/js/lib"))
+  middleware $ staticPolicy (noDots >-> addBase (dataDir </> "site"))
 
   get "/" $ do file (dataDir </> "site/static/index.html")
 

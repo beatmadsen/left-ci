@@ -46,8 +46,8 @@ h1 {
   transform: translateZ(0);
   opacity: var(--img-opacity, 1);  /* Default opacity of 1 */
   animation: 
-    morphShape 5500ms forwards ease-in-out,
-    rotateHue 5500ms forwards linear;
+    morphShape 1500ms forwards ease-in-out,
+    rotateHue 1500ms forwards linear;
   backface-visibility: hidden;
 }
 

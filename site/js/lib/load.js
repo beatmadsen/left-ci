@@ -63,7 +63,7 @@ async function playFadeAwayAnimation() {
 }
 
 async function playLoadAnimation() {
-  return wait(5600);
+  return wait(1600);
 }
 
 async function wait(ms) {

@@ -130,14 +130,30 @@ tbody tr:hover {
     0 0 15px rgba(27, 73, 101, 0.15);
 }
 
-
-/* Adjust the fade-slide-in animation to work with new colors */
-.fade-slide-in {
-  animation: fadeSlideIn 0.5s ease-out forwards;
+.hidden {
   opacity: 0;
-  transform: translateX(-20px);
+  visibility: hidden;
 }
 
+
+/* Adjust the fade-slide-in animation to work with new colors */
+
+.fade-slide-in {
+  animation: fadeSlideIn 0.3s ease-out forwards;
+}
+
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+    visibility: hidden;
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+    visibility: visible;
+  }
+}
 /* Small round image styles */
 #small-image-container {
   text-align: center;

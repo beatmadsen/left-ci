@@ -14,63 +14,6 @@
         <img src="/static/roberta.jpg" alt="Roberta" class="loading-image"/>
     </div>
 
-    <script>
-        /*
-        setTimeout(() => {
-            const container = document.getElementById('table-container');
-            const img = container.querySelector('img');
-            const smallContainer = document.getElementById('small-image-container');
-            
-            img.classList.add('fade-away');
-            
-            setTimeout(() => {
-                // Create small image and table simultaneously
-                smallContainer.innerHTML = `<img src="${img.src}" alt="${img.alt}" class="small-round-image fade-in"/>`;
-                
-                container.innerHTML = `
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Build</th>
-                                <th>Suite</th>
-                                <th>Created At</th>
-                                <th>Updated At</th>
-                                <th>State</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        </tbody>
-                    </table>
-                `;
-
-                const rows = [
-                    ['Build-123', 'Fast Suite', '2024-03-20', '2024-03-20', 'Running'],
-                    ['Build-124', 'Slow Suite', '2024-03-20', '2024-03-20', 'Pending'],
-                    ['Build-125', 'Fast Suite', '2024-03-20', '2024-03-20', 'Complete']
-                ];
-
-                const tbody = container.querySelector('tbody');
-                
-                // Add rows with delay
-                rows.forEach((rowData, index) => {
-                    setTimeout(() => {
-                        const tr = document.createElement('tr');
-                        tr.classList.add('fade-slide-in');
-                        
-                        rowData.forEach(cellData => {
-                            const td = document.createElement('td');
-                            td.textContent = cellData;
-                            tr.appendChild(td);
-                        });
-                        
-                        tbody.appendChild(tr);
-                    }, index * 200); // 200ms delay between each row
-                });
-            }, 300); // Reduced from 1100ms to 300ms for quicker transition
-        }, 5500);
-        */
-    </script>
-
     <script type="module">
         // todo: the contents here should be main.js, the function called should be load()
         import { load } from "/js/lib/load.js";

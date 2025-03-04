@@ -38,6 +38,7 @@ function createTBody(tableData) {
   const tbody = document.createElement("tbody");
   tableData.forEach(row => {
     const rowElement = document.createElement("tr");
+    rowElement.classList.add("hidden"); // Initially hidden
     row.forEach(cell => {
       const cellElement = document.createElement("td");
       cellElement.textContent = cell; 
@@ -46,4 +47,13 @@ function createTBody(tableData) {
     tbody.appendChild(rowElement);
   });
   return tbody;
+}
+
+export async function revealRows() {
+  const rows = document.querySelectorAll("tbody tr.hidden");
+  for (const row of rows) {
+    await new Promise(resolve => setTimeout(resolve, 150));
+    row.classList.remove("hidden");
+    row.classList.add("fade-slide-in");
+  }
 }

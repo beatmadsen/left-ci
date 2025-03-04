@@ -1,19 +1,49 @@
 import { fetchBuilds } from "./api.js";
-import { updatePage } from "./dom.js";
+import { updatePage, revealRows } from "./dom.js";
 
 export async function load() {
   try {
     console.log("calling main");
     const projectId = getProjectId();
-    const p1 = fetchBuilds(projectId);
+    const p1 = projectId === "dummy" ? fetchDummyBuilds() : fetchBuilds(projectId);
     await playLoadAnimation();
     const builds = await p1;
     await playFadeAwayAnimation();
     moveImageToSmallContainer();
     updatePage(builds);
+    await revealRows();
   } catch (e) {
     loadFailed(e.message);
     throw e;
+  }
+}
+
+async function fetchDummyBuilds() {
+  return {
+    "abc": {
+      "fast_suite": {
+        "created_at": "2025-02-22T10:44:40.160377Z",
+        "state": "init",
+        "updated_at": "2025-02-22T10:44:40.160377Z"
+      },
+      "slow_suite": {
+        "created_at": "2025-02-22T10:44:40.160377Z",
+        "state": "init",
+        "updated_at": "2025-02-22T10:44:40.160377Z"
+      }
+    },
+    "aidfudb": {
+      "fast_suite": {
+        "created_at": "2025-02-22T20:48:43.193578Z",
+        "state": "init",
+        "updated_at": "2025-02-22T20:48:43.193578Z"
+      },
+      "slow_suite": {
+        "created_at": "2025-02-22T20:48:43.193578Z",
+        "state": "init",
+        "updated_at": "2025-02-22T20:48:43.193578Z"
+      }
+    }
   }
 }
 

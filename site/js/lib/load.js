@@ -6,13 +6,31 @@ export async function load() {
     console.log("calling main");
     const projectId = getProjectId();
     const p1 = fetchBuilds(projectId);
-    await wait(5600); // play animation while fetching
+    await playLoadAnimation();
     const builds = await p1;
+    await playFadeAwayAnimation();
+    moveImageToSmallContainer();
     updatePage(builds);
   } catch (e) {
     loadFailed(e.message);
     throw e;
   }
+}
+
+function moveImageToSmallContainer() {
+  const img = document.querySelector("#table-container img");
+  const smallContainer = document.querySelector("#small-image-container");
+  smallContainer.innerHTML = `<img src="${img.src}" alt="${img.alt}" class="small-round-image fade-in"/>`;
+}
+
+async function playFadeAwayAnimation() {
+  const img = document.querySelector("#table-container img");
+  img.classList.add("fade-away");
+  await wait(300);
+}
+
+async function playLoadAnimation() {
+  return wait(5600);
 }
 
 async function wait(ms) {

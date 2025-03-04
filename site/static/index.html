@@ -1,32 +1,31 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Left CI</title>
-    <link rel="stylesheet" href="/static/main.css">    
+    <link rel="stylesheet" href="/static/main.css">
     <link rel="icon" type="image/png" href="/static/favicon.png">
-    
+
 </head>
 
 <body>
     <div id="small-image-container"></div>
     <h1>Left CI</h1>
     <div id="table-container">
-        <img src="/static/roberta.jpg" alt="Roberta" class="loading-image"/>
+        <img src="/static/roberta.jpg" alt="Roberta" class="loading-image" />
     </div>
 
     <script type="module">
-        // todo: the contents here should be main.js, the function called should be load()
-        import { load } from "/js/lib/load.js";
-        // Wait for the DOM to be fully loaded
-        document.addEventListener('DOMContentLoaded', async function() {
-            // Call main() after the script is loaded
-            console.log("Before main");
-            try { await load(); } catch (e) { console.log("failed to load"); }
-            console.log("After main");
-            
-        });
 
-        console.log("even listener added");
+        import { load } from "/js/lib/load.js";
+
+        document.addEventListener('DOMContentLoaded', async function () {
+            try {
+                await load();
+            } catch (e) {
+                console.log("failed to load data");
+            }
+        });
     </script>
 </body>
 

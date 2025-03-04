@@ -5,7 +5,10 @@ export async function load() {
   try {
     console.log("calling main");
     const projectId = getProjectId();
-    const p1 = projectId === "dummy" ? fetchDummyBuilds() : fetchBuilds(projectId);
+    console.log("projectId", projectId);
+    const isDummy = projectId === "dummy"; 
+    console.log("isDummy", isDummy);
+    const p1 = isDummy ? fetchDummyBuilds() : fetchBuilds(projectId);
     await playLoadAnimation();
     const builds = await p1;
     await playFadeAwayAnimation();

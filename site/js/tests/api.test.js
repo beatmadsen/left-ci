@@ -6,6 +6,9 @@ test("should call the correct endpoint", async () => {
   const fetchFn = jest.fn();
   fetchFn.mockResolvedValue({
     ok: true,
+    headers: {
+      get: () => "application/json"
+    },
     json: () => Promise.resolve({})
   });
 
@@ -28,10 +31,26 @@ test("should throw an ApiError if the response is not ok", async () => {
   await expect(fetchBuilds("test", fetchFn)).rejects.toThrow(ApiError);
 });
 
+test("should throw an ApiError if the response is not json", async () => {
+  const fetchFn = jest.fn();
+  fetchFn.mockResolvedValue({
+    ok: true,
+    headers: { 
+      get: () => "text/html"
+    },
+    json: () => Promise.resolve({})
+  });
+
+  await expect(fetchBuilds("test", fetchFn)).rejects.toThrow(ApiError);
+});
+
 test("should return the builds", async () => {
   const fetchFn = jest.fn();
   fetchFn.mockResolvedValue({
     ok: true,
+    headers: {
+      get: () => "application/json"
+    },
     json: () => Promise.resolve(archetypeData)
   });
 

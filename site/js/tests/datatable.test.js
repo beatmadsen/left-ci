@@ -27,12 +27,13 @@ const archetypeData = {
   }
 }
 
-test("should flatten archetype data to data table", () => {
+test("should flatten archetype data to data table ordered by updated_at and suite name", () => {
   const dataTable = toDataTable(archetypeData);
   expect(dataTable).toEqual([
+    ["aidfudb", "fast_suite", "2025-02-22T20:48:43.193578Z", "2025-02-22T20:48:43.193578Z", "init"],
+    ["aidfudb", "slow_suite", "2025-02-22T20:48:43.193578Z", "2025-02-22T20:48:43.193578Z", "init"],
     ["abc", "fast_suite", "2025-02-22T10:44:40.160377Z", "2025-02-22T10:44:40.160377Z", "init"],
     ["abc", "slow_suite", "2025-02-22T10:44:40.160377Z", "2025-02-22T10:44:40.160377Z", "init"],
-    ["aidfudb", "fast_suite", "2025-02-22T20:48:43.193578Z", "2025-02-22T20:48:43.193578Z", "init"],
-    ["aidfudb", "slow_suite", "2025-02-22T20:48:43.193578Z", "2025-02-22T20:48:43.193578Z", "init"]
   ]);
 });
+

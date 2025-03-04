@@ -6,6 +6,17 @@ export function toDataTable(data) {
       table.push(row);
     });
   });
+
+  // Sort descending
+  table.sort((a, b) => {
+    const [, suiteNameA, , updatedAtA] = a;
+    const [, suiteNameB, , updatedAtB] = b;
+    // First compare by updatedAt
+    if (updatedAtA !== updatedAtB) {
+      return updatedAtA < updatedAtB ? 1 : -1;
+    }
+    // If updatedAt is equal, compare by suiteName
+    return suiteNameA.localeCompare(suiteNameB);
+  });
   return table;
 }
-

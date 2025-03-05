@@ -12,7 +12,7 @@ test("should call the correct endpoint", async () => {
     json: () => Promise.resolve({})
   });
 
-  await fetchBuilds("test", fetchFn);  
+  await fetchBuilds("test", { fetchFn });
   expect(fetchFn).toHaveBeenCalledWith(
     "/projects/test/builds",
     expect.objectContaining({
@@ -28,20 +28,20 @@ test("should throw an ApiError if the response is not ok", async () => {
     statusText: "Not found"
   });
 
-  await expect(fetchBuilds("test", fetchFn)).rejects.toThrow(ApiError);
+  await expect(fetchBuilds("test", { fetchFn })).rejects.toThrow(ApiError);
 });
 
 test("should throw an ApiError if the response is not json", async () => {
   const fetchFn = jest.fn();
   fetchFn.mockResolvedValue({
     ok: true,
-    headers: { 
+    headers: {
       get: () => "text/html"
     },
     json: () => Promise.resolve({})
   });
 
-  await expect(fetchBuilds("test", fetchFn)).rejects.toThrow(ApiError);
+  await expect(fetchBuilds("test", { fetchFn })).rejects.toThrow(ApiError);
 });
 
 test("should return the builds", async () => {
@@ -54,7 +54,7 @@ test("should return the builds", async () => {
     json: () => Promise.resolve(archetypeData)
   });
 
-  const builds = await fetchBuilds("test", fetchFn);
+  const builds = await fetchBuilds("test", { fetchFn });
   expect(builds).toEqual(archetypeData);
 });
 
@@ -62,10 +62,25 @@ test("should catch errors from fetch", async () => {
   const fetchFn = jest.fn();
   fetchFn.mockRejectedValue(new Error("Network error"));
 
-  await expect(fetchBuilds("test", fetchFn)).rejects.toThrow(ApiError);
+  await expect(fetchBuilds("test", { fetchFn })).rejects.toThrow(ApiError);
 });
 
+test("should call fetch with the correct params", async () => {
+  const fetchFn = jest.fn();
+  fetchFn.mockResolvedValue({
+    ok: true,
+    headers: {
+      get: () => "application/json"
+    },
+    json: () => Promise.resolve({})
+  });
 
+  await fetchBuilds("test", { fetchFn, after: new Date('2025-02-22T10:44:40.160377Z') });
+  expect(fetchFn).toHaveBeenCalledWith(
+    "/projects/test/builds?after=2025-02-22T10%3A44%3A40.160Z",
+    expect.objectContaining({ method: "GET" })
+  );
+});
 
 
 const archetypeData = {

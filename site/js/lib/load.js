@@ -3,14 +3,8 @@ import { updatePage, revealRows } from "./dom.js";
 
 export async function load() {
   try {
-    console.log("calling main");
     const projectId = getProjectId();
-    console.log("projectId", projectId);
-    const isDummy = projectId === "dummy"; 
-    console.log("isDummy", isDummy);
-    const p1 = isDummy ? fetchDummyBuilds() : fetchBuilds(projectId);
-    await playLoadAnimation();
-    const builds = await p1;
+    const builds = await loadBuilds(projectId);
     await playFadeAwayAnimation();
     moveImageToSmallContainer();
     updatePage(builds);
@@ -19,6 +13,35 @@ export async function load() {
     loadFailed(e.message);
     throw e;
   }
+}
+
+export async function loadChanges() {
+  const projectId = getProjectId();
+  const after = getAfter();
+  /* NB: 
+  this could be builds already in the table that have entered a new state
+  or it could be new builds that should be added to the table
+  */
+  const moreBuilds = await fetchBuilds(projectId, { after });
+  /* NB:
+  we should keep the model around and render it as html tags
+  every time it's updated.
+  */
+  updateTable(moreBuilds);
+}
+
+function getAfter() {
+  throw new Error("Not implemented");
+}
+function updateTable(builds) {
+  throw new Error("Not implemented");
+}
+
+async function loadBuilds(projectId) {
+  const isDummy = projectId === "dummy";
+  const p1 = isDummy ? fetchDummyBuilds() : fetchBuilds(projectId);
+  const builds = await p1;
+  return builds;
 }
 
 async function fetchDummyBuilds() {

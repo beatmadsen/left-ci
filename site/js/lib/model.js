@@ -11,11 +11,11 @@ export class BuildHistory {
   async update() {
     if (Object.keys(this.builds).length === 0) {
       const builds = await this.fetchFn(this.projectId);
-      this.builds = this.parse(builds);
+      this.builds = reviveDates(builds);
     } else {
       const latestUpdate = this.#getLatestUpdate();
       const builds = await this.fetchFn(this.projectId, { after: latestUpdate });
-      this.builds = { ...this.builds, ...this.#parse(builds) };
+      this.builds = { ...this.builds, ...reviveDates(builds) };
     }
   }
 
@@ -23,13 +23,31 @@ export class BuildHistory {
     return toDataTable(this.builds);
   }
 
-  #parse(builds) {
-    // map date strings to Date objects
-    throw new Error("Not implemented");
-    
-  }
-
   #getLatestUpdate() {
-    throw new Error("Not implemented");
+    let latestUpdate = 0;
+    for (const build of Object.values(this.builds)) {
+      for (const suite of Object.values(build)) {
+        if (suite.updated_at > latestUpdate) {
+          latestUpdate = suite.updated_at;
+        }
+      }
+    }
+    return latestUpdate;
   }
+}
+
+
+export function reviveDates(builds) {
+  return Object.fromEntries(Object.entries(builds).map(([buildKey, suites]) => [buildKey, reviveDatesInSuites(suites)]));
+}
+
+function reviveDatesInSuites(suites) {
+  return Object.fromEntries(Object.entries(suites).map(([suiteName, suite]) => [suiteName, reviveDatesInSuite(suite)]));
+}
+
+function reviveDatesInSuite(suite) {
+  const cloned = { ...suite };
+  cloned.created_at = new Date(cloned.created_at);
+  cloned.updated_at = new Date(cloned.updated_at);
+  return cloned;
 }

@@ -26,6 +26,7 @@ export async function loadChanges() {
   /* NB:
   we should keep the model around and render it as html tags
   every time it's updated.
+  TODO: merge the two hashmaps and then re-animate the combined model
   */
   updateTable(moreBuilds);
 }

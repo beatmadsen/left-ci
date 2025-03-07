@@ -16,11 +16,20 @@ export async function load() {
     moveImageToSmallContainer();
     updatePage(history.rows());
     await revealRows();
+
+    // run loadUpdates every 10 seconds
+    setInterval(loadUpdates, 10000);
   } catch (e) {
     loadFailed(e.message);
     console.error(e);
     throw e;
   }
+}
+
+async function loadUpdates() {
+  await history.update();
+  updatePage(history.rows());
+  await revealRows();
 }
 
 function initHistory(projectId) {
@@ -48,8 +57,7 @@ export async function loadChanges() {
 }
 
 async function fetchDummyBuilds(_projectId, { after = null } = {}) {
-  console.log("fetchDummyBuilds", after);
-  return {
+  const archetypeData = {
     "abc": {
       "fast_suite": {
         "created_at": "2025-02-22T10:44:40.160377Z",
@@ -75,6 +83,20 @@ async function fetchDummyBuilds(_projectId, { after = null } = {}) {
       }
     }
   }
+  if (after) {
+    const newBuild = Math.random().toString(36).substring(2, 5);
+    const newUpdatedAt = new Date().toISOString();
+    return {
+      [newBuild]: {
+        ...archetypeData["abc"],
+        "slow_suite": {
+          ...archetypeData["abc"]["slow_suite"],
+          "updated_at": newUpdatedAt
+        }
+      }
+    }
+  }
+  return archetypeData
 }
 
 function moveImageToSmallContainer() {

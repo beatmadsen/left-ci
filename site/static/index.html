@@ -14,18 +14,25 @@
     <div id="table-container">
         <img src="/static/roberta.jpg" alt="Roberta" class="loading-image" />
     </div>
-
+    <script>
+        console.log("script loaded");
+    </script>
+    
+    
     <script type="module">
+        console.log("next script loaded");
 
         import { load } from "/js/lib/load.js";
 
         document.addEventListener('DOMContentLoaded', async function () {
             try {
+                console.log("DOMContentLoaded");
                 await load();
             } catch (e) {
                 console.log("failed to load data");
             }
         });
+    
     </script>
 </body>
 

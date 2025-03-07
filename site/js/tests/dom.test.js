@@ -1,4 +1,5 @@
 import { updatePage } from "../lib/dom";
+import { toDataTable } from "../lib/datatable.js";
 
 /*
 This is the shape of the data we want to display in the table.
@@ -30,10 +31,12 @@ const archetypeData = {
   }
 }
 
+const myRows = toDataTable(archetypeData);
+
 test("updatePage replaces table content", () => {
   document.body.innerHTML = `<div id="table-container"></div>`;
 
-  updatePage(archetypeData);
+  updatePage(myRows);
 
   const container = document.getElementById("table-container");
   const table = container.querySelector("table");

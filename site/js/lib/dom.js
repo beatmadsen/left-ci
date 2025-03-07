@@ -1,9 +1,6 @@
-import { toDataTable } from "./datatable.js";
-
-export function updatePage(data) {
+export function updatePage(rows) {
   const tableContainer = document.getElementById("table-container");
-  const tableData = toDataTable(data);  
-  const table = createTable(tableData);
+  const table = createTable(rows);
 
   tableContainer.innerHTML = "";
   tableContainer.appendChild(table);

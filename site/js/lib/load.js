@@ -1,17 +1,33 @@
 import { fetchBuilds } from "./api.js";
+import { BuildHistory } from "./model.js";
 import { updatePage, revealRows } from "./dom.js";
+
+let history;
 
 export async function load() {
   try {
+    console.log("load");
     const projectId = getProjectId();
-    const builds = await loadBuilds(projectId);
+    initHistory(projectId);
+    const p1 = history.update();
+    await playLoadAnimation();
+    await p1;
     await playFadeAwayAnimation();
     moveImageToSmallContainer();
-    updatePage(builds);
+    updatePage(history.rows());
     await revealRows();
   } catch (e) {
     loadFailed(e.message);
+    console.error(e);
     throw e;
+  }
+}
+
+function initHistory(projectId) {
+  if (projectId === "dummy") {
+    history = new BuildHistory(projectId, fetchDummyBuilds);
+  } else {
+    history = new BuildHistory(projectId);
   }
 }
 
@@ -31,21 +47,8 @@ export async function loadChanges() {
   updateTable(moreBuilds);
 }
 
-function getAfter() {
-  throw new Error("Not implemented");
-}
-function updateTable(builds) {
-  throw new Error("Not implemented");
-}
-
-async function loadBuilds(projectId) {
-  const isDummy = projectId === "dummy";
-  const p1 = isDummy ? fetchDummyBuilds() : fetchBuilds(projectId);
-  const builds = await p1;
-  return builds;
-}
-
-async function fetchDummyBuilds() {
+async function fetchDummyBuilds(_projectId, { after = null } = {}) {
+  console.log("fetchDummyBuilds", after);
   return {
     "abc": {
       "fast_suite": {

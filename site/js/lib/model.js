@@ -1,5 +1,5 @@
-import { fetchBuilds } from "./api";
-import { toDataTable } from "./datatable";
+import { fetchBuilds } from "./api.js";
+import { toDataTable } from "./datatable.js";
 
 export class BuildHistory {
   constructor(projectId, fetchFn = fetchBuilds) {
@@ -9,6 +9,7 @@ export class BuildHistory {
   }
 
   async update() {
+    console.log("update", this.projectId);
     if (Object.keys(this.builds).length === 0) {
       const builds = await this.fetchFn(this.projectId);
       this.builds = reviveDates(builds);

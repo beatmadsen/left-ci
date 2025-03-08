@@ -6,18 +6,28 @@ export class BuildHistory {
     this.projectId = projectId;
     this.builds = {};
     this.fetchFn = fetchFn;
+    this.changedBuilds = [];
   }
 
   async update() {
-    console.log("update", this.projectId);
     if (Object.keys(this.builds).length === 0) {
       const builds = await this.fetchFn(this.projectId);
       this.builds = reviveDates(builds);
     } else {
       const latestUpdate = this.#getLatestUpdate();
       const builds = await this.fetchFn(this.projectId, { after: latestUpdate });
+      this.changedBuilds = Object.keys(builds);
       this.builds = { ...this.builds, ...reviveDates(builds) };
     }
+  }
+  
+  changedRows() {
+    // get the builds map with just the keys in this.changedBuilds
+    const subMap = {};
+    for (const buildKey of this.changedBuilds) {
+      subMap[buildKey] = this.builds[buildKey];
+    }
+    return toDataTable(subMap);
   }
 
   rows() {

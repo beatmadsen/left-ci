@@ -77,3 +77,15 @@ test("given fetched builds, when parsing, then dates are revived", () => {
   const parsed = reviveDates(builds);
   expect(parsed).toEqual({ "abc": { "fast_suite": { "created_at": new Date("2025-02-22T10:44:40.160377Z"), "updated_at": new Date("2025-02-22T10:44:40.160377Z") } } });
 })
+
+test("given a history with some builds, when updating, then we fetch the builds after the latest build", async () => {
+  const firstUpdate = archetypeData;
+  const secondUpdate = { "abc": { ...archetypeData["abc"], "slow_suite": { ...archetypeData["abc"]["slow_suite"], "updated_at": "2025-03-23T20:48:43.193578Z" } } };
+  const fetchFn = jest.fn();
+  fetchFn.mockResolvedValueOnce(firstUpdate);
+  fetchFn.mockResolvedValueOnce(secondUpdate);
+  const history = new BuildHistory("my-project", fetchFn);
+  await history.update();
+  await history.update();
+  expect(history.changedRows()).toHaveLength(2);
+})

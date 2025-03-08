@@ -6,6 +6,7 @@ export function initPage(rows) {
   tableContainer.appendChild(table);
 }
 
+// TODO: remove existing rows with the same build keys as the new rows
 export function updatePage(rows) {
   // find existing table
   const table = document.querySelector("table");

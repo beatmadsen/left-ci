@@ -6,17 +6,18 @@ export function initPage(rows) {
   tableContainer.appendChild(table);
 }
 
-// TODO: remove existing rows with the same build keys as the new rows
-export function updatePage(rows) {
+export function refreshTable(rows) {
   // find existing table
   const table = document.querySelector("table");
   const tbody = table.querySelector("tbody");
 
-  // convert new rows and insert them above the existing rows
-  const oldFirstChild = tbody.firstChild;
+  // remove all existing rows
+  tbody.innerHTML = "";
+
+  // create new rows
   rows.forEach(row => {
     const rowElement = createRow(row);
-    tbody.insertBefore(rowElement, oldFirstChild);
+    tbody.appendChild(rowElement);
   });
 
 }
@@ -59,8 +60,11 @@ function createTBody(tableData) {
 
 function createRow(tableDataRow) {
   const rowElement = document.createElement("tr");
-  rowElement.classList.add("hidden"); // Initially hidden
-  tableDataRow.forEach(cell => {
+  const isUpdated = tableDataRow[5];
+  if (isUpdated) {    
+    rowElement.classList.add("hidden");
+  }
+  tableDataRow.slice(0, 5).forEach(cell => {
     const cellElement = document.createElement("td");
     cellElement.textContent = cell;
     rowElement.appendChild(cellElement);

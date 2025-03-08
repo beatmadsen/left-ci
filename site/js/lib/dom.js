@@ -7,6 +7,16 @@ export function initPage(rows) {
 }
 
 export function updatePage(rows) {
+  // find existing table
+  const table = document.querySelector("table");
+  const tbody = table.querySelector("tbody");
+
+  // convert new rows and insert them above the existing rows
+  const oldFirstChild = tbody.firstChild;
+  rows.forEach(row => {
+    const rowElement = createRow(row);
+    tbody.insertBefore(rowElement, oldFirstChild);
+  });
 
 }
 

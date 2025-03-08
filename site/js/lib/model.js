@@ -12,6 +12,7 @@ export class BuildHistory {
   async update() {
     if (Object.keys(this.builds).length === 0) {
       const builds = await this.fetchFn(this.projectId);
+      this.changedBuilds = Object.keys(builds);
       this.builds = reviveDates(builds);
     } else {
       const latestUpdate = this.#getLatestUpdate();

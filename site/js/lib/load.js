@@ -1,6 +1,6 @@
 import { fetchBuilds } from "./api.js";
 import { BuildHistory } from "./model.js";
-import { initPage, revealRows } from "./dom.js";
+import { initPage, refreshTable, revealRows } from "./dom.js";
 
 let history;
 
@@ -28,7 +28,7 @@ export async function load() {
 
 async function loadUpdates() {
   await history.update();
-  initPage(history.rows());
+  refreshTable(history.rows());
   await revealRows();
 }
 

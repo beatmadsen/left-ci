@@ -31,7 +31,7 @@ const archetypeData = {
   }
 }
 
-const myRows = toDataTable(archetypeData);
+const myRows = toDataTable(archetypeData, []);
 
 test("initPage inserts table content", () => {
   document.body.innerHTML = `<div id="table-container"></div>`;
@@ -80,7 +80,7 @@ test("updatePage adds new rows at top of table with hidden class", () => {
     }
   };
 
-  const newRows = toDataTable(newData);
+  const newRows = toDataTable(newData, []);
   updatePage(newRows);
 
   const table = document.querySelector("table");

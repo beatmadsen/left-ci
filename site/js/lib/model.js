@@ -27,11 +27,11 @@ export class BuildHistory {
     for (const buildKey of this.changedBuilds) {
       subMap[buildKey] = this.builds[buildKey];
     }
-    return toDataTable(subMap);
+    return toDataTable(subMap, this.changedBuilds);
   }
 
   rows() {
-    return toDataTable(this.builds);
+    return toDataTable(this.builds, this.changedBuilds);
   }
 
   #getLatestUpdate() {
@@ -46,7 +46,6 @@ export class BuildHistory {
     return latestUpdate;
   }
 }
-
 
 export function reviveDates(builds) {
   return Object.fromEntries(Object.entries(builds).map(([buildKey, suites]) => [buildKey, reviveDatesInSuites(suites)]));

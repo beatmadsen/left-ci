@@ -27,7 +27,9 @@ export async function load() {
 }
 
 async function loadUpdates() {
-  await history.update();
+  const p1 = history.update();
+  await playUpdateAnimation();
+  await p1;
   refreshTable(history.rows());
   await revealRows();
 }
@@ -40,21 +42,6 @@ function initHistory(projectId) {
   }
 }
 
-export async function loadChanges() {
-  const projectId = getProjectId();
-  const after = getAfter();
-  /* NB: 
-  this could be builds already in the table that have entered a new state
-  or it could be new builds that should be added to the table
-  */
-  const moreBuilds = await fetchBuilds(projectId, { after });
-  /* NB:
-  we should keep the model around and render it as html tags
-  every time it's updated.
-  TODO: merge the two hashmaps and then re-animate the combined model
-  */
-  updateTable(moreBuilds);
-}
 
 async function fetchDummyBuilds(_projectId, { after = null } = {}) {
   const archetypeData = {
@@ -113,6 +100,13 @@ async function playFadeAwayAnimation() {
 
 async function playLoadAnimation() {
   return wait(1600);
+}
+
+async function playUpdateAnimation() {
+  const smallContainer = document.querySelector("#small-image-container");
+  smallContainer.classList.add('rotating');
+  await wait(600);
+  smallContainer.classList.remove('rotating');
 }
 
 async function wait(ms) {

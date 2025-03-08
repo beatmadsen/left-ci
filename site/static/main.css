@@ -142,23 +142,13 @@ tbody tr:hover {
   animation: fadeSlideIn 0.3s ease-out forwards;
 }
 
-@keyframes fadeSlideIn {
-  from {
-    opacity: 0;
-    transform: translateX(-20px);
-    visibility: hidden;
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-    visibility: visible;
-  }
-}
 /* Small round image styles */
 #small-image-container {
   text-align: center;
   margin-bottom: 0.5rem;
   min-height: 80px;
+  transform-origin: center center; /* ensures rotation happens from center */
+  will-change: transform; /* optimizes animation performance */
 }
 
 .small-round-image {
@@ -174,8 +164,25 @@ tbody tr:hover {
   animation: fadeIn 0.5s ease-out forwards;
 }
 
+.rotating {
+  animation: rotate360 0.6s linear;
+}
+
 
 /* Animations */
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+    visibility: hidden;
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+    visibility: visible;
+  }
+}
+
 @keyframes morphShape {
   0% {
     transform: scale(1);
@@ -263,4 +270,13 @@ tbody tr:hover {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+@keyframes rotate360 {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
 }

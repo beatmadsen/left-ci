@@ -1,10 +1,16 @@
-export function updatePage(rows) {
+export function initPage(rows) {
   const tableContainer = document.getElementById("table-container");
   const table = createTable(rows);
 
   tableContainer.innerHTML = "";
   tableContainer.appendChild(table);
 }
+
+export function updatePage(rows) {
+
+}
+
+
 
 function createTable(tableData) {
   const table = document.createElement("table");
@@ -15,7 +21,7 @@ function createTable(tableData) {
 
 function createHeaderRow() {
   const headerCells = ["Build", "Suite", "Created At", "Updated At", "State"];
-  
+
   const headerRow = document.createElement("tr");
   headerCells.forEach(cell => {
     const headerCell = document.createElement("th");
@@ -34,16 +40,21 @@ function createTHead() {
 function createTBody(tableData) {
   const tbody = document.createElement("tbody");
   tableData.forEach(row => {
-    const rowElement = document.createElement("tr");
-    rowElement.classList.add("hidden"); // Initially hidden
-    row.forEach(cell => {
-      const cellElement = document.createElement("td");
-      cellElement.textContent = cell; 
-      rowElement.appendChild(cellElement);
-    });
+    const rowElement = createRow(row);
     tbody.appendChild(rowElement);
   });
   return tbody;
+}
+
+function createRow(tableDataRow) {
+  const rowElement = document.createElement("tr");
+  rowElement.classList.add("hidden"); // Initially hidden
+  tableDataRow.forEach(cell => {
+    const cellElement = document.createElement("td");
+    cellElement.textContent = cell;
+    rowElement.appendChild(cellElement);
+  });
+  return rowElement;
 }
 
 export async function revealRows() {

@@ -1,6 +1,6 @@
 import { fetchBuilds } from "./api.js";
 import { BuildHistory } from "./model.js";
-import { updatePage, revealRows } from "./dom.js";
+import { initPage, revealRows } from "./dom.js";
 
 let history;
 
@@ -14,7 +14,7 @@ export async function load() {
     await p1;
     await playFadeAwayAnimation();
     moveImageToSmallContainer();
-    updatePage(history.rows());
+    initPage(history.rows());
     await revealRows();
 
     // run loadUpdates every 10 seconds
@@ -28,7 +28,7 @@ export async function load() {
 
 async function loadUpdates() {
   await history.update();
-  updatePage(history.rows());
+  initPage(history.rows());
   await revealRows();
 }
 

@@ -1,4 +1,4 @@
-import { updatePage } from "../lib/dom";
+import { initPage } from "../lib/dom";
 import { toDataTable } from "../lib/datatable.js";
 
 /*
@@ -33,10 +33,10 @@ const archetypeData = {
 
 const myRows = toDataTable(archetypeData);
 
-test("updatePage replaces table content", () => {
+test("initPage inserts table content", () => {
   document.body.innerHTML = `<div id="table-container"></div>`;
 
-  updatePage(myRows);
+  initPage(myRows);
 
   const container = document.getElementById("table-container");
   const table = container.querySelector("table");

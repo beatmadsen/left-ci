@@ -7,6 +7,7 @@ export class BuildHistory {
     this.builds = {};
     this.fetchFn = fetchFn;
     this.changedBuilds = [];
+    this.tenLatestBuilds = [];
   }
 
   async update() {
@@ -19,7 +20,9 @@ export class BuildHistory {
       const builds = await this.fetchFn(this.projectId, { after: latestUpdate });
       this.changedBuilds = Object.keys(builds);
       this.builds = { ...this.builds, ...reviveDates(builds) };
-    }
+    }    
+    this.#updateTenLatestBuilds();
+    this.#trimBuilds();
   }
   
   changedRows() {
@@ -33,6 +36,25 @@ export class BuildHistory {
 
   rows() {
     return toDataTable(this.builds, this.changedBuilds);
+  }
+
+  #trimBuilds() {        
+    const subMap = {};
+    for (const buildKey of this.tenLatestBuilds) {
+      subMap[buildKey] = this.builds[buildKey];
+    }
+    this.builds = subMap;
+  }
+
+  #updateTenLatestBuilds() {
+    for (const buildKey of this.changedBuilds) {
+      if (!this.tenLatestBuilds.includes(buildKey)) {
+        this.tenLatestBuilds.push(buildKey);
+        if (this.tenLatestBuilds.length > 10) {
+          this.tenLatestBuilds.shift();
+        }
+      }
+    }
   }
 
   #getLatestUpdate() {

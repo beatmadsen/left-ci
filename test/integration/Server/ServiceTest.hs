@@ -49,7 +49,8 @@ tests =
       TestLabel "Given a project with builds, when listing builds, then returns list of builds" testListProjectBuilds,
       TestLabel "Given a project name in URL, when listing builds, then passes project name to service" testUsesPathProjectName,
       TestLabel "Given a project with builds and after param, when listing builds, then returns filtered list" testListProjectBuildsAfter,
-      TestLabel "Given a project name and after param in URL, when listing builds, then passes both to service" testUsesPathProjectNameAndAfter
+      TestLabel "Given a project name and after param in URL, when listing builds, then passes both to service" testUsesPathProjectNameAndAfter,
+      TestLabel "Given an invalid after param, when listing builds, then returns status code 400" testListProjectBuildsAfterInvalid
     ]
 
 testGetSummary :: Test
@@ -395,6 +396,29 @@ testUsesPathProjectNameAndAfter = TestCase $ do
   
   actualAfter <- IORef.readIORef passedAfter
   assertEqual "after" (Just theDate) actualAfter
+
+testListProjectBuildsAfterInvalid :: Test
+testListProjectBuildsAfterInvalid = TestCase $ do
+  let service = defaultService {listProjectBuilds = const $ const $ pure $ Just Map.empty}
+  dataDir <- P.getDataDir
+  app <- scottyApp $ makeApplication dataDir service
+  runSession
+    ( do
+        response <- srequest $ makeListRequestWithInvalidAfter
+        assertStatus 400 response
+    )
+    app
+
+
+makeListRequestWithInvalidAfter :: SRequest
+makeListRequestWithInvalidAfter = SRequest
+  defaultRequest
+    { requestMethod = "GET",
+      pathInfo = ["projects", "project-123", "builds"],
+      queryString = [("after", Just $ encodeUtf8 $ pack "xyz")]
+    }
+    ""
+
 
 makeListRequestWithAfter :: Project -> UTCTime -> SRequest
 makeListRequestWithAfter (Project name) after =

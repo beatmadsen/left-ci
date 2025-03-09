@@ -27,14 +27,14 @@ sqlFindBuildPair buildId = do
   return $ mapExecutionsM executions
 
 
-sqlFindBuildPairs :: Project -> AtomicM OngoingTransaction [BuildPair]
-sqlFindBuildPairs project = do
+sqlFindBuildPairs :: Project -> Maybe UTCTime -> AtomicM OngoingTransaction [BuildPair]
+sqlFindBuildPairs project mAfter = do
   OngoingTransaction connection <- ask
-  executions <- liftIO $ findProjectExecutions connection project
+  executions <- liftIO $ findProjectExecutions connection project mAfter
   return $ mapExecutions executions
 
-findProjectExecutions :: Connection -> Project -> IO [Execution]
-findProjectExecutions connection project = do
+findProjectExecutions :: Connection -> Project -> Maybe UTCTime -> IO [Execution]
+findProjectExecutions connection project mAfter = do
   query connection [sql|
     SELECT s.name, b.global_id, v.commit_hash, e.state, e.created_at, e.updated_at
     FROM executions e

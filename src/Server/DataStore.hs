@@ -9,7 +9,7 @@ where
 
 import Server.DataStore.Atomic
 import Server.Domain
-import Data.Time.Clock (UTCTime)
+import Data.Time (UTCTime)
 data BuildRecord = BuildRecord
   { buildId :: Build,
     versionId :: Version,
@@ -31,7 +31,7 @@ data BuildStore ctx = BuildStore
     findBuildPair :: Build -> AtomicM ctx (Maybe BuildPair),
 
     findProject :: Project -> AtomicM ctx (Maybe Project),
-    findBuildPairs :: Project -> AtomicM ctx [BuildPair],
+    findBuildPairs :: Project -> Maybe UTCTime -> AtomicM ctx [BuildPair],
     
     createBuildUnlessExists :: Project -> Version -> Build -> AtomicM ctx (Either () ()),
     

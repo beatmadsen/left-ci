@@ -24,7 +24,7 @@ tests =
     [ TestLabel "given a store and a non-existent build id, getBuildSummary returns Nothing" testGetBuildSummaryNonExistent,
       TestLabel "given a store that returns two rows for a build id, getBuildSummary returns a summary" testGetBuildSummaryTwoRows,
       TestLabel "given a store that fails to find a project, listProjectBuilds returns Nothing" testListProjectBuildsFails,
-      TestLabel "given a store that returns a project, listProjectBuilds returns the list of builds" testListProjectBuilds,
+      TestLabel "given a store that returns a project, listProjectBuilds returns the list of builds" testListProjectBuilds,      
       TestLabel "given a store that reports build id already exists, createBuild reports conflict" testCreateBuildAlreadyExists,
       TestLabel "given a store that reports build id does not exist, createBuild reports success" testCreateBuildSuccess,
       TestLabel "given a store and a non-existent build id, advanceFastSuite reports NotFound" testAdvanceFastResultNonExistent,
@@ -36,6 +36,7 @@ tests =
       TestLabel "given a store that returns a fast state, failFastSuite advances and updates the fast state" testFailFastResultAdvancesAndUpdates,
       TestLabel "given a store that returns a slow state, and succeeds in updating it, failSlowSuite reports SuccessfullyChangedState" testFailSlowResultSuccess,
       TestLabel "given a store that returns a slow state, failSlowSuite advances and updates the slow state" testFailSlowResultAdvancesAndUpdates
+      
     ]
 
 testGetBuildSummaryNonExistent :: Test
@@ -165,7 +166,7 @@ testListProjectBuilds = TestCase $ do
   let otherPair = makeBuildPair (D.Build "estum1")
   let service = makePersistentService defaultStore {
     DS.findProject = const $ pure $ Just (D.Project "abc"),     
-    DS.findBuildPairs = const $ pure [defaultBuildPair, otherPair]
+    DS.findBuildPairs = const $ const $ pure [defaultBuildPair, otherPair]
   }
   actual <- listProjectBuilds service (D.Project "abc") Nothing
   let expected = Just makeBuildMap

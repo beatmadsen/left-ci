@@ -114,7 +114,7 @@ testListProjectBuilds = TestCase $ bracket
     pairs <- DS.atomically buildStore $ do
       DS.createBuildUnlessExists buildStore project version build1
       DS.createBuildUnlessExists buildStore project version build2
-      DS.findBuildPairs buildStore project
+      DS.findBuildPairs buildStore project Nothing
     assertEqual "Should find two build pairs" 2 (length pairs)
     
     let compareBuildRecord expected actual = do

@@ -32,7 +32,7 @@ pListProjectBuilds buildStore project after = do
   case maybeProject of
     Nothing -> pure Nothing
     Just _ -> do
-      pairs <- DS.atomically buildStore $ DS.findBuildPairs buildStore project
+      pairs <- DS.atomically buildStore $ DS.findBuildPairs buildStore project after
       pure $ Just $ convert $ groupByBuild pairs
 
 groupByBuild :: [DS.BuildPair] -> Map.Map D.Build DS.BuildPair

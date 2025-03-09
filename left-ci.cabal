@@ -125,6 +125,7 @@ test-suite unit
   other-modules:
       Config.ApplicationConfigTest
       Server.Service.PersistentTest
+      Server.ServiceTest
       Paths_left_ci
   hs-source-dirs:
       test/unit

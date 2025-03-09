@@ -13,6 +13,10 @@ import Data.Either (Either (..))
 import Data.Text (Text)
 import Network.HTTP.Types.Status (status404, status409, status500)
 import Server.Domain (Build (..), BuildState (..), BuildSummary (..), Version (..), Project (..))
+
+
+
+
 import Server.Service
 import Web.Scotty
   ( ActionM,
@@ -23,6 +27,7 @@ import Web.Scotty
     json,
     jsonData,
     pathParam,
+    queryParam,
     post,
     status,
     file,
@@ -59,6 +64,7 @@ makeApplication dataDir service = do
   -- list all builds for a project
   get "/projects/:p/builds" $ do
     pid <- pathProject
+    -- afterStr <- queryParam "after" `catch` const $ pure Nothing
     s <- liftIO $ listProjectBuilds service pid Nothing
     respondToBuildSummaries s
 

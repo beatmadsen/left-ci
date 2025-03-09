@@ -3,6 +3,7 @@ module Server.Service
     CreationOutcome (..),
     StateChangeOutcome (..),
     BuildMap,
+    parseAfter,
     advance
   )
 where
@@ -10,6 +11,9 @@ where
 import Server.Domain (Build, BuildState (..), BuildSummary, Version, Project)
 import qualified Data.Map as Map
 import Data.Time (UTCTime)
+import Data.Text (Text)
+
+
 type BuildMap = Map.Map Build BuildSummary
 
 data CreationOutcome = Conflict | SuccessfullyCreated deriving (Show, Eq)
@@ -29,3 +33,7 @@ advance :: BuildState -> BuildState
 advance Init = Running
 advance Running = Passed
 advance s = s
+
+
+parseAfter :: Text -> Either () UTCTime
+parseAfter t = undefined

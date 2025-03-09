@@ -120,11 +120,13 @@ respondToBuildSummaries ms = case ms of
 
 getAfter :: ActionM (Maybe UTCTime)
 getAfter = do
-  mStr <- queryParamMaybe "after"
+  mStr <- queryParamMaybe "after"  
   case mStr of
     Nothing -> pure Nothing
-    Just str -> case parseAfter str of
-      Left _ -> do
-        status status400
-        return Nothing
-      Right time -> return (Just time)
+    Just str -> (checkE . parseAfter) str
+  where
+    checkE :: Either String UTCTime -> ActionM (Maybe UTCTime)
+    checkE (Left _) = do
+      status status400
+      return Nothing
+    checkE (Right time) = return (Just time)

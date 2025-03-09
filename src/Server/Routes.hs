@@ -11,12 +11,9 @@ import Data.Aeson (FromJSON (..), withObject, (.:))
 import Data.Aeson.Types (Parser)
 import Data.Either (Either (..))
 import Data.Text (Text)
-import Network.HTTP.Types.Status (status404, status409, status500)
+import Network.HTTP.Types.Status (status400, status404, status409, status500)
 import Server.Domain (Build (..), BuildState (..), BuildSummary (..), Version (..), Project (..))
-
-
-
-
+import Data.Time (UTCTime)
 import Server.Service
 import Web.Scotty
   ( ActionM,
@@ -27,7 +24,7 @@ import Web.Scotty
     json,
     jsonData,
     pathParam,
-    queryParam,
+    queryParamMaybe,
     post,
     status,
     file,
@@ -64,8 +61,8 @@ makeApplication dataDir service = do
   -- list all builds for a project
   get "/projects/:p/builds" $ do
     pid <- pathProject
-    -- afterStr <- queryParam "after" `catch` const $ pure Nothing
-    s <- liftIO $ listProjectBuilds service pid Nothing
+    mAfter <- getAfter
+    s <- liftIO $ listProjectBuilds service pid mAfter
     respondToBuildSummaries s
 
   get "/builds/:b" $ do
@@ -120,3 +117,14 @@ respondToBuildSummaries :: Maybe BuildMap -> ActionM ()
 respondToBuildSummaries ms = case ms of
   Nothing -> status status404
   Just summaries -> json summaries
+
+getAfter :: ActionM (Maybe UTCTime)
+getAfter = do
+  mStr <- queryParamMaybe "after"
+  case mStr of
+    Nothing -> pure Nothing
+    Just str -> case parseAfter str of
+      Left _ -> do
+        status status400
+        return Nothing
+      Right time -> return (Just time)

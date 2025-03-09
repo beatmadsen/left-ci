@@ -11,8 +11,12 @@ where
 import Server.Domain (Build, BuildState (..), BuildSummary, Version, Project)
 import qualified Data.Map as Map
 import Data.Time (UTCTime)
-import Data.Text (Text)
+import Data.Text (Text, unpack)
+import Data.Time.Format (defaultTimeLocale, parseTimeM)
 
+import Network.HTTP.Types.URI (urlDecode)
+import qualified Data.ByteString.Char8 as BS
+import Data.Text.Encoding (encodeUtf8, decodeUtf8)
 
 type BuildMap = Map.Map Build BuildSummary
 
@@ -35,5 +39,15 @@ advance Running = Passed
 advance s = s
 
 
-parseAfter :: Text -> Either () UTCTime
-parseAfter t = undefined
+parseAfter :: Text -> Either String UTCTime
+parseAfter = parseIso8601 . convertUrlEncoded  
+  where
+    convertUrlEncoded :: Text -> String
+    convertUrlEncoded = unpack . decodeUtf8 . urlDecode True . encodeUtf8
+
+    parseIso8601 :: String -> Either String UTCTime
+    parseIso8601 str = 
+      let mTime  = parseTimeM True defaultTimeLocale "%Y-%m-%dT%H:%M:%S%QZ" str
+      in case mTime of
+        Just time -> Right time
+        Nothing -> Left str

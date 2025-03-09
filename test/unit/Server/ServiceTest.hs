@@ -18,9 +18,9 @@ testParseValid :: Test
 testParseValid = TestCase $ do
     let result = parseAfter validAfter
     assertEqual "parseAfter should return the correct time" 
-        (Right $ read "2025-02-22 10:44:40.160 UTC") result
+        (Right $ read "2025-02-22 10:44:40.160Z") result
 
 testParseInvalid :: Test
 testParseInvalid = TestCase $ do
     let result = parseAfter $ pack "xyz"
-    assertEqual "parseAfter should return an error for an invalid time" (Left ()) result
+    assertEqual "parseAfter should return an error for an invalid time" (Left "xyz") result

@@ -14,10 +14,10 @@ data-files:
     site/static/main.css
     site/static/roberta.jpg
     site/js/lib/api.js
-    site/js/lib/bh.js
     site/js/lib/datatable.js
     site/js/lib/dom.js
     site/js/lib/load.js
+    site/js/lib/model.js
 
 library
   exposed-modules:

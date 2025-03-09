@@ -8,7 +8,7 @@ import qualified Server.Domain as D
 import qualified Server.DataStore as DS
 import Server.Service
 import qualified Data.Map as Map
-
+import Data.Time (UTCTime)
 makePersistentService :: DS.BuildStore ctx -> BuildService
 makePersistentService buildStore =
   BuildService
@@ -26,8 +26,8 @@ pGetBuildSummary buildStore buildId = do
   maybeBuildPair <- DS.atomically buildStore $ DS.findBuildPair buildStore buildId
   pure $ fmap extractSummary maybeBuildPair
 
-pListProjectBuilds :: DS.BuildStore ctx -> D.Project -> IO (Maybe BuildMap)
-pListProjectBuilds buildStore project = do
+pListProjectBuilds :: DS.BuildStore ctx -> D.Project -> Maybe UTCTime -> IO (Maybe BuildMap)
+pListProjectBuilds buildStore project after = do
   maybeProject <- DS.atomically buildStore $ DS.findProject buildStore project
   case maybeProject of
     Nothing -> pure Nothing

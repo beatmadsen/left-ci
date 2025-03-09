@@ -59,7 +59,7 @@ makeApplication dataDir service = do
   -- list all builds for a project
   get "/projects/:p/builds" $ do
     pid <- pathProject
-    s <- liftIO $ listProjectBuilds service pid
+    s <- liftIO $ listProjectBuilds service pid Nothing
     respondToBuildSummaries s
 
   get "/builds/:b" $ do

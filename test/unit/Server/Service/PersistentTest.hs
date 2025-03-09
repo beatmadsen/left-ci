@@ -156,7 +156,7 @@ testFailSlowResultAdvancesAndUpdates = TestCase $ do
 testListProjectBuildsFails :: Test
 testListProjectBuildsFails = TestCase $ do
   let service = makePersistentService defaultStore {DS.findProject = const $ pure Nothing}
-  actual <- listProjectBuilds service (D.Project "abc")
+  actual <- listProjectBuilds service (D.Project "abc") Nothing
   let expected = Nothing
   actual @?= expected
 
@@ -167,7 +167,7 @@ testListProjectBuilds = TestCase $ do
     DS.findProject = const $ pure $ Just (D.Project "abc"),     
     DS.findBuildPairs = const $ pure [defaultBuildPair, otherPair]
   }
-  actual <- listProjectBuilds service (D.Project "abc")
+  actual <- listProjectBuilds service (D.Project "abc") Nothing
   let expected = Just makeBuildMap
   actual @?= expected
   

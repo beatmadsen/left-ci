@@ -9,6 +9,7 @@ where
 
 import Server.Domain (Build, BuildState (..), BuildSummary, Version, Project)
 import qualified Data.Map as Map
+import Data.Time (UTCTime)
 type BuildMap = Map.Map Build BuildSummary
 
 data CreationOutcome = Conflict | SuccessfullyCreated deriving (Show, Eq)
@@ -16,7 +17,7 @@ data StateChangeOutcome = NotFound | SuccessfullyChangedState deriving (Show, Eq
 
 data BuildService = BuildService
   { getBuildSummary :: Build -> IO (Maybe BuildSummary),
-    listProjectBuilds :: Project -> IO (Maybe BuildMap),
+    listProjectBuilds :: Project -> Maybe UTCTime -> IO (Maybe BuildMap),
     createBuild :: Project -> Version -> Build -> IO CreationOutcome,
     advanceFastSuite :: Build -> IO StateChangeOutcome,
     advanceSlowSuite :: Build -> IO StateChangeOutcome,

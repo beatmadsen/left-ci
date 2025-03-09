@@ -12,7 +12,7 @@ import qualified Data.IORef as IORef
 import Data.Text (Text, pack)
 import Network.HTTP.Types
 import Network.HTTP.Types.Header (hContentType)
-import Network.Wai (Application, Request, pathInfo, requestBody, requestHeaders, requestMethod, setRequestBodyChunks)
+import Network.Wai (Application, Request, pathInfo, requestBody, requestHeaders, requestMethod, setRequestBodyChunks, queryString)
 import Network.Wai.Test (SRequest (..), Session, assertBody, assertStatus, defaultRequest, request, runSession, setRawPathInfo, srequest)
 import Server.Domain
 import Server.Routes
@@ -23,6 +23,10 @@ import qualified Data.Map as Map
 import Data.Time.Clock (UTCTime)
 import Text.RawString.QQ (r)
 import qualified Paths_left_ci as P
+import Data.Time.Format (formatTime)
+import Data.Time.Format.ISO8601 (iso8601Show)
+import Data.Text.Encoding (encodeUtf8)
+import Network.HTTP.Types (Query, QueryItem)
 
 tests :: Test
 tests =
@@ -43,7 +47,9 @@ tests =
       TestLabel "Given a non-existing project name, when listing builds, then returns status code 404 and empty body" testListProjectBuildsNotFound,
       TestLabel "Given a project with no builds, when listing builds, then returns empty list" testListProjectBuildsEmpty,
       TestLabel "Given a project with builds, when listing builds, then returns list of builds" testListProjectBuilds,
-      TestLabel "Given a project name in URL, when listing builds, then passes project name to service" testUsesPathProjectName
+      TestLabel "Given a project name in URL, when listing builds, then passes project name to service" testUsesPathProjectName,
+      TestLabel "Given a project with builds and after param, when listing builds, then returns filtered list" testListProjectBuildsAfter,
+      TestLabel "Given a project name and after param in URL, when listing builds, then passes both to service" testUsesPathProjectNameAndAfter
     ]
 
 testGetSummary :: Test
@@ -238,7 +244,7 @@ testFailSlowResultNonExistent = TestCase $ do
 
 testListProjectBuildsNotFound :: Test
 testListProjectBuildsNotFound = TestCase $ do
-  let service = defaultService {listProjectBuilds = const $ pure Nothing}
+  let service = defaultService {listProjectBuilds = const $ const $ pure Nothing}
   dataDir <- P.getDataDir
   app <- scottyApp $ makeApplication dataDir service
   runSession
@@ -250,7 +256,7 @@ testListProjectBuildsNotFound = TestCase $ do
 
 testListProjectBuildsEmpty :: Test
 testListProjectBuildsEmpty = TestCase $ do
-  let service = defaultService {listProjectBuilds = const $ pure (Just Map.empty)}
+  let service = defaultService {listProjectBuilds = const $ const $ pure (Just Map.empty)}
   dataDir <- P.getDataDir
   app <- scottyApp $ makeApplication dataDir service
   runSession
@@ -265,7 +271,7 @@ testListProjectBuilds :: Test
 testListProjectBuilds = TestCase $ do
   let theFirstDate = read "2024-01-01 00:00:00 UTC" :: UTCTime
   let theSecondDate = read "2024-01-02 00:00:00 UTC" :: UTCTime
-  let service = defaultService {listProjectBuilds = const $ pure $ Just $ Map.fromList [("123", BuildSummary 
+  let service = defaultService {listProjectBuilds = const $ const $ pure $ Just $ Map.fromList [("123", BuildSummary 
     { slowSuite = SuiteSummary {state = Init, createdAt = theFirstDate, updatedAt = theFirstDate}, 
       fastSuite = SuiteSummary {state = Init, createdAt = theFirstDate, updatedAt = theFirstDate}
     }
@@ -313,7 +319,7 @@ testListProjectBuilds = TestCase $ do
 testUsesPathProjectName :: Test
 testUsesPathProjectName = TestCase $ do
   passedProject <- IORef.newIORef ""
-  let service = defaultService {listProjectBuilds = \project -> do
+  let service = defaultService {listProjectBuilds = \project _ -> do
       IORef.writeIORef passedProject project
       pure (Just Map.empty)} 
 
@@ -329,6 +335,76 @@ testUsesPathProjectName = TestCase $ do
 
   actualProject <- IORef.readIORef passedProject
   assertEqual "project" "project-123" actualProject
+
+testListProjectBuildsAfter :: Test
+testListProjectBuildsAfter = TestCase $ do
+  let theFirstDate = read "2024-01-01 00:00:00 UTC" :: UTCTime
+  let theSecondDate = read "2024-01-02 00:00:00 UTC" :: UTCTime
+  let service = defaultService {listProjectBuilds = \_ mafter -> pure $ Just $ case mafter of
+        Just after -> Map.fromList [("estum1", BuildSummary 
+          { slowSuite = SuiteSummary {state = Running, createdAt = theSecondDate, updatedAt = theSecondDate}
+          , fastSuite = SuiteSummary {state = Running, createdAt = theSecondDate, updatedAt = theSecondDate}
+          })]
+        Nothing -> Map.empty}
+  dataDir <- P.getDataDir
+  app <- scottyApp $ makeApplication dataDir service
+  runSession
+    ( do
+        response <- srequest $ makeListRequestWithAfter (Project "project-123") theFirstDate
+        assertStatus 200 response
+        let expectedJson = [r|{
+          "estum1": {
+            "fast_suite": {
+              "created_at": "2024-01-02T00:00:00Z",
+              "state": "running",
+              "updated_at": "2024-01-02T00:00:00Z"
+            },
+            "slow_suite": {
+              "created_at": "2024-01-02T00:00:00Z",
+              "state": "running",
+              "updated_at": "2024-01-02T00:00:00Z"
+            }
+          }
+        }|]
+        assertBody (LBS.pack $ filter (/= ' ') $ filter (/= '\n') expectedJson) response
+    )
+    app
+
+testUsesPathProjectNameAndAfter :: Test
+testUsesPathProjectNameAndAfter = TestCase $ do
+  passedProject <- IORef.newIORef ""
+  passedAfter <- IORef.newIORef Nothing
+  let theDate = read "2024-01-01 00:00:00 UTC" :: UTCTime
+  let service = defaultService {listProjectBuilds = \project mafter -> do
+      IORef.writeIORef passedProject project
+      IORef.writeIORef passedAfter mafter
+      pure (Just Map.empty)} 
+
+  dataDir <- P.getDataDir
+  app <- scottyApp $ makeApplication dataDir service
+
+  runSession
+    ( do
+        response <- srequest $ makeListRequestWithAfter (Project "project-123") theDate
+        assertStatus 200 response
+    )
+    app
+
+  actualProject <- IORef.readIORef passedProject
+  assertEqual "project" "project-123" actualProject
+  
+  actualAfter <- IORef.readIORef passedAfter
+  assertEqual "after" (Just theDate) actualAfter
+
+makeListRequestWithAfter :: Project -> UTCTime -> SRequest
+makeListRequestWithAfter (Project name) after =
+  SRequest
+    defaultRequest
+      { requestMethod = "GET",
+        pathInfo = ["projects", name, "builds"],
+        queryString = [("after", Just $ encodeUtf8 $ pack $ iso8601Show after)]
+      }
+    ""
 
 defaultService :: BuildService
 defaultService =

@@ -34,7 +34,7 @@ sqlFindBuildPairs project mAfter = do
   return $ mapExecutions executions
 
 findProjectExecutions :: Connection -> Project -> Maybe UTCTime -> IO [Execution]
-findProjectExecutions connection project mAfter = do
+findProjectExecutions connection project Nothing = do
   query connection [sql|
     SELECT s.name, b.global_id, v.commit_hash, e.state, e.created_at, e.updated_at
     FROM executions e
@@ -44,6 +44,18 @@ findProjectExecutions connection project mAfter = do
     JOIN projects p ON v.project_id = p.id
     WHERE p.name = ?
   |] (Only project)
+
+findProjectExecutions connection project (Just after) = do
+  query connection [sql|
+    SELECT s.name, b.global_id, v.commit_hash, e.state, e.created_at, e.updated_at
+    FROM executions e
+    JOIN builds b ON e.build_id = b.id
+    JOIN versions v ON b.version_id = v.id
+    JOIN suites s ON e.suite_id = s.id
+    JOIN projects p ON v.project_id = p.id
+    WHERE p.name = ? AND e.updated_at > ?
+  |] (project, after)
+
 
 mapExecutions :: [Execution] -> [BuildPair]
 mapExecutions executions = do

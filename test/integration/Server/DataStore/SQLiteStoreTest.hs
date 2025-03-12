@@ -62,7 +62,12 @@ testListProjectBuildsAfter = TestCase $ bracket
 
       
       DS.findBuildPairs buildStore project (Just theFirstDate)
-    assertEqual "Should find two build pairs" 1 (length pairs)    
+    
+    -- debug print 
+    putStrLn $ "pairs: " ++ show pairs
+
+    -- since store is already set up with a build pair, we should find two, but not three
+    assertEqual "Should find two build pairs" 2 (length pairs)    
   )
 
 

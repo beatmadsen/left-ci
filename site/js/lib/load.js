@@ -104,9 +104,11 @@ async function playLoadAnimation() {
 
 async function playUpdateAnimation() {
   const smallContainer = document.querySelector("#small-image-container");
+  smallContainer.classList.remove('slowly-rotating');
   smallContainer.classList.add('rotating');
   await wait(600);
   smallContainer.classList.remove('rotating');
+  smallContainer.classList.add('slowly-rotating');
 }
 
 async function wait(ms) {

@@ -161,7 +161,13 @@ tbody tr:hover {
 }
 
 .small-round-image.fade-in {
-  animation: fadeIn 0.5s ease-out forwards;
+  animation: 
+    fadeIn 0.5s ease-out forwards,
+    rotate180 10s linear;  
+}
+
+.slowly-rotating {
+  animation: rotate180 10s linear;
 }
 
 .rotating {
@@ -272,9 +278,18 @@ tbody tr:hover {
   }
 }
 
+@keyframes rotate180 {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(180deg);
+  }
+}
+
 @keyframes rotate360 {
     from {
-        transform: rotate(0deg);
+        transform: rotate(180deg);
     }
     to {
         transform: rotate(360deg);

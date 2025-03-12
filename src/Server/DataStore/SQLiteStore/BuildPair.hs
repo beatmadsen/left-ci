@@ -43,6 +43,8 @@ findProjectExecutions connection project Nothing = do
     JOIN suites s ON e.suite_id = s.id
     JOIN projects p ON v.project_id = p.id
     WHERE p.name = ?
+    ORDER BY e.updated_at DESC
+    LIMIT 20
   |] (Only project)
 
 findProjectExecutions connection project (Just after) = do
@@ -54,6 +56,8 @@ findProjectExecutions connection project (Just after) = do
     JOIN suites s ON e.suite_id = s.id
     JOIN projects p ON v.project_id = p.id
     WHERE p.name = ? AND e.updated_at > ?
+    ORDER BY e.updated_at DESC
+    LIMIT 20
   |] (project, after)
 
 

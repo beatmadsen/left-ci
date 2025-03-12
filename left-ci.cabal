@@ -31,14 +31,14 @@ library
       Server.DataStore.SQLiteStore
       Server.DataStore.SQLiteSetup
       Server.DataStore.TmpDir
+      Server.DataStore.SQLiteStore.CreateBuild
+      Server.DataStore.SQLiteStore.Types
       Server.Routes
       Server.Domain
   other-modules:
       Config.InstallerValidator
       Config.ServerValidator
       Server.DataStore.SQLiteStore.BuildPair
-      Server.DataStore.SQLiteStore.CreateBuild
-      Server.DataStore.SQLiteStore.Types
       Paths_left_ci
   hs-source-dirs:
       src

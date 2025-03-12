@@ -23,6 +23,8 @@ library:
     - Server.DataStore.SQLiteStore
     - Server.DataStore.SQLiteSetup
     - Server.DataStore.TmpDir
+    - Server.DataStore.SQLiteStore.CreateBuild
+    - Server.DataStore.SQLiteStore.Types
     - Server.Routes
     - Server.Domain
   dependencies:

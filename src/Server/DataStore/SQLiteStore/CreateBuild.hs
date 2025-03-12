@@ -2,7 +2,8 @@
 {-# LANGUAGE QuasiQuotes #-}
 
 module Server.DataStore.SQLiteStore.CreateBuild (
-  sqlCreateBuildUnlessExists
+  sqlCreateBuildUnlessExists,
+  createEntitiesAt
 ) where
 
 import Control.Monad.IO.Class (liftIO)
@@ -44,14 +45,20 @@ doesBuildExist connection (Build buildId) = do
       IO [Only Int]
   return $ not $ null results
 
+
+createEntitiesAt :: Connection -> UTCTime -> Project -> Version -> Build -> IO ()
+createEntitiesAt connection now project version build = do
+  insertOrIgnoreProject connection project now
+  insertOrIgnoreVersion connection project version now
+  insertBuild connection version build now
+  insertExecution Fast connection build now
+  insertExecution Slow connection build now
+
+
 createEntities :: Connection -> Project -> Version -> Build -> IO ()
 createEntities connection project version buildId = do
   now <- getCurrentTime
-  insertOrIgnoreProject connection project now
-  insertOrIgnoreVersion connection project version now
-  insertBuild connection version buildId now
-  insertExecution Fast connection buildId now
-  insertExecution Slow connection buildId now
+  createEntitiesAt connection now project version buildId
 
 insertOrIgnoreProject :: Connection -> Project -> UTCTime -> IO ()
 insertOrIgnoreProject connection project now = do  

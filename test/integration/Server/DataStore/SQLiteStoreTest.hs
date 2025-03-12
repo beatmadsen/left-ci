@@ -15,9 +15,16 @@ import Control.Monad (when)
 import qualified Server.DataStore as DS
 import qualified Server.Domain as D
 
-import Data.Time.Clock (UTCTime)
+import Data.Time (UTCTime)
 
 import Server.DataStore.Atomic (AtomicM(..))
+import Server.DataStore.SQLiteStore.CreateBuild (createEntitiesAt)
+
+import Server.DataStore.SQLiteStore.Types (OngoingTransaction(..))
+
+import Control.Monad.Reader (ask)
+
+import Control.Monad.IO.Class (liftIO)
 
 import Control.Monad.Except (ExceptT(..), runExceptT)
 
@@ -29,8 +36,35 @@ tests =
       TestLabel "Given a created build, after finding and updating a fast execution of that build, then we can see it updated" testUpdateFastExecution,
       TestLabel "Given a created build, after finding and updating a slow execution of that build, then we can see it updated" testUpdateSlowExecution,
       TestLabel "Given a created build, when listing builds for a project, then we can see the build" testListProjectBuilds,
+      TestLabel "Given two builds, when specifying an after time, then we can see the build after that time" testListProjectBuildsAfter,
       TestLabel "Given a created build, when finding its project, then we can see the project" testFindProject
     ]
+
+
+testListProjectBuildsAfter :: Test
+testListProjectBuildsAfter = TestCase $ bracket
+  -- setup
+  (storeWithBuild makeSQLiteBuildStore)
+  -- teardown
+  removeDbDir
+  -- test
+  (\(dbDir, buildStore) -> do
+    let project = D.Project "project1"
+    let version = D.Version "version1"
+    let recentBuild = D.Build "recent"
+    pairs <- DS.atomically buildStore $ do
+      OngoingTransaction conn <- ask
+      
+      let theFirstDate = read "2024-01-01 00:00:00 UTC" :: UTCTime
+      liftIO $ createEntitiesAt conn theFirstDate project version (D.Build "b2024")
+      let theSecondDate = read "2025-01-01 00:00:00 UTC" :: UTCTime
+      liftIO $ createEntitiesAt conn theSecondDate project version (D.Build "b2025")
+
+      
+      DS.findBuildPairs buildStore project (Just theFirstDate)
+    assertEqual "Should find two build pairs" 1 (length pairs)    
+  )
+
 
 testBuildCreation :: Test
 testBuildCreation = TestCase $ bracket

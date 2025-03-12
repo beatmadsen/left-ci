@@ -18,13 +18,18 @@ export class BuildHistory {
     } else {
       const latestUpdate = this.#getLatestUpdate();
       const builds = await this.fetchFn(this.projectId, { after: latestUpdate });
-      this.changedBuilds = Object.keys(builds);
-      this.builds = { ...this.builds, ...reviveDates(builds) };
-    }    
+      if (!builds || builds.length === 0) {
+        this.changedBuilds = [];
+      } else {
+        this.changedBuilds = Object.keys(builds);
+        console.log(`Fetched ${this.changedBuilds.length} builds after ${latestUpdate}`);
+        this.builds = { ...this.builds, ...reviveDates(builds) };
+      }
+    }
     this.#updateTenLatestBuilds();
     this.#trimBuilds();
   }
-  
+
   changedRows() {
     // get the builds map with just the keys in this.changedBuilds
     const subMap = {};
@@ -38,7 +43,7 @@ export class BuildHistory {
     return toDataTable(this.builds, this.changedBuilds);
   }
 
-  #trimBuilds() {        
+  #trimBuilds() {
     const subMap = {};
     for (const buildKey of this.tenLatestBuilds) {
       subMap[buildKey] = this.builds[buildKey];
@@ -60,7 +65,7 @@ export class BuildHistory {
   #getLatestUpdate() {
     let latestUpdate = 0;
     for (const build of Object.values(this.builds)) {
-      for (const suite of Object.values(build)) {
+      for (const suite of Object.values(build)) {        
         if (suite.updated_at > latestUpdate) {
           latestUpdate = suite.updated_at;
         }

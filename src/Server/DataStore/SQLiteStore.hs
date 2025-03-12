@@ -22,6 +22,10 @@ import qualified Data.Map as Map
 import Server.DataStore.SQLiteStore.BuildPair
 import Server.DataStore.SQLiteStore.Types
 import Server.DataStore.SQLiteStore.CreateBuild
+import Data.Time.Clock (UTCTime, getCurrentTime)
+
+
+
 makeSQLiteBuildStore :: FilePath -> IO (BuildStore OngoingTransaction)
 makeSQLiteBuildStore subDir = do
   (dbDir, dbPath, client) <- initSQLiteDatabase subDir
@@ -82,17 +86,18 @@ takeFirstState results = case results of
 
 sqlUpdateState :: SuiteName -> Build -> BuildState -> AtomicM OngoingTransaction ()
 sqlUpdateState suiteName (Build globalId) state = do
-  OngoingTransaction connection <- ask
+  OngoingTransaction connection <- ask  
   liftIO $ do
+    now <- getCurrentTime
     execute
       connection
       [sql|
         UPDATE executions
-        SET state = ?
+        SET state = ?, updated_at = ?
         WHERE suite_id IN (SELECT id FROM suites WHERE name = ?)
         AND build_id IN (SELECT id FROM builds WHERE global_id = ?)
       |]
-      (show state, suiteName, globalId)
+      (show state, now, suiteName, globalId)
 
 beginTransaction :: Connection -> IO OngoingTransaction
 beginTransaction connection = do

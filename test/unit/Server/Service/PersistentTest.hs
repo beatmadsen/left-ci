@@ -9,14 +9,15 @@ import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Reader (runReaderT)
 import Control.Monad.Reader.Class (MonadReader)
 import Data.IORef
+import qualified Data.IORef as IORef
+import qualified Data.Map as Map
+import Data.Time.Clock (UTCTime)
 import qualified Server.DataStore as DS
 import Server.DataStore.Atomic (AtomicM (..))
 import qualified Server.Domain as D
 import Server.Service
 import Server.Service.Persistent (makePersistentService)
 import Test.HUnit (Test (TestCase, TestLabel, TestList), assertBool, (@?=))
-import qualified Data.Map as Map
-import Data.Time.Clock (UTCTime)
 
 tests :: Test
 tests =
@@ -24,7 +25,8 @@ tests =
     [ TestLabel "given a store and a non-existent build id, getBuildSummary returns Nothing" testGetBuildSummaryNonExistent,
       TestLabel "given a store that returns two rows for a build id, getBuildSummary returns a summary" testGetBuildSummaryTwoRows,
       TestLabel "given a store that fails to find a project, listProjectBuilds returns Nothing" testListProjectBuildsFails,
-      TestLabel "given a store that returns a project, listProjectBuilds returns the list of builds" testListProjectBuilds,      
+      TestLabel "given a store that returns a project, listProjectBuilds returns the list of builds" testListProjectBuilds,
+      TestLabel "given an after time, listProjectBuilds takes that into account" testListProjectBuildsAfterTime,
       TestLabel "given a store that reports build id already exists, createBuild reports conflict" testCreateBuildAlreadyExists,
       TestLabel "given a store that reports build id does not exist, createBuild reports success" testCreateBuildSuccess,
       TestLabel "given a store and a non-existent build id, advanceFastSuite reports NotFound" testAdvanceFastResultNonExistent,
@@ -36,7 +38,6 @@ tests =
       TestLabel "given a store that returns a fast state, failFastSuite advances and updates the fast state" testFailFastResultAdvancesAndUpdates,
       TestLabel "given a store that returns a slow state, and succeeds in updating it, failSlowSuite reports SuccessfullyChangedState" testFailSlowResultSuccess,
       TestLabel "given a store that returns a slow state, failSlowSuite advances and updates the slow state" testFailSlowResultAdvancesAndUpdates
-      
     ]
 
 testGetBuildSummaryNonExistent :: Test
@@ -55,18 +56,22 @@ testGetBuildSummaryTwoRows = TestCase $ do
             }
   actual <- getBuildSummary service (D.Build "123")
   let theDate = read "2024-01-01 00:00:00 UTC" :: UTCTime
-  let expected = Just $ D.BuildSummary
-                   { D.slowSuite = D.SuiteSummary 
-                       { D.state = D.Init
-                       , D.createdAt = theDate
-                       , D.updatedAt = theDate
-                       }
-                   , D.fastSuite = D.SuiteSummary 
-                       { D.state = D.Running
-                       , D.createdAt = theDate
-                       , D.updatedAt = theDate
-                       }
-                   }
+  let expected =
+        Just $
+          D.BuildSummary
+            { D.slowSuite =
+                D.SuiteSummary
+                  { D.state = D.Init,
+                    D.createdAt = theDate,
+                    D.updatedAt = theDate
+                  },
+              D.fastSuite =
+                D.SuiteSummary
+                  { D.state = D.Running,
+                    D.createdAt = theDate,
+                    D.updatedAt = theDate
+                  }
+            }
   actual @?= expected
 
 testCreateBuildAlreadyExists :: Test
@@ -164,29 +169,54 @@ testListProjectBuildsFails = TestCase $ do
 testListProjectBuilds :: Test
 testListProjectBuilds = TestCase $ do
   let otherPair = makeBuildPair (D.Build "estum1")
-  let service = makePersistentService defaultStore {
-    DS.findProject = const $ pure $ Just (D.Project "abc"),     
-    DS.findBuildPairs = const $ const $ pure [defaultBuildPair, otherPair]
-  }
+  let service =
+        makePersistentService
+          defaultStore
+            { DS.findProject = const $ pure $ Just (D.Project "abc"),
+              DS.findBuildPairs = const $ const $ pure [defaultBuildPair, otherPair]
+            }
   actual <- listProjectBuilds service (D.Project "abc") Nothing
   let expected = Just makeBuildMap
   actual @?= expected
-  
+
+testListProjectBuildsAfterTime :: Test
+testListProjectBuildsAfterTime = TestCase $ do
+  -- IORef to track input time
+  inputTime <- IORef.newIORef $ Just (read "2024-01-01 00:00:00 UTC" :: UTCTime)
+
+  let service =
+        makePersistentService
+          defaultStore
+            { DS.findProject = const $ pure $ Just (D.Project "abc"),
+              DS.findBuildPairs = \_ after -> do
+                -- update the input time with the after time
+                liftIO $ IORef.writeIORef inputTime after
+                -- return empty list
+                pure []
+            }
+  let after = Just (read "2024-02-01 00:00:00 UTC" :: UTCTime)
+  listProjectBuilds service (D.Project "abc") after
+  actualTime <- IORef.readIORef inputTime
+  actualTime @?= after
+
 makeBuildMap :: BuildMap
-makeBuildMap = 
+makeBuildMap =
   let theDate = read "2024-01-01 00:00:00 UTC" :: UTCTime
-      summaries = 
-        [ ("123", D.BuildSummary 
-            { D.slowSuite = D.SuiteSummary {D.state = D.Init, D.createdAt = theDate, D.updatedAt = theDate}, 
-              D.fastSuite = D.SuiteSummary {D.state = D.Running, D.createdAt = theDate, D.updatedAt = theDate}
-            }
-          ), 
-          ("estum1", D.BuildSummary 
-            { D.slowSuite = D.SuiteSummary {D.state = D.Init, D.createdAt = theDate, D.updatedAt = theDate}, 
-              D.fastSuite = D.SuiteSummary {D.state = D.Running, D.createdAt = theDate, D.updatedAt = theDate}
-            }
-          )]  
-  in Map.fromList summaries
+      summaries =
+        [ ( "123",
+            D.BuildSummary
+              { D.slowSuite = D.SuiteSummary {D.state = D.Init, D.createdAt = theDate, D.updatedAt = theDate},
+                D.fastSuite = D.SuiteSummary {D.state = D.Running, D.createdAt = theDate, D.updatedAt = theDate}
+              }
+          ),
+          ( "estum1",
+            D.BuildSummary
+              { D.slowSuite = D.SuiteSummary {D.state = D.Init, D.createdAt = theDate, D.updatedAt = theDate},
+                D.fastSuite = D.SuiteSummary {D.state = D.Running, D.createdAt = theDate, D.updatedAt = theDate}
+              }
+          )
+        ]
+   in Map.fromList summaries
 
 makeServiceWithFastStubs :: D.BuildState -> BuildService
 makeServiceWithFastStubs inital =
@@ -236,14 +266,13 @@ defaultBuildPair :: DS.BuildPair
 defaultBuildPair = makeBuildPair (D.Build "123")
 
 makeBuildPair :: D.Build -> DS.BuildPair
-makeBuildPair build = 
+makeBuildPair build =
   let version = D.Version "04a66b1n"
       theDate = read "2024-01-01 00:00:00 UTC" :: UTCTime
-  in DS.BuildPair 
-    { DS.slowSuite = DS.BuildRecord build version D.Init theDate theDate
-    , DS.fastSuite = DS.BuildRecord build version D.Running theDate theDate
-    }
-
+   in DS.BuildPair
+        { DS.slowSuite = DS.BuildRecord build version D.Init theDate theDate,
+          DS.fastSuite = DS.BuildRecord build version D.Running theDate theDate
+        }
 
 defaultAtomically :: AtomicM ctx a -> IO a
 defaultAtomically action =

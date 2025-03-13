@@ -11,8 +11,8 @@ import Server.DataStore.Atomic
 import Server.Domain
 import Data.Time (UTCTime)
 data BuildRecord = BuildRecord
-  { buildId :: Build,
-    versionId :: Version,
+  { build :: Build,
+    version :: Version,
     state :: BuildState,
     createdAt :: UTCTime,
     updatedAt :: UTCTime

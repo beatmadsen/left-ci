@@ -9,31 +9,31 @@ where
 import Control.Monad.IO.Class (liftIO)
 import qualified Data.ByteString.Lazy.Char8 as LBS
 import qualified Data.IORef as IORef
+import qualified Data.Map as Map
 import Data.Text (Text, pack)
+import Data.Text.Encoding (encodeUtf8)
+import Data.Time.Clock (UTCTime)
+import Data.Time.Format (formatTime)
+import Data.Time.Format.ISO8601 (iso8601Show)
 import Network.HTTP.Types
+import Network.HTTP.Types (Query, QueryItem)
 import Network.HTTP.Types.Header (hContentType)
-import Network.Wai (Application, Request, pathInfo, requestBody, requestHeaders, requestMethod, setRequestBodyChunks, queryString)
+import Network.Wai (Application, Request, pathInfo, queryString, requestBody, requestHeaders, requestMethod, setRequestBodyChunks)
 import Network.Wai.Test (SRequest (..), Session, assertBody, assertStatus, defaultRequest, request, runSession, setRawPathInfo, srequest)
+import qualified Paths_left_ci as P
 import Server.Domain
 import Server.Routes
 import Server.Service
 import Test.HUnit
-import Web.Scotty (scottyApp)
-import qualified Data.Map as Map
-import Data.Time.Clock (UTCTime)
 import Text.RawString.QQ (r)
-import qualified Paths_left_ci as P
-import Data.Time.Format (formatTime)
-import Data.Time.Format.ISO8601 (iso8601Show)
-import Data.Text.Encoding (encodeUtf8)
-import Network.HTTP.Types (Query, QueryItem)
+import Web.Scotty (scottyApp)
 
 tests :: Test
 tests =
   TestList
     [ TestLabel "Given a build id, when getting summary, then serialises a populated summary" testGetSummary,
       TestLabel "Given a non-existent build id, when getting summary, then returns status code 404 and empty body" testGetSummaryNotFound,
-      TestLabel "Given a build id in URL, when getting summary, then passes build id to service" testUsesPathBuildId,
+      TestLabel "Given a build id in URL, when getting summary, then passes build id to service" testUsesPathBuildGlobalId,
       TestLabel "Given a build id in URL, when posting advance fast, then passes build id to service" (testUpdateBuild "fast" "advance"),
       TestLabel "Given a non-existing build id, when posting advance fast, then returns status code 404" testAdvanceFastResultNonExistent,
       TestLabel "Given a build id in URL, when posting advance slow, then passes build id to service" (testUpdateBuild "slow" "advance"),
@@ -63,7 +63,8 @@ testGetSummary = TestCase $ do
     ( do
         response <- request $ defaultRequest {pathInfo = ["builds", "123"]}
         assertStatus 200 response
-        let expectedJson = [r|{
+        let expectedJson =
+              [r|{
           "fast_suite": {
             "created_at": "2024-05-01T00:00:00Z",
             "state": "init",
@@ -92,8 +93,8 @@ testGetSummaryNotFound = TestCase $ do
     )
     app
 
-testUsesPathBuildId :: Test
-testUsesPathBuildId = TestCase $ do
+testUsesPathBuildGlobalId :: Test
+testUsesPathBuildGlobalId = TestCase $ do
   passedId <- IORef.newIORef ""
 
   let service =
@@ -122,18 +123,18 @@ testUsesPathBuildId = TestCase $ do
 
 testUpdateBuild :: Text -> Text -> Test
 testUpdateBuild cadence action = TestCase $ do
-  passedBuildId <- IORef.newIORef ""
+  passedBuild <- IORef.newIORef ""
 
-  let x buildId = do
-        IORef.writeIORef passedBuildId buildId
+  let writeArg build = do
+        IORef.writeIORef passedBuild build
         pure SuccessfullyChangedState
 
   let service =
         defaultService
-          { advanceFastSuite = x,
-            advanceSlowSuite = x,
-            failFastSuite = x,
-            failSlowSuite = x
+          { advanceFastSuite = writeArg,
+            advanceSlowSuite = writeArg,
+            failFastSuite = writeArg,
+            failSlowSuite = writeArg
           }
 
   dataDir <- P.getDataDir
@@ -146,8 +147,8 @@ testUpdateBuild cadence action = TestCase $ do
     )
     app
 
-  actualBuildId <- IORef.readIORef passedBuildId
-  assertEqual "build id" "build-42" actualBuildId
+  actualBuild <- IORef.readIORef passedBuild
+  assertEqual "build id" "build-42" actualBuild
 
 testCreateBuild :: Test
 testCreateBuild = TestCase $ do
@@ -249,7 +250,7 @@ testListProjectBuildsNotFound = TestCase $ do
   dataDir <- P.getDataDir
   app <- scottyApp $ makeApplication dataDir service
   runSession
-    ( do  
+    ( do
         response <- srequest $ makeListRequest (Project "project-123")
         assertStatus 404 response
     )
@@ -272,44 +273,87 @@ testListProjectBuilds :: Test
 testListProjectBuilds = TestCase $ do
   let theFirstDate = read "2024-01-01 00:00:00 UTC" :: UTCTime
   let theSecondDate = read "2024-01-02 00:00:00 UTC" :: UTCTime
-  let service = defaultService {listProjectBuilds = const $ const $ pure $ Just $ Map.fromList [("123", BuildSummary 
-    { slowSuite = SuiteSummary {state = Init, createdAt = theFirstDate, updatedAt = theFirstDate}, 
-      fastSuite = SuiteSummary {state = Init, createdAt = theFirstDate, updatedAt = theFirstDate}
-    }
-  ), ("estum1", BuildSummary 
-    { slowSuite = SuiteSummary {state = Running, createdAt = theSecondDate, updatedAt = theSecondDate}, 
-      fastSuite = SuiteSummary {state = Running, createdAt = theSecondDate, updatedAt = theSecondDate}
-    }
-  )]}
+  let version = Version "04a66b1n"
+  let service =
+        defaultService
+          { listProjectBuilds =
+              const $
+                const $
+                  pure $
+                    Just $
+                      Map.fromList
+                        [ ( "123",
+                            BuildSummary
+                              { slowSuite =
+                                  SuiteSummary
+                                    { state = Init,
+                                      createdAt = theFirstDate,
+                                      updatedAt = theFirstDate,
+                                      version = version
+                                    },
+                                fastSuite =
+                                  SuiteSummary
+                                    { state = Init,
+                                      createdAt = theFirstDate,
+                                      updatedAt = theFirstDate,
+                                      version = version
+                                    }
+                              }
+                          ),
+                          ( "estum1",
+                            BuildSummary
+                              { slowSuite =
+                                  SuiteSummary
+                                    { state = Running,
+                                      createdAt = theSecondDate,
+                                      updatedAt = theSecondDate,
+                                      version = version
+                                    },
+                                fastSuite =
+                                  SuiteSummary
+                                    { state = Running,
+                                      createdAt = theSecondDate,
+                                      updatedAt = theSecondDate,
+                                      version = version
+                                    }
+                              }
+                          )
+                        ]
+          }
   dataDir <- P.getDataDir
   app <- scottyApp $ makeApplication dataDir service
   runSession
     ( do
         response <- srequest $ makeListRequest (Project "project-123")
         assertStatus 200 response
-        let expectedJson = [r|{
+        let expectedJson =
+              [r|{
           "123": {
             "fast_suite": {
               "created_at": "2024-01-01T00:00:00Z",
               "state": "init",
-              "updated_at": "2024-01-01T00:00:00Z"
+              "updated_at": "2024-01-01T00:00:00Z",
+              "version": "04a66b1n"
             },
             "slow_suite": {
               "created_at": "2024-01-01T00:00:00Z",
               "state": "init",
-              "updated_at": "2024-01-01T00:00:00Z"
+              "updated_at": "2024-01-01T00:00:00Z",
+              "version": "04a66b1n"
             }
           },
           "estum1": {
             "fast_suite": {
               "created_at": "2024-01-02T00:00:00Z",
               "state": "running",
-              "updated_at": "2024-01-02T00:00:00Z"
+              "updated_at": "2024-01-02T00:00:00Z",
+              "version": "04a66b1n"
             },
             "slow_suite": {
               "created_at": "2024-01-02T00:00:00Z",
               "state": "running",
-              "updated_at": "2024-01-02T00:00:00Z"
+              "updated_at": "2024-01-02T00:00:00Z",
+              "version": "04a66b1n"
             }
           }
         }|]
@@ -320,9 +364,12 @@ testListProjectBuilds = TestCase $ do
 testUsesPathProjectName :: Test
 testUsesPathProjectName = TestCase $ do
   passedProject <- IORef.newIORef ""
-  let service = defaultService {listProjectBuilds = \project _ -> do
-      IORef.writeIORef passedProject project
-      pure (Just Map.empty)} 
+  let service =
+        defaultService
+          { listProjectBuilds = \project _ -> do
+              IORef.writeIORef passedProject project
+              pure (Just Map.empty)
+          }
 
   dataDir <- P.getDataDir
   app <- scottyApp $ makeApplication dataDir service
@@ -341,29 +388,41 @@ testListProjectBuildsAfter :: Test
 testListProjectBuildsAfter = TestCase $ do
   let theFirstDate = read "2024-01-01 00:00:00 UTC" :: UTCTime
   let theSecondDate = read "2024-01-02 00:00:00 UTC" :: UTCTime
-  let service = defaultService {listProjectBuilds = \_ mafter -> pure $ Just $ case mafter of
-        Just after -> Map.fromList [("estum1", BuildSummary 
-          { slowSuite = SuiteSummary {state = Running, createdAt = theSecondDate, updatedAt = theSecondDate}
-          , fastSuite = SuiteSummary {state = Running, createdAt = theSecondDate, updatedAt = theSecondDate}
-          })]
-        Nothing -> Map.empty}
+  let version = Version "04a66b1n"
+  let service =
+        defaultService
+          { listProjectBuilds = \_ mafter -> pure $ Just $ case mafter of
+              Just after ->
+                Map.fromList
+                  [ ( "estum1",
+                      BuildSummary
+                        { slowSuite = SuiteSummary {state = Running, createdAt = theSecondDate, updatedAt = theSecondDate, version = version},
+                          fastSuite = SuiteSummary {state = Running, createdAt = theSecondDate, updatedAt = theSecondDate, version = version}
+                        }
+                    )
+                  ]
+              Nothing -> Map.empty
+          }
   dataDir <- P.getDataDir
   app <- scottyApp $ makeApplication dataDir service
   runSession
     ( do
         response <- srequest $ makeListRequestWithAfter (Project "project-123") theFirstDate
         assertStatus 200 response
-        let expectedJson = [r|{
+        let expectedJson =
+              [r|{
           "estum1": {
             "fast_suite": {
               "created_at": "2024-01-02T00:00:00Z",
               "state": "running",
-              "updated_at": "2024-01-02T00:00:00Z"
+              "updated_at": "2024-01-02T00:00:00Z",
+              "version": "04a66b1n"
             },
             "slow_suite": {
               "created_at": "2024-01-02T00:00:00Z",
               "state": "running",
-              "updated_at": "2024-01-02T00:00:00Z"
+              "updated_at": "2024-01-02T00:00:00Z",
+              "version": "04a66b1n"
             }
           }
         }|]
@@ -376,10 +435,13 @@ testUsesPathProjectNameAndAfter = TestCase $ do
   passedProject <- IORef.newIORef ""
   passedAfter <- IORef.newIORef Nothing
   let theDate = read "2024-01-01 00:00:00 UTC" :: UTCTime
-  let service = defaultService {listProjectBuilds = \project mafter -> do
-      IORef.writeIORef passedProject project
-      IORef.writeIORef passedAfter mafter
-      pure (Just Map.empty)} 
+  let service =
+        defaultService
+          { listProjectBuilds = \project mafter -> do
+              IORef.writeIORef passedProject project
+              IORef.writeIORef passedAfter mafter
+              pure (Just Map.empty)
+          }
 
   dataDir <- P.getDataDir
   app <- scottyApp $ makeApplication dataDir service
@@ -393,7 +455,7 @@ testUsesPathProjectNameAndAfter = TestCase $ do
 
   actualProject <- IORef.readIORef passedProject
   assertEqual "project" "project-123" actualProject
-  
+
   actualAfter <- IORef.readIORef passedAfter
   assertEqual "after" (Just theDate) actualAfter
 
@@ -409,16 +471,15 @@ testListProjectBuildsAfterInvalid = TestCase $ do
     )
     app
 
-
 makeListRequestWithInvalidAfter :: SRequest
-makeListRequestWithInvalidAfter = SRequest
-  defaultRequest
-    { requestMethod = "GET",
-      pathInfo = ["projects", "project-123", "builds"],
-      queryString = [("after", Just $ encodeUtf8 $ pack "xyz")]
-    }
+makeListRequestWithInvalidAfter =
+  SRequest
+    defaultRequest
+      { requestMethod = "GET",
+        pathInfo = ["projects", "project-123", "builds"],
+        queryString = [("after", Just $ encodeUtf8 $ pack "xyz")]
+      }
     ""
-
 
 makeListRequestWithAfter :: Project -> UTCTime -> SRequest
 makeListRequestWithAfter (Project name) after =
@@ -442,12 +503,10 @@ defaultService =
       failSlowSuite = undefined
     }
 
-
 defaultBuildSummary :: BuildSummary
-defaultBuildSummary = 
+defaultBuildSummary =
   let theDate = read "2024-05-01 00:00:00 UTC" :: UTCTime
-  in BuildSummary {slowSuite = SuiteSummary {state = Init, createdAt = theDate, updatedAt = theDate}, fastSuite = SuiteSummary {state = Init, createdAt = theDate, updatedAt = theDate}}
-
+   in BuildSummary {slowSuite = SuiteSummary {state = Init, createdAt = theDate, updatedAt = theDate}, fastSuite = SuiteSummary {state = Init, createdAt = theDate, updatedAt = theDate}}
 
 makeListRequest :: Project -> SRequest
 makeListRequest (Project name) =

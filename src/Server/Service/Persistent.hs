@@ -41,7 +41,7 @@ groupByBuild pairs =
   in Map.fromListWith const annotated
 
 buildIdFromPair :: DS.BuildPair -> D.Build
-buildIdFromPair pair = DS.buildId (DS.fastSuite pair)
+buildIdFromPair pair = DS.build (DS.fastSuite pair)
 
 convert :: Map.Map D.Build DS.BuildPair -> BuildMap
 convert = Map.map extractSummary
@@ -52,12 +52,14 @@ extractSummary bp =
     D.slowSuite = D.SuiteSummary {
       D.state = DS.state (DS.slowSuite bp),
       D.createdAt = DS.createdAt (DS.slowSuite bp),
-      D.updatedAt = DS.updatedAt (DS.slowSuite bp)
+      D.updatedAt = DS.updatedAt (DS.slowSuite bp),
+      D.version = DS.version (DS.slowSuite bp)
     },
     D.fastSuite = D.SuiteSummary {
       D.state = DS.state (DS.fastSuite bp),
       D.createdAt = DS.createdAt (DS.fastSuite bp),
-      D.updatedAt = DS.updatedAt (DS.fastSuite bp)
+      D.updatedAt = DS.updatedAt (DS.fastSuite bp),
+      D.version = DS.version (DS.fastSuite bp)
     }
   }
 

@@ -109,12 +109,12 @@ testBuildCreation =
           case maybeBuildPair of
             Nothing -> assertFailure "Expected build pair but got Nothing"
             Just (DS.BuildPair actual1 actual2) -> do
-              assertEqual "First build should match" build (DS.buildId actual1)
-              assertEqual "First version should match" version (DS.versionId actual1)
+              assertEqual "First build should match" build (DS.build actual1)
+              assertEqual "First version should match" version (DS.version actual1)
               assertEqual "First state should match" D.Init (DS.state actual1)
 
-              assertEqual "Second build should match" build (DS.buildId actual2)
-              assertEqual "Second version should match" version (DS.versionId actual2)
+              assertEqual "Second build should match" build (DS.build actual2)
+              assertEqual "Second version should match" version (DS.version actual2)
               assertEqual "Second state should match" D.Init (DS.state actual2)
       )
 
@@ -128,13 +128,13 @@ testUpdateFastExecution =
       removeDbDir
       -- test
       ( \(dbDir, buildStore) -> do
-          let buildId = D.Build "build1"
+          let build = D.Build "build1"
 
-          foundAndUpdatedE <- ioFindAndUpdateFastState buildStore buildId
+          foundAndUpdatedE <- ioFindAndUpdateFastState buildStore build
 
           foundAgainE <- case foundAndUpdatedE of
             Left _ -> return $ Left ()
-            Right _ -> ioFindFastState buildStore buildId
+            Right _ -> ioFindFastState buildStore build
 
           case foundAgainE of
             Left _ -> assertFailure "Should find again"
@@ -151,13 +151,13 @@ testUpdateSlowExecution =
       removeDbDir
       -- test
       ( \(dbDir, buildStore) -> do
-          let buildId = D.Build "build1"
+          let build = D.Build "build1"
 
-          foundAndUpdatedE <- ioFindAndUpdateSlowState buildStore buildId
+          foundAndUpdatedE <- ioFindAndUpdateSlowState buildStore build
 
           foundAgainE <- case foundAndUpdatedE of
             Left _ -> return $ Left ()
-            Right _ -> ioFindSlowState buildStore buildId
+            Right _ -> ioFindSlowState buildStore build
 
           case foundAgainE of
             Left _ -> assertFailure "Should find again"
@@ -184,8 +184,8 @@ testListProjectBuilds =
           assertEqual "Should find two build pairs" 2 (length pairs)
 
           let compareBuildRecord expected actual = do
-                assertEqual "Build ID should match" (DS.buildId expected) (DS.buildId actual)
-                assertEqual "Version ID should match" (DS.versionId expected) (DS.versionId actual)
+                assertEqual "Build ID should match" (DS.build expected) (DS.build actual)
+                assertEqual "Version ID should match" (DS.version expected) (DS.version actual)
                 assertEqual "State should match" (DS.state expected) (DS.state actual)
 
           -- Compare first build pair
@@ -216,27 +216,27 @@ testFindProject =
       )
 
 ioFindFastState :: DS.BuildStore tx -> D.Build -> IO (Either () D.BuildState)
-ioFindFastState buildStore buildId = do
-  DS.atomically buildStore $ justToRight <$> DS.findFastState buildStore buildId
+ioFindFastState buildStore build = do
+  DS.atomically buildStore $ justToRight <$> DS.findFastState buildStore build
 
 ioFindSlowState :: DS.BuildStore tx -> D.Build -> IO (Either () D.BuildState)
-ioFindSlowState buildStore buildId = do
-  DS.atomically buildStore $ justToRight <$> DS.findSlowState buildStore buildId
+ioFindSlowState buildStore build = do
+  DS.atomically buildStore $ justToRight <$> DS.findSlowState buildStore build
 
 ioFindAndUpdateFastState :: DS.BuildStore tx -> D.Build -> IO (Either () ())
-ioFindAndUpdateFastState buildStore buildId = do
+ioFindAndUpdateFastState buildStore build = do
   DS.atomically buildStore $ do
-    stateE <- justToRight <$> DS.findFastState buildStore buildId
+    stateE <- justToRight <$> DS.findFastState buildStore build
     case stateE of
-      Right _ -> Right <$> DS.updateFastState buildStore buildId D.Running
+      Right _ -> Right <$> DS.updateFastState buildStore build D.Running
       Left _ -> return $ Left ()
 
 ioFindAndUpdateSlowState :: DS.BuildStore tx -> D.Build -> IO (Either () ())
-ioFindAndUpdateSlowState buildStore buildId = do
+ioFindAndUpdateSlowState buildStore build = do
   DS.atomically buildStore $ do
-    stateE <- justToRight <$> DS.findSlowState buildStore buildId
+    stateE <- justToRight <$> DS.findSlowState buildStore build
     case stateE of
-      Right _ -> Right <$> DS.updateSlowState buildStore buildId D.Running
+      Right _ -> Right <$> DS.updateSlowState buildStore build D.Running
       Left _ -> return $ Left ()
 
 justToRight :: Maybe a -> Either () a

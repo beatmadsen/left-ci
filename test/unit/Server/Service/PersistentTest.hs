@@ -56,6 +56,7 @@ testGetBuildSummaryTwoRows = TestCase $ do
             }
   actual <- getBuildSummary service (D.Build "123")
   let theDate = read "2024-01-01 00:00:00 UTC" :: UTCTime
+  let version = D.Version "04a66b1n"
   let expected =
         Just $
           D.BuildSummary
@@ -63,13 +64,15 @@ testGetBuildSummaryTwoRows = TestCase $ do
                 D.SuiteSummary
                   { D.state = D.Init,
                     D.createdAt = theDate,
-                    D.updatedAt = theDate
+                    D.updatedAt = theDate,
+                    D.version = version
                   },
               D.fastSuite =
                 D.SuiteSummary
                   { D.state = D.Running,
                     D.createdAt = theDate,
-                    D.updatedAt = theDate
+                    D.updatedAt = theDate,
+                    D.version = version
                   }
             }
   actual @?= expected
@@ -202,17 +205,18 @@ testListProjectBuildsAfterTime = TestCase $ do
 makeBuildMap :: BuildMap
 makeBuildMap =
   let theDate = read "2024-01-01 00:00:00 UTC" :: UTCTime
+      version = D.Version "04a66b1n"
       summaries =
         [ ( "123",
             D.BuildSummary
-              { D.slowSuite = D.SuiteSummary {D.state = D.Init, D.createdAt = theDate, D.updatedAt = theDate},
-                D.fastSuite = D.SuiteSummary {D.state = D.Running, D.createdAt = theDate, D.updatedAt = theDate}
+              { D.slowSuite = D.SuiteSummary {D.state = D.Init, D.createdAt = theDate, D.updatedAt = theDate, D.version = version},
+                D.fastSuite = D.SuiteSummary {D.state = D.Running, D.createdAt = theDate, D.updatedAt = theDate, D.version = version}
               }
           ),
           ( "estum1",
             D.BuildSummary
-              { D.slowSuite = D.SuiteSummary {D.state = D.Init, D.createdAt = theDate, D.updatedAt = theDate},
-                D.fastSuite = D.SuiteSummary {D.state = D.Running, D.createdAt = theDate, D.updatedAt = theDate}
+              { D.slowSuite = D.SuiteSummary {D.state = D.Init, D.createdAt = theDate, D.updatedAt = theDate, D.version = version},
+                D.fastSuite = D.SuiteSummary {D.state = D.Running, D.createdAt = theDate, D.updatedAt = theDate, D.version = version}
               }
           )
         ]

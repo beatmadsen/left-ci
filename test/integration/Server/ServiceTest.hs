@@ -68,12 +68,14 @@ testGetSummary = TestCase $ do
           "fast_suite": {
             "created_at": "2024-05-01T00:00:00Z",
             "state": "init",
-            "updated_at": "2024-05-01T00:00:00Z"
+            "updated_at": "2024-05-01T00:00:00Z",
+            "version": "04a66b1n"
           },
           "slow_suite": { 
             "created_at": "2024-05-01T00:00:00Z",
             "state": "init",
-            "updated_at": "2024-05-01T00:00:00Z"
+            "updated_at": "2024-05-01T00:00:00Z",
+            "version": "04a66b1n"
           }
         }|]
         assertBody (LBS.pack $ filter (/= ' ') $ filter (/= '\n') expectedJson) response
@@ -506,7 +508,23 @@ defaultService =
 defaultBuildSummary :: BuildSummary
 defaultBuildSummary =
   let theDate = read "2024-05-01 00:00:00 UTC" :: UTCTime
-   in BuildSummary {slowSuite = SuiteSummary {state = Init, createdAt = theDate, updatedAt = theDate}, fastSuite = SuiteSummary {state = Init, createdAt = theDate, updatedAt = theDate}}
+      version = Version "04a66b1n"
+   in BuildSummary
+        { slowSuite =
+            SuiteSummary
+              { state = Init,
+                createdAt = theDate,
+                updatedAt = theDate,
+                version = version
+              },
+          fastSuite =
+            SuiteSummary
+              { state = Init,
+                createdAt = theDate,
+                updatedAt = theDate,
+                version = version
+              }
+        }
 
 makeListRequest :: Project -> SRequest
 makeListRequest (Project name) =

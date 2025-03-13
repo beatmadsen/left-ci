@@ -6,8 +6,8 @@ import System.Environment (getArgs)
 import Server (makeWaiApp)
 import Network.Wai.Handler.Warp (run, runSettings, defaultSettings, setPort, setInstallShutdownHandler)
 import System.Posix.Signals (installHandler, sigINT, Handler(Catch))
-import Control.Concurrent (myThreadId)
-import Control.Exception (finally)
+import Control.Concurrent (myThreadId, killThread)
+import qualified Control.Exception as E
 import Control.Monad (void)
 
 main :: IO ()
@@ -22,6 +22,9 @@ closeSocketOnSIGINT :: IO () -> IO ()
 closeSocketOnSIGINT closeSocket = void $ installHandler sigINT (Catch $ do
     putStrLn "\nReceived Ctrl+C, shutting down..."
     closeSocket
+    -- Force exit if the server doesn't shut down cleanly
+    tid <- myThreadId
+    killThread tid
   ) Nothing
 
 runServer :: Int -> IO ()
@@ -33,6 +36,7 @@ runServer port = do
   let settings = setPort port $ 
                  setInstallShutdownHandler closeSocketOnSIGINT defaultSettings
                  
-  finally 
-    (runSettings settings app)
-    (putStrLn "Server shutdown complete")
+  E.bracket
+    (pure ())
+    (\_ -> putStrLn "Server shutdown complete")
+    (\_ -> runSettings settings app)

@@ -21,9 +21,9 @@ import Server.DataStore.SQLiteStore.Types
 import Server.Domain (Build (..), Project (..))
 
 sqlFindBuildPair :: Build -> AtomicM OngoingTransaction (Maybe BuildPair)
-sqlFindBuildPair buildId = do
+sqlFindBuildPair build = do
   OngoingTransaction connection <- ask
-  executions <- liftIO $ findExecutions connection buildId
+  executions <- liftIO $ findExecutions connection build
   return $ mapExecutionsM executions
 
 sqlFindBuildPairs :: Project -> Maybe UTCTime -> AtomicM OngoingTransaction [BuildPair]
@@ -120,7 +120,7 @@ mapExecution ex =
     (executionUpdatedAt ex)
 
 findExecutions :: Connection -> Build -> IO [Execution]
-findExecutions connection (Build buildId) =
+findExecutions connection (Build build) =
   query
     connection
     [sql|
@@ -131,4 +131,4 @@ findExecutions connection (Build buildId) =
       JOIN suites s ON e.suite_id = s.id
       WHERE b.global_id = ?
       |]
-    (Only buildId)
+    (Only build)

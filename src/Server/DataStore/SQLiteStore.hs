@@ -61,9 +61,9 @@ sqlFindProject project = do
 
 
 sqlFindState :: SuiteName -> Build -> AtomicM OngoingTransaction (Maybe BuildState)
-sqlFindState suiteName buildId = do
+sqlFindState suiteName build = do
   OngoingTransaction connection <- ask
-  results <- liftIO $ queryState suiteName connection buildId
+  results <- liftIO $ queryState suiteName connection build
   return $ takeFirstState results
 
 queryState :: SuiteName -> Connection -> Build -> IO [Only String]

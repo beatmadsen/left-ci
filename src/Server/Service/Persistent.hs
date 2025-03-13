@@ -22,8 +22,8 @@ makePersistentService buildStore =
     }
 
 pGetBuildSummary :: DS.BuildStore ctx -> D.Build -> IO (Maybe D.BuildSummary)
-pGetBuildSummary buildStore buildId = do
-  maybeBuildPair <- DS.atomically buildStore $ DS.findBuildPair buildStore buildId
+pGetBuildSummary buildStore build = do
+  maybeBuildPair <- DS.atomically buildStore $ DS.findBuildPair buildStore build
   pure $ fmap extractSummary maybeBuildPair
 
 pListProjectBuilds :: DS.BuildStore ctx -> D.Project -> Maybe UTCTime -> IO (Maybe BuildMap)
@@ -37,11 +37,11 @@ pListProjectBuilds buildStore project after = do
 
 groupByBuild :: [DS.BuildPair] -> Map.Map D.Build DS.BuildPair
 groupByBuild pairs =
-  let annotated = [(buildIdFromPair pair, pair) | pair <- pairs]
+  let annotated = [(buildFromPair pair, pair) | pair <- pairs]
   in Map.fromListWith const annotated
 
-buildIdFromPair :: DS.BuildPair -> D.Build
-buildIdFromPair pair = DS.build (DS.fastSuite pair)
+buildFromPair :: DS.BuildPair -> D.Build
+buildFromPair pair = DS.build (DS.fastSuite pair)
 
 convert :: Map.Map D.Build DS.BuildPair -> BuildMap
 convert = Map.map extractSummary
@@ -71,37 +71,37 @@ pCreateBuild buildStore project version build = do
     Right () -> SuccessfullyCreated
 
 pAdvanceFastSuite :: DS.BuildStore ctx -> D.Build -> IO StateChangeOutcome
-pAdvanceFastSuite buildStore buildId = DS.atomically buildStore $ do
-  maybeState <- DS.findFastState buildStore buildId
+pAdvanceFastSuite buildStore build = DS.atomically buildStore $ do
+  maybeState <- DS.findFastState buildStore build
   case maybeState of
     Nothing -> pure NotFound
-    Just state -> advanceAndUpdate (DS.updateFastState buildStore buildId) state
+    Just state -> advanceAndUpdate (DS.updateFastState buildStore build) state
 
 pAdvanceSlowSuite :: DS.BuildStore ctx -> D.Build -> IO StateChangeOutcome
-pAdvanceSlowSuite buildStore buildId = DS.atomically buildStore $ do
-  maybeState <- DS.findSlowState buildStore buildId
+pAdvanceSlowSuite buildStore build = DS.atomically buildStore $ do
+  maybeState <- DS.findSlowState buildStore build
   case maybeState of
     Nothing -> pure NotFound
-    Just state -> advanceAndUpdate (DS.updateSlowState buildStore buildId) state
+    Just state -> advanceAndUpdate (DS.updateSlowState buildStore build) state
 
 pFailFastSuite :: DS.BuildStore ctx -> D.Build -> IO StateChangeOutcome
-pFailFastSuite buildStore buildId = DS.atomically buildStore $ do
-  maybeState <- DS.findFastState buildStore buildId
+pFailFastSuite buildStore build = DS.atomically buildStore $ do
+  maybeState <- DS.findFastState buildStore build
   case maybeState of
     Nothing -> pure NotFound
     Just D.Failed -> pure SuccessfullyChangedState
     Just _ -> do
-      DS.updateFastState buildStore buildId D.Failed
+      DS.updateFastState buildStore build D.Failed
       pure SuccessfullyChangedState
 
 pFailSlowSuite :: DS.BuildStore ctx -> D.Build -> IO StateChangeOutcome
-pFailSlowSuite buildStore buildId = DS.atomically buildStore $ do
-  maybeState <- DS.findSlowState buildStore buildId
+pFailSlowSuite buildStore build = DS.atomically buildStore $ do
+  maybeState <- DS.findSlowState buildStore build
   case maybeState of
     Nothing -> pure NotFound
     Just D.Failed -> pure SuccessfullyChangedState
     Just _ -> do
-      DS.updateSlowState buildStore buildId D.Failed
+      DS.updateSlowState buildStore build D.Failed
       pure SuccessfullyChangedState
 
 type StateUpdater ctx = D.BuildState -> AtomicM ctx ()

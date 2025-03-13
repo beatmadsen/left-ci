@@ -36,12 +36,12 @@ sqlCreateBuildUnlessExists project version build = do
         return $ Right ()
 
 doesBuildExist :: Connection -> Build -> IO Bool
-doesBuildExist connection (Build buildId) = do
+doesBuildExist connection (Build build) = do
   results <-
     query
       connection
       "SELECT 1 FROM builds WHERE global_id = ?"
-      (Only buildId) ::
+      (Only build) ::
       IO [Only Int]
   return $ not $ null results
 
@@ -56,9 +56,9 @@ createEntitiesAt connection now project version build = do
 
 
 createEntities :: Connection -> Project -> Version -> Build -> IO ()
-createEntities connection project version buildId = do
+createEntities connection project version build = do
   now <- getCurrentTime
-  createEntitiesAt connection now project version buildId
+  createEntitiesAt connection now project version build
 
 insertOrIgnoreProject :: Connection -> Project -> UTCTime -> IO ()
 insertOrIgnoreProject connection project now = do  
@@ -81,8 +81,8 @@ insertOrIgnoreVersion connection project version now = do
     (commitHash, now, project)
 
 insertBuild :: Connection -> Version -> Build -> UTCTime -> IO ()
-insertBuild connection (Version commitHash) buildId now = do
-  let Build globalId = buildId
+insertBuild connection (Version commitHash) build now = do
+  let Build globalId = build
   execute
     connection
     [sql|

@@ -9,24 +9,28 @@ const archetypeData = {
     "fast_suite": {
       "created_at": "2025-02-22T10:44:40.160377Z",
       "state": "init",
-      "updated_at": "2025-02-22T10:44:40.160377Z"
+      "updated_at": "2025-02-22T10:44:40.160377Z",
+      "version": "04a66b1n"
     },
     "slow_suite": {
       "created_at": "2025-02-22T10:44:40.160377Z",
       "state": "init",
-      "updated_at": "2025-02-22T10:44:40.160377Z"
+      "updated_at": "2025-02-22T10:44:40.160377Z",
+      "version": "04a66b1n"
     }
   },
   "aidfudb": {
     "fast_suite": {
       "created_at": "2025-02-22T20:48:43.193578Z",
       "state": "init",
-      "updated_at": "2025-02-22T20:48:43.193578Z"
+      "updated_at": "2025-02-22T20:48:43.193578Z",
+      "version": "01b66b1n"
     },
     "slow_suite": {
       "created_at": "2025-02-22T20:48:43.193578Z",
       "state": "init",
-      "updated_at": "2025-02-22T20:48:43.193578Z"
+      "updated_at": "2025-02-22T20:48:43.193578Z",
+      "version": "01b66b1n"
     }
   }
 }
@@ -46,12 +50,13 @@ test("initPage inserts table content", () => {
   
   // Check headers
   const headers = table.querySelectorAll("thead th");
-  expect(headers.length).toBe(5); // Build, Suite, Created At, Updated At, State
-  expect(headers[0].textContent).toBe("Build");
-  expect(headers[1].textContent).toBe("Suite");
-  expect(headers[2].textContent).toBe("Created At");
-  expect(headers[3].textContent).toBe("Updated At");
-  expect(headers[4].textContent).toBe("State");
+  expect(headers.length).toBe(6); // Version, Build, Suite, Created At, Updated At, State
+  expect(headers[0].textContent).toBe("Version");
+  expect(headers[1].textContent).toBe("Build");
+  expect(headers[2].textContent).toBe("Suite");
+  expect(headers[3].textContent).toBe("Created At");
+  expect(headers[4].textContent).toBe("Updated At");
+  expect(headers[5].textContent).toBe("State");
   
   // Check data rows (2 builds × 2 suites = 4 rows)
   const rows = table.querySelectorAll("tbody tr");

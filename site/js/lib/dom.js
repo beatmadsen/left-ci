@@ -32,7 +32,7 @@ function createTable(tableData) {
 }
 
 function createHeaderRow() {
-  const headerCells = ["Build", "Suite", "Created At", "Updated At", "State"];
+  const headerCells = ["Version", "Build", "Suite", "Created At", "Updated At", "State"];
 
   const headerRow = document.createElement("tr");
   headerCells.forEach(cell => {
@@ -65,7 +65,7 @@ function createRow(tableDataRow) {
   if (isUpdated) {    
     rowElement.classList.add("hidden");
   }
-  tableDataRow.slice(1, 6).forEach(cell => {
+  tableDataRow.slice(1, 7).forEach(cell => {
     const cellElement = document.createElement("td");
     cellElement.textContent = cell;
     rowElement.appendChild(cellElement);

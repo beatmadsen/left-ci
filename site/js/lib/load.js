@@ -49,24 +49,28 @@ async function fetchDummyBuilds(_projectId, { after = null } = {}) {
       "fast_suite": {
         "created_at": "2025-02-22T10:44:40.160377Z",
         "state": "init",
-        "updated_at": "2025-02-22T10:44:40.160377Z"
+        "updated_at": "2025-02-22T10:44:40.160377Z",
+        "version": "04a66b1n"
       },
       "slow_suite": {
         "created_at": "2025-02-22T10:44:40.160377Z",
         "state": "init",
-        "updated_at": "2025-02-22T10:44:40.160377Z"
+        "updated_at": "2025-02-22T10:44:40.160377Z",
+        "version": "04a66b1n"
       }
     },
     "aidfudb": {
       "fast_suite": {
         "created_at": "2025-02-22T20:48:43.193578Z",
         "state": "init",
-        "updated_at": "2025-02-22T20:48:43.193578Z"
+        "updated_at": "2025-02-22T20:48:43.193578Z",
+        "version": "01b66b1n"
       },
       "slow_suite": {
         "created_at": "2025-02-22T20:48:43.193578Z",
         "state": "init",
-        "updated_at": "2025-02-22T20:48:43.193578Z"
+        "updated_at": "2025-02-22T20:48:43.193578Z",
+        "version": "01b66b1n"
       }
     }
   }

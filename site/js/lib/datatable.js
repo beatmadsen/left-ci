@@ -18,12 +18,12 @@ function toMetadata(buildKey, changedBuilds) {
 }
 
 function toRow(metadata, buildKey, suiteName, suiteData) {
-  return [metadata, buildKey, suiteName, suiteData.created_at, suiteData.updated_at, suiteData.state];
+  return [metadata, suiteData.version, buildKey, suiteName, suiteData.created_at, suiteData.updated_at, suiteData.state];
 }
 
 function byUpdatedAtAndSuiteName(a, b) {
-  const [, suiteNameA, , updatedAtA] = a;
-  const [, suiteNameB, , updatedAtB] = b;
+  const [,, suiteNameA, , updatedAtA] = a;
+  const [,, suiteNameB, , updatedAtB] = b;
   // First compare by updatedAt
   if (updatedAtA !== updatedAtB) {
     return updatedAtA < updatedAtB ? 1 : -1;

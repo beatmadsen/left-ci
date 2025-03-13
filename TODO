@@ -1,6 +1,6 @@
-- Server
-  - Include version in build history
-
+- Static site
+  - Add calculated, ticking duration to the table
+  
 - Installer
   - Demo packaging of template inside binary
   - Create .left-ci directory

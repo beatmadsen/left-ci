@@ -1,14 +1,5 @@
-- Branch out into different functions for running the server and installing the application
-
 - Server
-  - Serve static files
-  - API
-    - Get build history for a project
-
-- Web UI
-  - Served from the server using static files
-  - Show build history
-  - Show build status
+  - Include version in build history
 
 - Installer
   - Demo packaging of template inside binary

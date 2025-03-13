@@ -2,15 +2,23 @@ export function toDataTable(data, changedBuilds) {
   const table = [];
   Object.entries(data).forEach(([buildKey, buildValue]) => {
     Object.entries(buildValue).forEach(([suiteName, suiteData]) => {
-      const row = [buildKey, suiteName, suiteData.created_at, suiteData.updated_at, suiteData.state];
-      row.push(changedBuilds.includes(buildKey));      
-      table.push(row);
+      const metadata = toMetadata(buildKey, changedBuilds);
+      const nextRow = toRow(metadata, buildKey, suiteName, suiteData);
+      table.push(nextRow);
     });
   });
 
   // Sort descending
   table.sort(byUpdatedAtAndSuiteName);
   return table;
+}
+
+function toMetadata(buildKey, changedBuilds) {
+  return { changed: changedBuilds.includes(buildKey) };
+}
+
+function toRow(metadata, buildKey, suiteName, suiteData) {
+  return [metadata, buildKey, suiteName, suiteData.created_at, suiteData.updated_at, suiteData.state];
 }
 
 function byUpdatedAtAndSuiteName(a, b) {

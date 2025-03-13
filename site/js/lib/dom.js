@@ -60,11 +60,12 @@ function createTBody(tableData) {
 
 function createRow(tableDataRow) {
   const rowElement = document.createElement("tr");
-  const isUpdated = tableDataRow[5];
+  const metadata = tableDataRow[0];
+  const isUpdated = metadata.changed;
   if (isUpdated) {    
     rowElement.classList.add("hidden");
   }
-  tableDataRow.slice(0, 5).forEach(cell => {
+  tableDataRow.slice(1, 6).forEach(cell => {
     const cellElement = document.createElement("td");
     cellElement.textContent = cell;
     rowElement.appendChild(cellElement);

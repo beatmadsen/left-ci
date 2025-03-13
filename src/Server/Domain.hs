@@ -69,7 +69,7 @@ instance ToJSON BuildSummary where
     "slow_suite" .= slowSuite
     ]
 
-
+-- TODO: Add version to suite summary, and perhaps other fields
 data SuiteSummary = SuiteSummary
   {
     state :: BuildState,

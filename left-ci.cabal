@@ -68,6 +68,7 @@ executable left-ci
       Paths_left_ci
   hs-source-dirs:
       app
+  ghc-options: -threaded
   build-depends:
       base >=4.7 && <5
     , containers

@@ -45,6 +45,8 @@ executables:
   left-ci:
     main: Main.hs
     source-dirs: app
+    ghc-options:
+      - -threaded
     dependencies:
       - left-ci
       - warp

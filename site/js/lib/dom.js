@@ -6,7 +6,7 @@ export function initPage(rows) {
   tableContainer.appendChild(table);
 }
 
-export function refreshTable(rows) {
+export function refreshTable(rows, disregardChanges = false) {
   // find existing table
   const table = document.querySelector("table");
   const tbody = table.querySelector("tbody");
@@ -16,7 +16,7 @@ export function refreshTable(rows) {
 
   // create new rows
   rows.forEach(row => {
-    const rowElement = createRow(row);
+    const rowElement = createRow(row, disregardChanges);
     tbody.appendChild(rowElement);
   });
 
@@ -32,7 +32,7 @@ function createTable(tableData) {
 }
 
 function createHeaderRow() {
-  const headerCells = ["Version", "Build", "Suite", "Created At", "Updated At", "State"];
+  const headerCells = ["Version", "Build", "Suite", "Created At", "Updated At", "Elapsed Time", "State"];
 
   const headerRow = document.createElement("tr");
   headerCells.forEach(cell => {
@@ -58,14 +58,14 @@ function createTBody(tableData) {
   return tbody;
 }
 
-function createRow(tableDataRow) {
+function createRow(tableDataRow, disregardChanges) {
   const rowElement = document.createElement("tr");
   const metadata = tableDataRow[0];
   const isUpdated = metadata.changed;
-  if (isUpdated) {    
+  if (!disregardChanges &&isUpdated) {    
     rowElement.classList.add("hidden");
   }
-  tableDataRow.slice(1, 7).forEach(cell => {
+  tableDataRow.slice(1, 8).forEach(cell => {
     const cellElement = document.createElement("td");
     cellElement.textContent = cell;
     rowElement.appendChild(cellElement);

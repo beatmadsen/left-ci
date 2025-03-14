@@ -19,11 +19,18 @@ export async function load() {
 
     // run loadUpdates every 10 seconds
     setInterval(loadUpdates, 10000);
+    setInterval(updateElapsedTime, 1000);
   } catch (e) {
     loadFailed(e.message);
     console.error(e);
     throw e;
   }
+}
+
+function updateElapsedTime() {
+  history.updateElapsedTime();
+  refreshTable(history.rows(), true);
+
 }
 
 async function loadUpdates() {

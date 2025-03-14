@@ -50,13 +50,14 @@ test("initPage inserts table content", () => {
   
   // Check headers
   const headers = table.querySelectorAll("thead th");
-  expect(headers.length).toBe(6); // Version, Build, Suite, Created At, Updated At, State
+  expect(headers.length).toBe(7);
   expect(headers[0].textContent).toBe("Version");
   expect(headers[1].textContent).toBe("Build");
   expect(headers[2].textContent).toBe("Suite");
   expect(headers[3].textContent).toBe("Created At");
   expect(headers[4].textContent).toBe("Updated At");
-  expect(headers[5].textContent).toBe("State");
+  expect(headers[5].textContent).toBe("Elapsed Time");
+  expect(headers[6].textContent).toBe("State");
   
   // Check data rows (2 builds × 2 suites = 4 rows)
   const rows = table.querySelectorAll("tbody tr");

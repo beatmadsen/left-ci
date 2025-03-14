@@ -14,7 +14,7 @@ export class BuildHistory {
     if (Object.keys(this.builds).length === 0) {
       const builds = await this.fetchFn(this.projectId);
       this.changedBuilds = Object.keys(builds);
-      this.builds = reviveDates(builds);
+      this.builds = enrichBuilds(builds);
     } else {
       const latestUpdate = this.#getLatestUpdate();
       const builds = await this.fetchFn(this.projectId, { after: latestUpdate });
@@ -23,11 +23,15 @@ export class BuildHistory {
       } else {
         this.changedBuilds = Object.keys(builds);
         console.log(`Fetched ${this.changedBuilds.length} builds after ${latestUpdate}`);
-        this.builds = { ...this.builds, ...reviveDates(builds) };
+        this.builds = { ...this.builds, ...enrichBuilds(builds) };
       }
     }
     this.#updateTenLatestBuilds();
     this.#trimBuilds();
+  }
+
+  updateElapsedTime() {    
+    this.builds = populateElapsedTime(this.builds);
   }
 
   changedRows() {
@@ -72,7 +76,42 @@ export class BuildHistory {
       }
     }
     return latestUpdate;
-  }
+  }  
+}
+
+function enrichBuilds(builds) {
+  return reviveDates(builds);
+}
+
+export function populateElapsedTime(builds) {
+  const now = new Date();
+  return Object.fromEntries(Object.entries(builds).map(([buildKey, suites]) => [buildKey, populateElapsedTimeInSuites(suites, now)]));
+}
+
+function populateElapsedTimeInSuites(suites, now) {
+  return Object.fromEntries(Object.entries(suites).map(([suiteName, suite]) => [suiteName, populateElapsedTimeInSuite(suite, now)]));
+}
+
+function populateElapsedTimeInSuite(suite, now) {
+  const cloned = { ...suite };
+  const inFinalState = ["failed", "passed"].includes(cloned.state);
+  const elapsedMs = inFinalState ? cloned.updated_at - cloned.created_at : now - cloned.created_at;
+  cloned.elapsed_time = formatDuration(elapsedMs);
+  return cloned;
+}
+
+function formatDuration(ms) {
+  const seconds = Math.floor(ms / 1000);
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const remainingSeconds = seconds % 60;
+  
+  const parts = [];
+  if (hours > 0) parts.push(`${hours}h`);
+  if (minutes > 0) parts.push(`${minutes}m`);
+  if (remainingSeconds > 0) parts.push(`${remainingSeconds}s`);
+  
+  return parts.join(' ') || '0s';
 }
 
 export function reviveDates(builds) {

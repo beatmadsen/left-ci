@@ -18,7 +18,7 @@ function toMetadata(buildKey, changedBuilds) {
 }
 
 function toRow(metadata, buildKey, suiteName, suiteData) {
-  return [metadata, suiteData.version, buildKey, suiteName, suiteData.created_at, suiteData.updated_at, suiteData.state];
+  return [metadata, suiteData.version, buildKey, suiteName, suiteData.created_at, suiteData.updated_at, suiteData.elapsed_time, suiteData.state];
 }
 
 function byUpdatedAtAndSuiteName(a, b) {
